@@ -19,6 +19,17 @@ CREATE TABLE IF NOT EXISTS samples_1m (
     max REAL NOT NULL,
     PRIMARY KEY (server, key, at)
 );
+CREATE TABLE IF NOT EXISTS actions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    at INTEGER NOT NULL,
+    server TEXT NOT NULL,
+    module TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    target TEXT NOT NULL,
+    argument TEXT,
+    ok INTEGER NOT NULL,
+    message TEXT NOT NULL
+);
 CREATE TABLE IF NOT EXISTS samples_1h (
     server TEXT NOT NULL,
     key TEXT NOT NULL,

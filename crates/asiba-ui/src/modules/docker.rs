@@ -2,7 +2,7 @@ use asiba_core::{ModuleId, QueryRequest, ServerState};
 use asiba_modules::docker::{self, Container, DockerSnapshot};
 use egui::{RichText, Ui};
 
-use super::{ModuleView, Tab, ViewAction};
+use super::{ModuleView, Tab, ViewAction, action_button};
 use crate::components::{Table, badge};
 use crate::format;
 use crate::text;
@@ -171,12 +171,17 @@ fn containers_table(ui: &mut Ui, id: &str, containers: &[&Container]) -> Option<
             }
             ui.label(RichText::new(&container.image).color(p.text_secondary));
             ui.monospace(&container.ports);
-            if ui.small_button(text::DOCKER_LOGS).clicked() {
-                action = Some(ViewAction::Query(QueryRequest::new(
-                    docker::QUERY_LOGS,
-                    &container.name,
-                )));
-            }
+            ui.horizontal(|ui| {
+                if ui.small_button(text::DOCKER_LOGS).clicked() {
+                    action = Some(ViewAction::Query(QueryRequest::new(
+                        docker::QUERY_LOGS,
+                        &container.name,
+                    )));
+                }
+                if let Some(next) = container_buttons(ui, container) {
+                    action = Some(next);
+                }
+            });
             ui.end_row();
         }
     });
@@ -233,4 +238,14 @@ fn images_table(ui: &mut Ui, snapshot: &DockerSnapshot) {
             ui.end_row();
         }
     });
+}
+
+fn container_buttons(ui: &mut Ui, container: &Container) -> Option<ViewAction> {
+    let name = &container.name;
+    if container.is_running() {
+        action_button(ui, text::ACT_RESTART, docker::SPEC_RESTART, name)
+            .or_else(|| action_button(ui, text::ACT_STOP, docker::SPEC_STOP, name))
+    } else {
+        action_button(ui, text::ACT_START, docker::SPEC_START, name)
+    }
 }

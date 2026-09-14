@@ -1,4 +1,5 @@
 mod actions;
+mod confirm;
 mod dialogs;
 
 use std::sync::Arc;
@@ -13,6 +14,7 @@ use crate::devtools::{self, ScreenshotOnStart};
 use crate::modules::{self, ModuleView};
 use crate::pages::inspector::Inspector;
 use crate::pages::server_detail::{self, DetailContext};
+use crate::pages::settings::SettingsContext;
 use crate::pages::{self, Action, Page, server_form::ServerForm};
 use crate::shell::{Notice, sidebar, statusbar};
 use crate::text;
@@ -66,6 +68,7 @@ pub struct AsibaApp {
     page: Page,
     form: Option<ServerForm>,
     delete_dialog: Option<dialogs::DeleteDialog>,
+    confirm_dialog: Option<confirm::ConfirmDialog>,
     notices: Vec<Notice>,
     views: Vec<Box<dyn ModuleView>>,
     screenshot: Option<ScreenshotOnStart>,
@@ -83,6 +86,7 @@ impl AsibaApp {
             page: Page::Overview,
             form: None,
             delete_dialog: None,
+            confirm_dialog: None,
             notices: Vec::new(),
             views: modules::all(),
             screenshot: ScreenshotOnStart::from_env(),
@@ -103,6 +107,18 @@ impl AsibaApp {
                     if let Some(inspector) = &mut self.inspector {
                         inspector.accept(token, result.map(|r| (r.title, r.text)));
                     }
+                }
+                EngineEvent::ActionFinished(record) => {
+                    let outcome = if record.is_success {
+                        text::ACTION_DONE
+                    } else {
+                        text::ACTION_FAILED
+                    };
+                    let message = format!(
+                        "{} {}: {outcome} — {}",
+                        record.kind, record.target, record.message
+                    );
+                    self.notices.push(Notice::new(message));
                 }
                 EngineEvent::ServerSaved(_) | EngineEvent::ServerRemoved(_) => {}
                 EngineEvent::Warning(message) => self.notices.push(Notice::new(message)),
@@ -144,7 +160,14 @@ impl AsibaApp {
                 pages::map::show(ui);
                 None
             }
-            Page::Settings => pages::settings::show(ui, &self.paths, &self.config),
+            Page::Settings => pages::settings::show(
+                ui,
+                &SettingsContext {
+                    paths: &self.paths,
+                    config: &self.config,
+                    state: &state,
+                },
+            ),
         }
     }
 }
@@ -197,6 +220,7 @@ impl eframe::App for AsibaApp {
                 }
             });
         self.delete_modal(&ctx);
+        self.confirm_modal(&ctx);
         if let Some(action) = action {
             self.apply(action, &ctx);
         }

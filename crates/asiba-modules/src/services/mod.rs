@@ -1,13 +1,16 @@
+mod actions;
 mod model;
 mod parse;
 
 use asiba_core::transport::shell_quote;
 use asiba_core::{
-    Availability, CollectContext, Event, Module, ModuleError, ModuleId, QueryRequest,
-    QueryResponse, Sample, Schedule, Severity, Snapshot, Transport,
+    ActionOutcome, ActionRequest, ActionSpec, Availability, CollectContext, Event, Module,
+    ModuleError, ModuleId, QueryRequest, QueryResponse, Sample, Schedule, Severity, Snapshot,
+    Transport,
 };
 use async_trait::async_trait;
 
+pub use actions::{ACTION_RESTART, ACTION_START, ACTION_STOP, SPEC_RESTART, SPEC_START, SPEC_STOP};
 pub use model::{ServicesSnapshot, Timer, Unit, UnitOrigin};
 
 use crate::common::sections;
@@ -101,6 +104,18 @@ impl Module for ServicesModule {
             title: format!("journal {}", request.target),
             text,
         })
+    }
+
+    fn actions(&self) -> &'static [ActionSpec] {
+        &actions::SPECS
+    }
+
+    async fn perform(
+        &self,
+        transport: &dyn Transport,
+        request: &ActionRequest,
+    ) -> Result<ActionOutcome, ModuleError> {
+        actions::perform(transport, request).await
     }
 }
 

@@ -1,12 +1,14 @@
+mod actions;
 mod model;
 mod parse;
 
 use asiba_core::{
-    Availability, CollectContext, Module, ModuleError, ModuleId, Sample, Schedule, Snapshot,
-    Transport,
+    ActionOutcome, ActionRequest, ActionSpec, Availability, CollectContext, Module, ModuleError,
+    ModuleId, Sample, Schedule, Snapshot, Transport,
 };
 use async_trait::async_trait;
 
+pub use actions::{ACTION_KILL, ACTION_TERMINATE, SPEC_KILL, SPEC_TERMINATE};
 pub use model::{Process, ProcessSnapshot};
 
 use crate::common::sections;
@@ -69,5 +71,17 @@ impl Module for ProcessesModule {
             Sample::new(KEY_ZOMBIES, snapshot.zombie_count() as f64),
         ];
         Ok(Snapshot::new(snapshot).with_samples(samples))
+    }
+
+    fn actions(&self) -> &'static [ActionSpec] {
+        &actions::SPECS
+    }
+
+    async fn perform(
+        &self,
+        transport: &dyn Transport,
+        request: &ActionRequest,
+    ) -> Result<ActionOutcome, ModuleError> {
+        actions::perform(transport, request).await
     }
 }

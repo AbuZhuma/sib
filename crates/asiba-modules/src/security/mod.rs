@@ -1,3 +1,4 @@
+mod actions;
 mod checks;
 mod events;
 mod journal;
@@ -5,18 +6,20 @@ mod model;
 mod parse;
 
 use asiba_core::{
-    Availability, CollectContext, Module, ModuleError, ModuleId, Sample, Schedule, Snapshot,
-    SudoMode, Transport,
+    ActionOutcome, ActionRequest, ActionSpec, Availability, CollectContext, Module, ModuleError,
+    ModuleId, Sample, Schedule, Snapshot, SudoMode, Transport,
 };
 use async_trait::async_trait;
 use chrono::Utc;
 
+pub use actions::{ACTION_BAN, ACTION_UNBAN, PERMANENT, SPEC_BAN, SPEC_UNBAN};
 pub use checks::{Check, CheckStatus, checks, score};
 pub use model::{
     Attacker, BRUTE_FORCE_THRESHOLD, BRUTE_FORCE_WINDOW_MINUTES, Ban, BanBackend, FirewallState,
     Jail, Login, SecuritySnapshot, SshdSettings, SudoCall, Switch,
 };
 
+use crate::common::root::exec_prefer_root;
 use crate::common::sections;
 
 pub const ID: ModuleId = ModuleId("security");
@@ -104,14 +107,7 @@ impl Module for SecurityModule {
         transport: &dyn Transport,
         context: &CollectContext,
     ) -> Result<Snapshot, ModuleError> {
-        let command = script();
-        let output = match transport.sudo_mode() {
-            SudoMode::None => transport.exec(&command).await?,
-            _ => match transport.exec_root(&command).await {
-                Ok(output) if output.is_success() => output,
-                _ => transport.exec(&command).await?,
-            },
-        };
+        let output = exec_prefer_root(transport, &script()).await?;
         let now = Utc::now();
         let snapshot = parse::security_snapshot(&output.stdout, now)?;
         let events = context
@@ -126,5 +122,17 @@ impl Module for SecurityModule {
         Ok(Snapshot::new(snapshot)
             .with_samples(samples)
             .with_events(events))
+    }
+
+    fn actions(&self) -> &'static [ActionSpec] {
+        &actions::SPECS
+    }
+
+    async fn perform(
+        &self,
+        transport: &dyn Transport,
+        request: &ActionRequest,
+    ) -> Result<ActionOutcome, ModuleError> {
+        actions::perform(transport, request).await
     }
 }

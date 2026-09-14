@@ -13,7 +13,7 @@ mod system;
 mod updates;
 mod users;
 
-use asiba_core::{ModuleId, QueryRequest, ServerState, Snapshot};
+use asiba_core::{ActionRequest, ActionSpec, ModuleId, QueryRequest, ServerState, Snapshot};
 use egui::Ui;
 
 use crate::text;
@@ -87,6 +87,30 @@ impl Tab {
 
 pub enum ViewAction {
     Query(QueryRequest),
+    Act {
+        spec: ActionSpec,
+        request: ActionRequest,
+    },
+}
+
+impl ViewAction {
+    pub fn act(spec: ActionSpec, target: &str) -> Self {
+        Self::Act {
+            spec,
+            request: ActionRequest::new(spec.kind, target),
+        }
+    }
+}
+
+pub fn action_button(
+    ui: &mut Ui,
+    label: &str,
+    spec: ActionSpec,
+    target: &str,
+) -> Option<ViewAction> {
+    ui.small_button(label)
+        .clicked()
+        .then(|| ViewAction::act(spec, target))
 }
 
 pub trait ModuleView: Send + Sync {

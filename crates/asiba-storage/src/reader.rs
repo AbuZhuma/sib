@@ -1,10 +1,11 @@
 use std::collections::BTreeMap;
 use std::path::Path;
 
-use asiba_core::Point;
+use asiba_core::{ActionRecord, Point};
 use chrono::{DateTime, Utc};
 use rusqlite::{Connection, OpenFlags, params};
 
+use crate::actions;
 use crate::error::StorageError;
 
 pub struct HistoryReader {
@@ -17,6 +18,10 @@ impl HistoryReader {
         Ok(Self {
             connection: Connection::open_with_flags(path, flags)?,
         })
+    }
+
+    pub fn recent_actions(&self, limit: usize) -> Result<Vec<ActionRecord>, StorageError> {
+        actions::list_recent(&self.connection, limit)
     }
 
     pub fn load_series(

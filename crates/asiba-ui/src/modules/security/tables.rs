@@ -1,6 +1,8 @@
-use asiba_modules::security::SecuritySnapshot;
+use asiba_core::ActionRequest;
+use asiba_modules::security::{self, SecuritySnapshot};
 use egui::{RichText, Ui};
 
+use super::super::ViewAction;
 use crate::components::{Table, badge};
 use crate::format;
 use crate::text;
@@ -15,12 +17,13 @@ fn title(ui: &mut Ui, label: &str) {
     );
 }
 
-pub fn attackers(ui: &mut Ui, snapshot: &SecuritySnapshot) {
+pub fn attackers(ui: &mut Ui, snapshot: &SecuritySnapshot) -> Option<ViewAction> {
     let p = Palette::current(ui.ctx());
+    let mut action = None;
     title(ui, text::SEC_ATTACKERS);
     if snapshot.attackers.is_empty() {
         ui.label(RichText::new(text::SEC_NO_ATTACKERS).color(p.text_muted));
-        return;
+        return None;
     }
     let columns = [
         "IP",
@@ -50,30 +53,40 @@ pub fn attackers(ui: &mut Ui, snapshot: &SecuritySnapshot) {
             ui.monospace(format::date_time(attacker.last_at));
             if snapshot.is_banned(&attacker.ip) {
                 badge(ui, text::SEC_BANNED, p.text_muted);
-            } else {
-                ui.label("");
+            } else if ui.small_button(text::ACT_BAN).clicked() {
+                action = Some(ViewAction::act(security::SPEC_BAN, &attacker.ip));
             }
             ui.end_row();
         }
     });
+    action
 }
 
-pub fn bans(ui: &mut Ui, snapshot: &SecuritySnapshot) {
+pub fn bans(ui: &mut Ui, snapshot: &SecuritySnapshot) -> Option<ViewAction> {
     let p = Palette::current(ui.ctx());
+    let mut action = None;
     title(ui, text::SEC_BANS);
     if snapshot.bans.is_empty() {
         ui.label(RichText::new(text::SEC_NO_BANS).color(p.text_muted));
-        return;
+        return None;
     }
-    let columns = ["IP", text::SEC_BAN_SOURCE, text::SEC_BAN_EXPIRES];
+    let columns = ["IP", text::SEC_BAN_SOURCE, text::SEC_BAN_EXPIRES, ""];
     Table::new("security-bans", &columns).show(ui, |ui| {
         for ban in &snapshot.bans {
             ui.monospace(&ban.ip);
             ui.label(RichText::new(&ban.source).color(p.text_secondary));
             ui.monospace(ban.expires.as_deref().unwrap_or("—"));
+            if ui.small_button(text::ACT_UNBAN).clicked() {
+                action = Some(ViewAction::Act {
+                    spec: security::SPEC_UNBAN,
+                    request: ActionRequest::new(security::ACTION_UNBAN, &ban.ip)
+                        .with_argument(&ban.source),
+                });
+            }
             ui.end_row();
         }
     });
+    action
 }
 
 pub fn logins(ui: &mut Ui, snapshot: &SecuritySnapshot) {

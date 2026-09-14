@@ -2,7 +2,7 @@ use asiba_core::{ModuleId, QueryRequest, ServerState};
 use asiba_modules::services::{self, ServicesSnapshot, Unit, UnitOrigin};
 use egui::{Id, RichText, Ui};
 
-use super::{ModuleView, Tab, ViewAction};
+use super::{ModuleView, Tab, ViewAction, action_button};
 use crate::components::{Table, badge};
 use crate::format;
 use crate::text;
@@ -139,12 +139,17 @@ fn units_table(ui: &mut Ui, snapshot: &ServicesSnapshot, filters: Filters) -> Op
                 "—".to_owned()
             });
             ui.label(&unit.description);
-            if ui.small_button(text::SVC_JOURNAL).clicked() {
-                action = Some(ViewAction::Query(QueryRequest::new(
-                    services::QUERY_JOURNAL,
-                    &unit.name,
-                )));
-            }
+            ui.horizontal(|ui| {
+                if ui.small_button(text::SVC_JOURNAL).clicked() {
+                    action = Some(ViewAction::Query(QueryRequest::new(
+                        services::QUERY_JOURNAL,
+                        &unit.name,
+                    )));
+                }
+                if let Some(next) = unit_buttons(ui, unit) {
+                    action = Some(next);
+                }
+            });
             ui.end_row();
         }
     });
@@ -178,4 +183,13 @@ fn timers_table(ui: &mut Ui, snapshot: &ServicesSnapshot) {
             ui.end_row();
         }
     });
+}
+
+fn unit_buttons(ui: &mut Ui, unit: &Unit) -> Option<ViewAction> {
+    if unit.is_active() {
+        action_button(ui, text::ACT_RESTART, services::SPEC_RESTART, &unit.name)
+            .or_else(|| action_button(ui, text::ACT_STOP, services::SPEC_STOP, &unit.name))
+    } else {
+        action_button(ui, text::ACT_START, services::SPEC_START, &unit.name)
+    }
 }

@@ -2,7 +2,7 @@ mod connection;
 mod header;
 mod modules_table;
 
-use asiba_core::ServerState;
+use asiba_core::{ModuleId, ServerState};
 use egui::{Id, RichText, ScrollArea, Ui};
 
 use super::Action;
@@ -125,15 +125,27 @@ fn pages_for(
         .filter(|v| v.tab() == tab && has_data(server, v.id()))
     {
         let view_action = panel(ui, view.title(), |ui| view.page(ui, server));
-        if let Some(ViewAction::Query(request)) = view_action {
-            let server = server.spec.id.clone();
-            action = Some(Action::Query {
-                server,
-                module: view.id(),
-                request,
-            });
+        if let Some(view_action) = view_action {
+            action = Some(to_action(view_action, server, view.id()));
         }
         ui.add_space(GAP);
     }
     action
+}
+
+fn to_action(view_action: ViewAction, server: &ServerState, module: ModuleId) -> Action {
+    let server = server.spec.id.clone();
+    match view_action {
+        ViewAction::Query(request) => Action::Query {
+            server,
+            module,
+            request,
+        },
+        ViewAction::Act { spec, request } => Action::AskPerform {
+            server,
+            module,
+            spec,
+            request,
+        },
+    }
 }

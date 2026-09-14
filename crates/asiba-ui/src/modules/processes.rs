@@ -3,13 +3,15 @@ use asiba_modules::processes::{self, Process, ProcessSnapshot};
 use egui::{Id, RichText, TextEdit, Ui};
 use egui_extras::{Column, TableBuilder};
 
-use super::{ModuleView, Tab, ViewAction};
+use super::{ModuleView, Tab, ViewAction, action_button};
 use crate::format;
 use crate::text;
 use crate::theme::{GAP, Palette, ROW_HEIGHT};
 
 const SUMMARY_TOP: usize = 8;
 const CMD_MAX_CHARS: usize = 120;
+const ACTIONS_WIDTH: f32 = 104.0;
+const MEMORY_WIDTH: f32 = 130.0;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 enum SortBy {
@@ -93,9 +95,9 @@ impl ModuleView for ProcessesView {
         toolbar(ui, &mut state);
         ui.add_space(GAP);
         let rows = filtered_sorted(snapshot, &state);
-        table(ui, snapshot, &rows, &mut state);
+        let action = table(ui, snapshot, &rows, &mut state);
         ui.ctx().data_mut(|d| d.insert_temp(id, state));
-        None
+        action
     }
 }
 
@@ -148,7 +150,12 @@ fn filtered_sorted<'a>(snapshot: &'a ProcessSnapshot, state: &TableState) -> Vec
     rows
 }
 
-fn table(ui: &mut Ui, snapshot: &ProcessSnapshot, rows: &[&Process], state: &mut TableState) {
+fn table(
+    ui: &mut Ui,
+    snapshot: &ProcessSnapshot,
+    rows: &[&Process],
+    state: &mut TableState,
+) -> Option<ViewAction> {
     let p = Palette::current(ui.ctx());
     let headers = [
         "PID",
@@ -159,19 +166,22 @@ fn table(ui: &mut Ui, snapshot: &ProcessSnapshot, rows: &[&Process], state: &mut
         "W/s",
         text::PROC_STATE,
         text::PROC_UPTIME,
+        "",
         text::PROC_COMMAND,
     ];
     let body_height = ui.available_height();
+    let mut action = None;
     TableBuilder::new(ui)
         .striped(true)
         .column(Column::exact(64.0))
         .column(Column::exact(90.0))
         .column(Column::exact(64.0))
-        .column(Column::exact(90.0))
+        .column(Column::exact(MEMORY_WIDTH))
         .column(Column::exact(90.0))
         .column(Column::exact(90.0))
         .column(Column::exact(40.0))
         .column(Column::exact(80.0))
+        .column(Column::exact(ACTIONS_WIDTH))
         .column(Column::remainder().clip(true))
         .min_scrolled_height(body_height)
         .header(ROW_HEIGHT, |mut header| {
@@ -188,10 +198,13 @@ fn table(ui: &mut Ui, snapshot: &ProcessSnapshot, rows: &[&Process], state: &mut
         .body(|body| {
             body.rows(ROW_HEIGHT, rows.len(), |mut row| {
                 let process = rows[row.index()];
-                row_cells(&mut row, snapshot, process, &p);
+                if let Some(next) = row_cells(&mut row, snapshot, process, &p) {
+                    action = Some(next);
+                }
             });
         });
     let _ = state;
+    action
 }
 
 fn row_cells(
@@ -199,7 +212,7 @@ fn row_cells(
     snapshot: &ProcessSnapshot,
     process: &Process,
     p: &Palette,
-) {
+) -> Option<ViewAction> {
     let mono = |row: &mut egui_extras::TableRow<'_, '_>, value: String| {
         row.col(|ui| {
             ui.monospace(value);
@@ -252,9 +265,24 @@ fn row_cells(
         row,
         format::duration_short(snapshot.started_secs_ago(process)),
     );
+    let mut action = None;
+    row.col(|ui| {
+        action = process_buttons(ui, process);
+    });
     row.col(|ui| {
         ui.label(truncate(process.display_name(), CMD_MAX_CHARS));
     });
+    action
+}
+
+fn process_buttons(ui: &mut Ui, process: &Process) -> Option<ViewAction> {
+    let pid = process.pid.to_string();
+    ui.horizontal(|ui| {
+        ui.spacing_mut().item_spacing.x = 2.0;
+        action_button(ui, text::ACT_TERM, processes::SPEC_TERMINATE, &pid)
+            .or_else(|| action_button(ui, text::ACT_KILL, processes::SPEC_KILL, &pid))
+    })
+    .inner
 }
 
 fn truncate(value: &str, max_chars: usize) -> String {

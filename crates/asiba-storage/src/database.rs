@@ -4,6 +4,9 @@ use asiba_core::Point;
 use chrono::{DateTime, Utc};
 use rusqlite::{Connection, params};
 
+use asiba_core::ActionRecord;
+
+use crate::actions;
 use crate::error::StorageError;
 use crate::maintenance;
 use crate::sample::StoredSample;
@@ -75,6 +78,14 @@ impl Database {
         Ok(points)
     }
 
+    pub fn insert_action(&self, record: &ActionRecord) -> Result<(), StorageError> {
+        actions::insert(&self.connection, record)
+    }
+
+    pub fn recent_actions(&self, limit: usize) -> Result<Vec<ActionRecord>, StorageError> {
+        actions::list_recent(&self.connection, limit)
+    }
+
     pub fn run_maintenance(&mut self, now: DateTime<Utc>) -> Result<(), StorageError> {
         maintenance::run(&mut self.connection, now)
     }
@@ -111,6 +122,27 @@ mod tests {
             .expect("query");
         let values: Vec<f64> = points.iter().map(|p| p.value).collect();
         assert_eq!(values, vec![1.0, 2.0]);
+    }
+
+    #[test]
+    fn insert_action_then_recent_returns_newest_first() {
+        let db = Database::in_memory().expect("db");
+        let record = |kind: &str| ActionRecord {
+            at: Utc::now(),
+            server: asiba_core::ServerId::parse("neo").expect("id"),
+            module: "security".to_owned(),
+            kind: kind.to_owned(),
+            target: "1.2.3.4".to_owned(),
+            argument: None,
+            is_success: true,
+            message: "ok".to_owned(),
+        };
+        db.insert_action(&record("ban")).expect("insert");
+        db.insert_action(&record("unban")).expect("insert");
+        let recent = db.recent_actions(10).expect("recent");
+        let kinds: Vec<&str> = recent.iter().map(|r| r.kind.as_str()).collect();
+        assert_eq!(kinds, vec!["unban", "ban"]);
+        assert_eq!(recent[0].server.as_str(), "neo");
     }
 
     #[test]

@@ -3,6 +3,8 @@ use std::time::{Duration, Instant};
 
 use chrono::Utc;
 
+use asiba_core::ActionRecord;
+
 use crate::database::Database;
 use crate::error::StorageError;
 use crate::sample::StoredSample;
@@ -11,21 +13,32 @@ const FLUSH_INTERVAL: Duration = Duration::from_secs(5);
 const MAINTENANCE_INTERVAL: Duration = Duration::from_secs(3600);
 const MAX_BATCH: usize = 5000;
 
+enum WriteRequest {
+    Sample(StoredSample),
+    Action(ActionRecord),
+}
+
 #[derive(Clone)]
 pub struct StorageWriter {
-    sender: Sender<StoredSample>,
+    sender: Sender<WriteRequest>,
 }
 
 impl StorageWriter {
     pub fn write(&self, sample: StoredSample) -> Result<(), StorageError> {
         self.sender
-            .send(sample)
+            .send(WriteRequest::Sample(sample))
+            .map_err(|_| StorageError::WriterStopped)
+    }
+
+    pub fn write_action(&self, record: ActionRecord) -> Result<(), StorageError> {
+        self.sender
+            .send(WriteRequest::Action(record))
             .map_err(|_| StorageError::WriterStopped)
     }
 }
 
 pub fn spawn_writer(mut database: Database) -> StorageWriter {
-    let (sender, receiver) = mpsc::channel::<StoredSample>();
+    let (sender, receiver) = mpsc::channel::<WriteRequest>();
     std::thread::Builder::new()
         .name("asiba-storage".to_owned())
         .spawn(move || {
@@ -34,7 +47,8 @@ pub fn spawn_writer(mut database: Database) -> StorageWriter {
             let mut last_maintenance = Instant::now();
             loop {
                 match receiver.recv_timeout(FLUSH_INTERVAL) {
-                    Ok(sample) => batch.push(sample),
+                    Ok(WriteRequest::Sample(sample)) => batch.push(sample),
+                    Ok(WriteRequest::Action(record)) => record_action(&database, &record),
                     Err(RecvTimeoutError::Timeout) => {}
                     Err(RecvTimeoutError::Disconnected) => break,
                 }
@@ -59,6 +73,12 @@ fn flush(database: &mut Database, batch: &mut Vec<StoredSample>) {
         tracing::error!(%error, "не удалось записать метрики");
     }
     batch.clear();
+}
+
+fn record_action(database: &Database, record: &ActionRecord) {
+    if let Err(error) = database.insert_action(record) {
+        tracing::error!(%error, "не удалось записать действие в журнал");
+    }
 }
 
 fn maintain(database: &mut Database) {

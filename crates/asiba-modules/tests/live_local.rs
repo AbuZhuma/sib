@@ -40,3 +40,23 @@ async fn all_modules_collect_on_localhost() {
         }
     }
 }
+
+#[tokio::test]
+#[ignore = "запускает и завершает локальный sleep; запускать вручную вместе с --ignored"]
+async fn processes_terminate_action_stops_own_child() {
+    use asiba_core::{ActionRequest, Module};
+    use asiba_modules::processes::{ACTION_TERMINATE, ProcessesModule};
+
+    let mut child = std::process::Command::new("sleep")
+        .arg("300")
+        .spawn()
+        .expect("sleep");
+    let transport = LocalTransport::new(SudoMode::None, None);
+    let request = ActionRequest::new(ACTION_TERMINATE, child.id().to_string());
+    let outcome = ProcessesModule.perform(&transport, &request).await;
+    assert!(outcome.is_ok(), "{:?}", outcome.err());
+    let status = child.wait().expect("wait");
+    assert!(!status.success());
+    let bad = ActionRequest::new(ACTION_TERMINATE, "1");
+    assert!(ProcessesModule.perform(&transport, &bad).await.is_err());
+}

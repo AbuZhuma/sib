@@ -4,6 +4,7 @@ use std::time::Duration;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
+use crate::action::{ActionOutcome, ActionRequest, ActionSpec};
 use crate::snapshot::{CollectContext, Snapshot};
 use crate::transport::{Transport, TransportError};
 
@@ -59,6 +60,10 @@ pub enum ModuleError {
     CommandFailed(String),
     #[error("модуль не поддерживает запрос {0}")]
     UnsupportedQuery(String),
+    #[error("модуль не поддерживает действие {0}")]
+    UnsupportedAction(String),
+    #[error("действие не выполнено: {0}")]
+    ActionFailed(String),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -104,5 +109,17 @@ pub trait Module: Send + Sync {
         request: &QueryRequest,
     ) -> Result<QueryResponse, ModuleError> {
         Err(ModuleError::UnsupportedQuery(request.kind.clone()))
+    }
+
+    fn actions(&self) -> &'static [ActionSpec] {
+        &[]
+    }
+
+    async fn perform(
+        &self,
+        _transport: &dyn Transport,
+        request: &ActionRequest,
+    ) -> Result<ActionOutcome, ModuleError> {
+        Err(ModuleError::UnsupportedAction(request.kind.clone()))
     }
 }

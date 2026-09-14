@@ -1,4 +1,5 @@
 use asiba_config::{AppConfig, Paths, ThemeChoice};
+use asiba_core::AppState;
 use egui::{Grid, RichText, Ui};
 
 use super::Action;
@@ -6,7 +7,14 @@ use crate::components::{page_title, panel};
 use crate::text;
 use crate::theme::{GAP, Palette};
 
-pub fn show(ui: &mut Ui, paths: &Paths, config: &AppConfig) -> Option<Action> {
+pub struct SettingsContext<'a> {
+    pub paths: &'a Paths,
+    pub config: &'a AppConfig,
+    pub state: &'a AppState,
+}
+
+pub fn show(ui: &mut Ui, ctx: &SettingsContext<'_>) -> Option<Action> {
+    let (paths, config) = (ctx.paths, ctx.config);
     page_title(ui, text::SETTINGS_TITLE);
     let mut action = None;
     panel(ui, text::SETTINGS_SECTION_APPEARANCE, |ui| {
@@ -15,6 +23,10 @@ pub fn show(ui: &mut Ui, paths: &Paths, config: &AppConfig) -> Option<Action> {
     ui.add_space(GAP);
     panel(ui, text::SETTINGS_SECTION_PATHS, |ui| {
         paths_grid(ui, paths, config)
+    });
+    ui.add_space(GAP);
+    panel(ui, text::SETTINGS_SECTION_JOURNAL, |ui| {
+        super::journal::show(ui, ctx.state)
     });
     action
 }

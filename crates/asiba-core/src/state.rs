@@ -3,6 +3,7 @@ use std::sync::{Arc, RwLock};
 
 use chrono::{DateTime, Utc};
 
+use crate::action::ActionRecord;
 use crate::event::Event;
 use crate::module::{Availability, ModuleId};
 use crate::series::{Point, Series};
@@ -10,6 +11,7 @@ use crate::server::{ServerId, ServerSpec};
 use crate::snapshot::{ModuleData, Sample, Snapshot};
 
 const MAX_EVENTS: usize = 500;
+const MAX_ACTIONS: usize = 200;
 const MAX_SERVER_EVENTS: usize = 100;
 
 pub type SharedState = Arc<RwLock<AppState>>;
@@ -18,6 +20,7 @@ pub type SharedState = Arc<RwLock<AppState>>;
 pub struct AppState {
     pub servers: BTreeMap<ServerId, ServerState>,
     pub events: Vec<Event>,
+    pub actions: Vec<ActionRecord>,
 }
 
 impl AppState {
@@ -31,6 +34,11 @@ impl AppState {
             let overflow = self.events.len() - MAX_EVENTS;
             self.events.drain(..overflow);
         }
+    }
+
+    pub fn push_action(&mut self, record: ActionRecord) {
+        self.actions.insert(0, record);
+        self.actions.truncate(MAX_ACTIONS);
     }
 
     pub fn online_count(&self) -> usize {

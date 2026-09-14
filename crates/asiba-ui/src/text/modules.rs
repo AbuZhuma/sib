@@ -184,3 +184,11 @@ pub const SEC_FAILED_24H: &str = "неудачных входов за 24 ч";
 pub const SEC_ATTACKING_NOW: &str = "брутфорс сейчас";
 pub const SEC_BAN_BACKEND: &str = "бан через";
 pub const SEC_NEEDS_SUDO: &str = "без sudo: нет настроек sshd, fail2ban и банов";
+
+pub const ACT_BAN: &str = "бан";
+pub const ACT_UNBAN: &str = "разбанить";
+pub const ACT_TERM: &str = "term";
+pub const ACT_KILL: &str = "kill";
+pub const ACT_RESTART: &str = "restart";
+pub const ACT_STOP: &str = "stop";
+pub const ACT_START: &str = "start";

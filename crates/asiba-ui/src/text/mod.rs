@@ -138,3 +138,16 @@ pub const ERR_USER_EMPTY: &str = "укажите пользователя";
 pub const ERR_PORT: &str = "порт должен быть числом от 1 до 65535";
 pub const ERR_KEY_PATH: &str = "укажите путь к ключу";
 pub const ERR_JUMP: &str = "у jump host должны быть хост и пользователь";
+
+pub const CONFIRM_SERVER: &str = "Сервер";
+pub const CONFIRM_TARGET: &str = "Цель";
+pub const CONFIRM_DURATION: &str = "Срок";
+pub const CONFIRM_FOREVER: &str = "навсегда";
+pub const CONFIRM_PROMPT: &str = "Опасное действие. Введите имя сервера для подтверждения:";
+pub const BTN_CONFIRM: &str = "Выполнить";
+pub const ACTION_DONE: &str = "выполнено";
+pub const ACTION_FAILED: &str = "ошибка";
+pub const SETTINGS_SECTION_JOURNAL: &str = "Журнал действий";
+pub const JOURNAL_EMPTY: &str = "действий ещё не было";
+pub const JOURNAL_ACTION: &str = "Действие";
+pub const JOURNAL_RESULT: &str = "Результат";

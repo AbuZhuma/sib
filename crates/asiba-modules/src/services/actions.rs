@@ -1,0 +1,36 @@
+use asiba_core::{ActionOutcome, ActionRequest, ActionSpec, Danger, ModuleError, Transport};
+
+use crate::common::root::{exec_as_root, require_success, validate_name};
+
+pub const ACTION_RESTART: &str = "restart";
+pub const ACTION_START: &str = "start";
+pub const ACTION_STOP: &str = "stop";
+
+pub const SPEC_RESTART: ActionSpec =
+    ActionSpec::new(ACTION_RESTART, "Перезапустить сервис", Danger::Normal);
+pub const SPEC_START: ActionSpec =
+    ActionSpec::new(ACTION_START, "Запустить сервис", Danger::Normal);
+pub const SPEC_STOP: ActionSpec = ActionSpec::new(ACTION_STOP, "Остановить сервис", Danger::High);
+pub const SPECS: [ActionSpec; 3] = [SPEC_RESTART, SPEC_START, SPEC_STOP];
+
+pub async fn perform(
+    transport: &dyn Transport,
+    request: &ActionRequest,
+) -> Result<ActionOutcome, ModuleError> {
+    let unit = validate_name(&request.target)?;
+    let verb = match request.kind.as_str() {
+        ACTION_RESTART | ACTION_START | ACTION_STOP => request.kind.as_str(),
+        other => return Err(ModuleError::UnsupportedAction(other.to_owned())),
+    };
+    let command = format!("systemctl {verb} {unit} && systemctl is-active {unit}");
+    let state = require_success(exec_as_root(transport, &command).await?).or_else(|error| {
+        if verb == ACTION_STOP {
+            Ok("inactive".to_owned())
+        } else {
+            Err(error)
+        }
+    })?;
+    Ok(ActionOutcome::new(format!(
+        "systemctl {verb} {unit}: {state}"
+    )))
+}

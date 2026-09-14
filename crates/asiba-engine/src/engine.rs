@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
-use asiba_core::{ModuleId, QueryRequest};
+use asiba_core::{ActionRequest, ModuleId, QueryRequest};
 
 use asiba_core::{Credentials, ModuleRegistry, ServerId, ServerSpec, ServerState, SharedState};
 use asiba_storage::StorageWriter;
@@ -10,6 +10,7 @@ use asiba_transport::HostKeyPolicy;
 use tokio::sync::mpsc;
 use tokio::task::JoinHandle;
 
+use crate::actions::{self, Perform};
 use crate::command::{Command, EngineEvent, TestRequest};
 use crate::history;
 use crate::persistence::Persistence;
@@ -85,6 +86,7 @@ pub fn spawn(
         workers: HashMap::new(),
     };
     runtime.spawn(async move {
+        engine.load_action_journal();
         engine.load_saved().await;
         while let Some(command) = receiver.recv().await {
             engine.handle(command).await;
@@ -97,6 +99,14 @@ pub fn spawn(
 }
 
 impl Engine {
+    fn load_action_journal(&self) {
+        actions::prefill_journal(
+            self.history_path.clone(),
+            Arc::clone(&self.state),
+            Arc::clone(&self.notify),
+        );
+    }
+
     async fn load_saved(&mut self) {
         let persistence = self.persistence.clone();
         let loaded = tokio::task::spawn_blocking(move || persistence.load_all()).await;
@@ -140,6 +150,11 @@ impl Engine {
             } => {
                 self.query(token, &server, module, request);
             }
+            Command::Perform {
+                server,
+                module,
+                request,
+            } => self.perform(&server, module, request),
         }
     }
 
@@ -231,10 +246,7 @@ impl Engine {
     }
 
     fn query(&self, token: u64, server: &ServerId, module: ModuleId, request: QueryRequest) {
-        let transport = self
-            .workers
-            .get(server)
-            .and_then(|entry| entry.transport.lock().ok().and_then(|slot| slot.clone()));
+        let transport = self.transport_of(server);
         let module = self.registry.get(module).cloned();
         let events = self.events.clone();
         let notify = Arc::clone(&self.notify);
@@ -250,6 +262,26 @@ impl Engine {
             let _ = events.send(EngineEvent::QueryFinished { token, result });
             notify();
         });
+    }
+
+    fn perform(&self, server: &ServerId, module: ModuleId, request: ActionRequest) {
+        let transport = self.transport_of(server);
+        actions::perform(Perform {
+            server: server.clone(),
+            module: self.registry.get(module).cloned(),
+            transport,
+            request,
+            state: Arc::clone(&self.state),
+            storage: self.storage.clone(),
+            events: self.events.clone(),
+            notify: Arc::clone(&self.notify),
+        });
+    }
+
+    fn transport_of(&self, server: &ServerId) -> Option<Arc<dyn asiba_core::Transport>> {
+        self.workers
+            .get(server)
+            .and_then(|entry| entry.transport.lock().ok().and_then(|slot| slot.clone()))
     }
 
     fn emit(&self, event: EngineEvent) {

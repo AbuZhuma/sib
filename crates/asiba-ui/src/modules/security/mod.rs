@@ -43,14 +43,16 @@ impl ModuleView for SecurityView {
         ui.add_space(GAP);
         checklist(ui, snapshot);
         ui.add_space(GAP);
-        tables::attackers(ui, snapshot);
+        let mut action = tables::attackers(ui, snapshot);
         ui.add_space(GAP);
-        tables::bans(ui, snapshot);
+        if let Some(next) = tables::bans(ui, snapshot) {
+            action = Some(next);
+        }
         ui.add_space(GAP);
         tables::logins(ui, snapshot);
         ui.add_space(GAP);
         tables::sudo_calls(ui, snapshot);
-        None
+        action
     }
 }
 

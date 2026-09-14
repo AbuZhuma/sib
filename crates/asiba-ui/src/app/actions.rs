@@ -1,8 +1,9 @@
 use asiba_config::ThemeChoice;
-use asiba_core::{ModuleId, QueryRequest, ServerId};
+use asiba_core::{ActionRequest, ActionSpec, Environment, ModuleId, QueryRequest, ServerId};
 use asiba_engine::Command;
 
 use super::AsibaApp;
+use super::confirm::ConfirmDialog;
 use super::dialogs::DeleteDialog;
 use crate::pages::inspector::Inspector;
 use crate::pages::server_form::ServerForm;
@@ -53,6 +54,12 @@ impl AsibaApp {
                 module,
                 request,
             } => self.start_query(server, module, request),
+            Action::AskPerform {
+                server,
+                module,
+                spec,
+                request,
+            } => self.ask_perform(server, module, spec, request),
             Action::CloseInspector => self.inspector = None,
         }
     }
@@ -86,6 +93,33 @@ impl AsibaApp {
             module,
             request,
         });
+    }
+
+    fn ask_perform(
+        &mut self,
+        server: ServerId,
+        module: ModuleId,
+        spec: ActionSpec,
+        request: ActionRequest,
+    ) {
+        let environment = self
+            .state
+            .read()
+            .ok()
+            .and_then(|state| {
+                state
+                    .servers
+                    .get(&server)
+                    .map(|s| s.spec.description.environment)
+            })
+            .unwrap_or(Environment::Production);
+        self.confirm_dialog = Some(ConfirmDialog::new(
+            server,
+            module,
+            spec,
+            request,
+            environment,
+        ));
     }
 
     fn set_theme(&mut self, ctx: &egui::Context, choice: ThemeChoice) {

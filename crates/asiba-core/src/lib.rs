@@ -1,3 +1,4 @@
+pub mod action;
 pub mod event;
 pub mod module;
 pub mod registry;
@@ -7,6 +8,7 @@ pub mod snapshot;
 pub mod state;
 pub mod transport;
 
+pub use action::{ActionOutcome, ActionRecord, ActionRequest, ActionSpec, Danger};
 pub use event::{Event, Severity};
 pub use module::{
     Availability, Module, ModuleError, ModuleId, QueryRequest, QueryResponse, Schedule,

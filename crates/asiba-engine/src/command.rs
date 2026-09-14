@@ -1,8 +1,8 @@
 use std::time::Duration;
 
 use asiba_core::{
-    Availability, Credentials, ModuleId, QueryRequest, QueryResponse, ServerId, ServerSpec,
-    Snapshot, TransportError,
+    ActionRecord, ActionRequest, Availability, Credentials, ModuleId, QueryRequest, QueryResponse,
+    ServerId, ServerSpec, Snapshot, TransportError,
 };
 use asiba_transport::HostKeyPolicy;
 
@@ -28,6 +28,11 @@ pub enum Command {
         server: ServerId,
         module: ModuleId,
         request: QueryRequest,
+    },
+    Perform {
+        server: ServerId,
+        module: ModuleId,
+        request: ActionRequest,
     },
 }
 
@@ -67,6 +72,7 @@ pub enum EngineEvent {
         token: u64,
         result: Result<QueryResponse, String>,
     },
+    ActionFinished(ActionRecord),
     ServerSaved(ServerId),
     ServerRemoved(ServerId),
     Warning(String),
