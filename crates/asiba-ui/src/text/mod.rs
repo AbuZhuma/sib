@@ -152,7 +152,13 @@ pub const SEVERITY_INFO: &str = "info";
 pub const SEVERITY_WARNING: &str = "warning";
 pub const SEVERITY_CRITICAL: &str = "critical";
 pub const MAP_TITLE: &str = "Карта";
-pub const MAP_PLACEHOLDER: &str = "Геолокация и карта появятся на этапе 5.";
+pub const MAP_EMPTY: &str =
+    "Ни у одного сервера нет координат: геолокация ещё не определена или недоступна.";
+pub const MAP_LEGEND_HOME: &str = "эта машина";
+pub const SECTION_MAP: &str = "Карта";
+pub const DETAIL_LOCATION: &str = "расположение";
+pub const DETAIL_LOCATION_MANUAL: &str = "задано вручную";
+pub const DETAIL_LOCATION_PENDING: &str = "определяется…";
 
 pub const SETTINGS_TITLE: &str = "Настройки";
 pub const SETTINGS_SECTION_PATHS: &str = "Пути";

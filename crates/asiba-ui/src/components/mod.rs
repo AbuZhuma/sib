@@ -1,5 +1,6 @@
 mod badge;
 mod fields;
+mod map;
 mod meter;
 mod nav;
 mod panel;
@@ -11,6 +12,7 @@ mod tile;
 
 pub use badge::{badge, severity_color};
 pub use fields::{field, password_field, section_label};
+pub use map::MapState;
 pub use meter::meter;
 pub use nav::nav_item;
 pub use panel::{page_title, panel};

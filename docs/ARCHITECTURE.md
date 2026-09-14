@@ -21,7 +21,7 @@ asiba-core ◄── asiba-transport ◄──┐
 | `asiba-storage` | SQLite: история метрик, даунсэмплинг, поток записи | модули, UI |
 | `asiba-docgen` | рендер `servers/<name>.md` из состояния сервера | движок, UI |
 | `asiba-alerts` | встроенные правила, оценка правил и базовой линии над `AppState`, уведомления на рабочий стол | транспорт, UI |
-| `asiba-engine` | воркеры серверов, задачи сбора по модулям, пинг, переподключение, команды от UI | egui |
+| `asiba-engine` | воркеры серверов, задачи сбора по модулям, пинг, переподключение, геолокация, алерты, действия, команды от UI | egui |
 | `asiba-ui` | тема, страницы, виджеты модулей | сеть напрямую |
 | `asiba-app` | точка входа, tokio runtime, сборка зависимостей | — |
 
@@ -61,6 +61,10 @@ UI → `ViewAction::Act { spec, request }` → `Action::AskPerform` → диал
 ## Алерты
 
 Задача движка раз в 5 с: `Evaluator::evaluate(&mut AppState)` — правила (встроенные из `asiba-alerts::builtin_rules` + пользовательские из `config.toml`) по последним значениям серий и виртуальной метрике `connection.offline`, плюс базовая линия EWMA по ключевым метрикам. Поднятые алерты — в `AppState.alerts`, warning/critical уходят на рабочий стол. `Command::AcknowledgeAlert` / `MuteAlert` меняют запись; `SetAlertSettings` обновляет правила через `watch`.
+
+## Геолокация и карта
+
+При старте воркера `geo::resolve_server`: ручные координаты → кеш `geo.json` → `ip-api.com`. Результат — `ServerState.location`; положение локальной машины — `AppState.self_location`. UI рисует карту компонентом `MapState` (`walkers`, OSM-тайлы с кешем в `~/.cache/asiba/tiles`), маркеры и линии пинга — плагином `Markers`.
 
 ## Файл сервера
 

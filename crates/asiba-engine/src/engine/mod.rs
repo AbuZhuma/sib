@@ -13,6 +13,7 @@ use tokio::task::JoinHandle;
 use crate::actions;
 use crate::alerts::{self, AlertLoop, AlertSettings};
 use crate::command::{Command, EngineEvent};
+use crate::geo;
 use crate::history;
 use crate::persistence::Persistence;
 use crate::worker::{self, DocWriter, TransportSlot, WorkerContext};
@@ -55,6 +56,7 @@ pub struct EngineDeps {
     pub persistence: Persistence,
     pub storage: Option<StorageWriter>,
     pub history_path: Option<PathBuf>,
+    pub geo_cache: Option<PathBuf>,
     pub alert_settings: AlertSettings,
 }
 
@@ -64,6 +66,7 @@ struct Engine {
     persistence: Persistence,
     storage: Option<StorageWriter>,
     history_path: Option<PathBuf>,
+    geo_cache: Option<PathBuf>,
     notify: RepaintNotifier,
     events: mpsc::UnboundedSender<EngineEvent>,
     workers: HashMap<ServerId, WorkerEntry>,
@@ -89,6 +92,7 @@ pub fn spawn(
         persistence: deps.persistence,
         storage: deps.storage,
         history_path: deps.history_path,
+        geo_cache: deps.geo_cache,
         notify,
         events,
         workers: HashMap::new(),
@@ -96,6 +100,7 @@ pub fn spawn(
     };
     runtime.spawn(async move {
         alerts::spawn(alert_loop);
+        geo::resolve_self(engine.geo_request());
         engine.load_action_journal();
         engine.load_saved().await;
         while let Some(command) = receiver.recv().await {
@@ -109,6 +114,14 @@ pub fn spawn(
 }
 
 impl Engine {
+    fn geo_request(&self) -> geo::GeoRequest {
+        geo::GeoRequest {
+            cache: self.geo_cache.clone(),
+            state: Arc::clone(&self.state),
+            notify: Arc::clone(&self.notify),
+        }
+    }
+
     fn load_action_journal(&self) {
         actions::prefill_journal(
             self.history_path.clone(),
@@ -245,6 +258,7 @@ impl Engine {
             notify: Arc::clone(&self.notify),
         };
         history::prefill(prefill);
+        geo::resolve_server(self.geo_request(), spec.clone());
         let entry = WorkerEntry {
             task,
             spec: spec.clone(),

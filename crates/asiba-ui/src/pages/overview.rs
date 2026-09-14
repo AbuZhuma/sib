@@ -1,18 +1,19 @@
 use asiba_core::{AppState, ConnectionStatus, ServerState};
 use asiba_modules::system::{self, SystemInfo};
 use asiba_modules::{cpu, disk, memory, network};
-use egui::{RichText, ScrollArea, Ui};
+use egui::{RichText, ScrollArea, Ui, Vec2};
 
 use super::{Action, Page};
+use crate::components::MapState;
 use crate::components::{Table, page_title, panel, severity_color, status_label, tile};
 use crate::format;
 use crate::modules::attack_badge;
 use crate::text;
-use crate::theme::{GAP, Palette};
+use crate::theme::{GAP, MINI_MAP_HEIGHT, Palette};
 
 const EVENTS_SHOWN: usize = 30;
 
-pub fn show(ui: &mut Ui, state: &AppState) -> Option<Action> {
+pub fn show(ui: &mut Ui, state: &AppState, map: &mut MapState) -> Option<Action> {
     page_title(ui, text::OVERVIEW_TITLE);
     tiles(ui, state);
     ui.add_space(GAP);
@@ -20,6 +21,17 @@ pub fn show(ui: &mut Ui, state: &AppState) -> Option<Action> {
     ScrollArea::vertical().show(ui, |ui| {
         action = panel(ui, text::SECTION_SERVERS, |ui| servers_table(ui, state));
         ui.add_space(GAP);
+        if state.servers.values().any(|s| s.location.is_some()) {
+            let clicked = panel(ui, text::SECTION_MAP, |ui| {
+                let visible = ui.clip_rect().right() - ui.cursor().left();
+                let size = Vec2::new(visible.min(ui.available_width()), MINI_MAP_HEIGHT);
+                ui.allocate_ui(size, |ui| map.show(ui, state, false)).inner
+            });
+            if let Some(id) = clicked {
+                action = Some(Action::Navigate(Page::ServerDetail(id)));
+            }
+            ui.add_space(GAP);
+        }
         panel(ui, text::SECTION_EVENTS, |ui| events(ui, state));
     });
     action

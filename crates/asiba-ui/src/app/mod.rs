@@ -10,6 +10,7 @@ use asiba_core::{ServerId, SharedState};
 use asiba_engine::{EngineEvent, EngineHandle, RepaintNotifier};
 use egui::{CentralPanel, Frame, Margin, Panel};
 
+use crate::components::MapState;
 use crate::devtools::{self, ScreenshotOnStart};
 use crate::modules::{self, ModuleView, Tab};
 use crate::pages::inspector::Inspector;
@@ -48,7 +49,7 @@ pub fn run(deps: AppDeps, engine_factory: EngineFactory) -> eframe::Result<()> {
             let ctx = cc.egui_ctx.clone();
             let notifier: RepaintNotifier = Arc::new(move || ctx.request_repaint());
             let engine = engine_factory(notifier);
-            let mut app = AsibaApp::new(deps, engine);
+            let mut app = AsibaApp::new(deps, engine, &cc.egui_ctx);
             app.start_page = devtools::start_page();
             Ok(Box::new(app))
         }),
@@ -68,13 +69,16 @@ pub struct AsibaApp {
     views: Vec<Box<dyn ModuleView>>,
     screenshot: Option<ScreenshotOnStart>,
     start_page: Option<(Page, Option<Tab>)>,
+    map: MapState,
     inspector: Option<Inspector>,
     next_query_token: u64,
 }
 
 impl AsibaApp {
-    fn new(deps: AppDeps, engine: EngineHandle) -> Self {
+    fn new(deps: AppDeps, engine: EngineHandle, ctx: &egui::Context) -> Self {
+        let map = MapState::new(ctx, deps.paths.tiles_cache());
         Self {
+            map,
             engine,
             state: deps.state,
             paths: deps.paths,
@@ -150,7 +154,7 @@ impl AsibaApp {
             return None;
         };
         match self.page.clone() {
-            Page::Overview => pages::overview::show(ui, &state),
+            Page::Overview => pages::overview::show(ui, &state, &mut self.map),
             Page::Servers => pages::servers::show(ui, &state),
             Page::ServerDetail(id) => match state.servers.get(&id) {
                 Some(server) => {
@@ -171,10 +175,7 @@ impl AsibaApp {
                 }
             }
             Page::Alerts => pages::alerts::show(ui, &state),
-            Page::Map => {
-                pages::map::show(ui);
-                None
-            }
+            Page::Map => pages::map::show(ui, &state, &mut self.map),
             Page::Settings => pages::settings::show(
                 ui,
                 &SettingsContext {

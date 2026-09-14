@@ -8,7 +8,7 @@ use crate::alert::Alert;
 use crate::event::Event;
 use crate::module::{Availability, ModuleId};
 use crate::series::{Point, Series};
-use crate::server::{ServerId, ServerSpec};
+use crate::server::{Location, ServerId, ServerSpec};
 use crate::snapshot::{ModuleData, Sample, Snapshot};
 
 const MAX_EVENTS: usize = 500;
@@ -24,6 +24,7 @@ pub struct AppState {
     pub events: Vec<Event>,
     pub actions: Vec<ActionRecord>,
     pub alerts: Vec<Alert>,
+    pub self_location: Option<Location>,
 }
 
 impl AppState {
@@ -83,6 +84,7 @@ pub struct ServerState {
     pub series: BTreeMap<String, Series>,
     pub ping: Option<PingStatus>,
     pub recent_events: Vec<Event>,
+    pub location: Option<Location>,
 }
 
 impl ServerState {
@@ -94,6 +96,7 @@ impl ServerState {
             series: BTreeMap::new(),
             ping: None,
             recent_events: Vec::new(),
+            location: None,
         }
     }
 

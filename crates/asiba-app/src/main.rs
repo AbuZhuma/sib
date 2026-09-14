@@ -33,6 +33,7 @@ fn main() -> anyhow::Result<()> {
         persistence,
         storage,
         history_path,
+        geo_cache: Some(paths.geo_cache()),
         alert_settings,
     };
     let factory = Box::new(move |notify| asiba_engine::spawn(&handle, engine_deps, notify));

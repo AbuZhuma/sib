@@ -3,6 +3,7 @@ mod alerts;
 mod backoff;
 mod command;
 mod engine;
+mod geo;
 mod history;
 mod persistence;
 mod test_connection;

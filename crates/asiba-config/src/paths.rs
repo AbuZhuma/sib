@@ -8,6 +8,8 @@ const APP_NAME: &str = "asiba";
 const SERVERS_DIR: &str = "servers";
 const CONFIG_FILE: &str = "config.toml";
 const HISTORY_DB: &str = "history.db";
+const GEO_CACHE: &str = "geo.json";
+const TILES_DIR: &str = "tiles";
 
 #[derive(Debug, Clone)]
 pub struct Paths {
@@ -38,6 +40,14 @@ impl Paths {
 
     pub fn history_db(&self) -> PathBuf {
         self.data_dir.join(HISTORY_DB)
+    }
+
+    pub fn geo_cache(&self) -> PathBuf {
+        self.cache_dir.join(GEO_CACHE)
+    }
+
+    pub fn tiles_cache(&self) -> PathBuf {
+        self.cache_dir.join(TILES_DIR)
     }
 
     pub fn default_servers_dir(&self) -> PathBuf {

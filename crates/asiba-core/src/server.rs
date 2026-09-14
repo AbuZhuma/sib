@@ -78,6 +78,33 @@ pub struct ManualLocation {
     pub label: String,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LocationSource {
+    Manual,
+    Lookup,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Location {
+    pub lat: f64,
+    pub lon: f64,
+    pub label: String,
+    pub provider: String,
+    pub source: LocationSource,
+}
+
+impl Location {
+    pub fn manual(manual: &ManualLocation) -> Self {
+        Self {
+            lat: manual.lat,
+            lon: manual.lon,
+            label: manual.label.clone(),
+            provider: String::new(),
+            source: LocationSource::Manual,
+        }
+    }
+}
+
 impl ServerSpec {
     pub fn module_settings(&self, module: &str) -> ModuleSettings {
         self.modules.get(module).cloned().unwrap_or_default()

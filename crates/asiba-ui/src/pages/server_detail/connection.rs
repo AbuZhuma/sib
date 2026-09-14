@@ -1,4 +1,4 @@
-use asiba_core::{ConnectionStatus, ServerState};
+use asiba_core::{ConnectionStatus, LocationSource, ServerState};
 use egui::{RichText, Ui};
 
 use crate::components::status_label;
@@ -18,6 +18,7 @@ pub fn show(ui: &mut Ui, server: &ServerState) -> Option<Action> {
                 format::date_time(*since)
             ));
             ping_line(ui, server);
+            location_line(ui, server);
             None
         }
         ConnectionStatus::Offline { reason, retry_at } => {
@@ -59,4 +60,36 @@ fn ping_line(ui: &mut Ui, server: &ServerState) {
             RichText::new(format!("{} {}", text::NET_PING, text::NET_PING_LOST)).color(p.warning),
         ),
     };
+}
+
+fn location_line(ui: &mut Ui, server: &ServerState) {
+    let p = Palette::current(ui.ctx());
+    let Some(location) = &server.location else {
+        ui.label(
+            RichText::new(format!(
+                "{} {}",
+                text::DETAIL_LOCATION,
+                text::DETAIL_LOCATION_PENDING
+            ))
+            .color(p.text_muted),
+        );
+        return;
+    };
+    let mut parts = vec![location.label.clone()];
+    if !location.provider.is_empty() {
+        parts.push(location.provider.clone());
+    }
+    parts.push(format!("{:.3}, {:.3}", location.lat, location.lon));
+    if location.source == LocationSource::Manual {
+        parts.push(text::DETAIL_LOCATION_MANUAL.to_owned());
+    }
+    let joined = parts
+        .into_iter()
+        .filter(|s| !s.is_empty())
+        .collect::<Vec<_>>()
+        .join(" · ");
+    ui.horizontal(|ui| {
+        ui.label(RichText::new(text::DETAIL_LOCATION).color(p.text_secondary));
+        ui.label(joined);
+    });
 }
