@@ -1,4 +1,4 @@
-use asiba_core::{ActionRequest, ActionSpec, Danger, Environment, ModuleId, ServerId};
+use asiba_core::{ActionRequest, ActionSpec, Danger, Environment, ServerId};
 use asiba_engine::Command;
 use asiba_modules::security;
 use egui::{ComboBox, Modal, RichText, Ui};
@@ -19,7 +19,6 @@ const DEFAULT_BAN_DURATION: &str = "24h";
 
 pub struct ConfirmDialog {
     pub server: ServerId,
-    pub module: ModuleId,
     pub spec: ActionSpec,
     pub request: ActionRequest,
     pub needs_name: bool,
@@ -29,12 +28,11 @@ pub struct ConfirmDialog {
 impl ConfirmDialog {
     pub fn new(
         server: ServerId,
-        module: ModuleId,
         spec: ActionSpec,
         request: ActionRequest,
         environment: Environment,
     ) -> Self {
-        let is_ban = module == security::ID && request.kind == security::ACTION_BAN;
+        let is_ban = spec.module == security::ID && request.kind == security::ACTION_BAN;
         let request = if is_ban && request.argument.is_none() {
             request.with_argument(DEFAULT_BAN_DURATION)
         } else {
@@ -42,7 +40,6 @@ impl ConfirmDialog {
         };
         Self {
             server,
-            module,
             spec,
             needs_name: spec.danger == Danger::High || environment == Environment::Production,
             request,
@@ -55,7 +52,7 @@ impl ConfirmDialog {
     }
 
     fn has_duration(&self) -> bool {
-        self.module == security::ID && self.request.kind == security::ACTION_BAN
+        self.spec.module == security::ID && self.request.kind == security::ACTION_BAN
     }
 
     fn body(&mut self, ui: &mut Ui) {
@@ -128,7 +125,7 @@ impl AsibaApp {
         if confirmed && let Some(dialog) = self.confirm_dialog.take() {
             self.engine.send(Command::Perform {
                 server: dialog.server,
-                module: dialog.module,
+                module: dialog.spec.module,
                 request: dialog.request,
             });
             return;

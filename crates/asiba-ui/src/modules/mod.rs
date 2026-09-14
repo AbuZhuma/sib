@@ -1,3 +1,4 @@
+mod anomalies;
 mod cpu;
 mod disk;
 mod docker;
@@ -31,10 +32,11 @@ pub enum Tab {
     Logs,
     Users,
     Security,
+    Anomalies,
 }
 
 impl Tab {
-    pub const ALL: [Tab; 11] = [
+    pub const ALL: [Tab; 12] = [
         Tab::Summary,
         Tab::Processes,
         Tab::Resources,
@@ -46,6 +48,7 @@ impl Tab {
         Tab::Logs,
         Tab::Users,
         Tab::Security,
+        Tab::Anomalies,
     ];
 
     pub fn from_key(key: &str) -> Option<Self> {
@@ -65,6 +68,7 @@ impl Tab {
             Tab::Logs => "logs",
             Tab::Users => "users",
             Tab::Security => "security",
+            Tab::Anomalies => "anomalies",
         }
     }
 
@@ -81,6 +85,7 @@ impl Tab {
             Tab::Logs => text::TAB_LOGS,
             Tab::Users => text::TAB_USERS,
             Tab::Security => text::TAB_SECURITY,
+            Tab::Anomalies => text::TAB_ANOMALIES,
         }
     }
 }
@@ -146,8 +151,11 @@ pub fn all() -> Vec<Box<dyn ModuleView>> {
         Box::new(users::UsersView),
         Box::new(updates::UpdatesView),
         Box::new(security::SecurityView),
+        Box::new(anomalies::AnomaliesView),
     ]
 }
+
+pub use anomalies::attack_badge;
 
 pub fn has_data(server: &ServerState, id: ModuleId) -> bool {
     server.snapshot(id).is_some()

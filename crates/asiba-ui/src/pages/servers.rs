@@ -6,6 +6,7 @@ use egui::{Frame, Margin, RichText, ScrollArea, Sense, Stroke, Ui, Vec2};
 use super::{Action, Page};
 use crate::components::{badge, page_title, sparkline, status_label};
 use crate::format;
+use crate::modules::attack_badge;
 use crate::text;
 use crate::theme::{CARD_WIDTH, GAP, Palette};
 
@@ -90,6 +91,7 @@ fn header(ui: &mut Ui, server: &ServerState) {
         );
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
             status_label(ui, &server.connection);
+            attack_badge(ui, server);
         });
     });
 }

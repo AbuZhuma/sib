@@ -1,17 +1,19 @@
 use asiba_core::{ActionOutcome, ActionRequest, ActionSpec, Danger, ModuleError, Transport};
 
+use super::ID;
 use crate::common::root::{exec_prefer_root, require_success};
 
 pub const ACTION_TERMINATE: &str = "terminate";
 pub const ACTION_KILL: &str = "kill";
 
 pub const SPEC_TERMINATE: ActionSpec = ActionSpec::new(
+    ID,
     ACTION_TERMINATE,
     "Завершить процесс (SIGTERM)",
     Danger::Normal,
 );
 pub const SPEC_KILL: ActionSpec =
-    ActionSpec::new(ACTION_KILL, "Убить процесс (SIGKILL)", Danger::High);
+    ActionSpec::new(ID, ACTION_KILL, "Убить процесс (SIGKILL)", Danger::High);
 pub const SPECS: [ActionSpec; 2] = [SPEC_TERMINATE, SPEC_KILL];
 
 pub async fn perform(

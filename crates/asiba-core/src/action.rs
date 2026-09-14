@@ -1,5 +1,6 @@
 use chrono::{DateTime, Utc};
 
+use crate::module::ModuleId;
 use crate::server::ServerId;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -10,14 +11,21 @@ pub enum Danger {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ActionSpec {
+    pub module: ModuleId,
     pub kind: &'static str,
     pub title: &'static str,
     pub danger: Danger,
 }
 
 impl ActionSpec {
-    pub const fn new(kind: &'static str, title: &'static str, danger: Danger) -> Self {
+    pub const fn new(
+        module: ModuleId,
+        kind: &'static str,
+        title: &'static str,
+        danger: Danger,
+    ) -> Self {
         Self {
+            module,
             kind,
             title,
             danger,

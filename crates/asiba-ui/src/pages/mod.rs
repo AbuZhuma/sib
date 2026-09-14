@@ -48,7 +48,6 @@ pub enum Action {
     },
     AskPerform {
         server: ServerId,
-        module: ModuleId,
         spec: ActionSpec,
         request: ActionRequest,
     },

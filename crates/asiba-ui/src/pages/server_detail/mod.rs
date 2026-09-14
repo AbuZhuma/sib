@@ -143,7 +143,6 @@ fn to_action(view_action: ViewAction, server: &ServerState, module: ModuleId) ->
         },
         ViewAction::Act { spec, request } => Action::AskPerform {
             server,
-            module,
             spec,
             request,
         },

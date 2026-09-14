@@ -56,10 +56,9 @@ impl AsibaApp {
             } => self.start_query(server, module, request),
             Action::AskPerform {
                 server,
-                module,
                 spec,
                 request,
-            } => self.ask_perform(server, module, spec, request),
+            } => self.ask_perform(server, spec, request),
             Action::CloseInspector => self.inspector = None,
         }
     }
@@ -95,13 +94,7 @@ impl AsibaApp {
         });
     }
 
-    fn ask_perform(
-        &mut self,
-        server: ServerId,
-        module: ModuleId,
-        spec: ActionSpec,
-        request: ActionRequest,
-    ) {
+    fn ask_perform(&mut self, server: ServerId, spec: ActionSpec, request: ActionRequest) {
         let environment = self
             .state
             .read()
@@ -113,13 +106,7 @@ impl AsibaApp {
                     .map(|s| s.spec.description.environment)
             })
             .unwrap_or(Environment::Production);
-        self.confirm_dialog = Some(ConfirmDialog::new(
-            server,
-            module,
-            spec,
-            request,
-            environment,
-        ));
+        self.confirm_dialog = Some(ConfirmDialog::new(server, spec, request, environment));
     }
 
     fn set_theme(&mut self, ctx: &egui::Context, choice: ThemeChoice) {

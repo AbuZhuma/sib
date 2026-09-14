@@ -1,0 +1,34 @@
+###ss
+LISTEN     0      4096              0.0.0.0:22               0.0.0.0:*
+ESTAB      0      0            10.0.0.2:22          198.51.100.20:51000
+ESTAB      0      0            10.0.0.2:443         203.0.113.7:40001
+ESTAB      0      0            10.0.0.2:443         192.0.2.33:40002
+ESTAB      0      0     [::ffff:10.0.0.2]:443   [::ffff:192.0.2.34]:40003
+SYN-RECV   0      0            10.0.0.2:443         203.0.113.7:40010
+SYN-RECV   0      0            10.0.0.2:443         203.0.113.7:40011
+SYN-RECV   0      0            10.0.0.2:443         203.0.113.7:40012
+SYN-RECV   0      0            10.0.0.2:443         203.0.113.7:40013
+SYN-RECV   0      0            10.0.0.2:443         203.0.113.7:40014
+SYN-RECV   0      0            10.0.0.2:443         192.0.2.33:40015
+TIME-WAIT  0      0            10.0.0.2:443         198.51.100.20:51001
+###netstat
+TcpExt: SyncookiesSent SyncookiesRecv SyncookiesFailed EmbryonicRsts PruneCalled RcvPruned OfoPruned OutOfWindowIcmps LockDroppedIcmps ArpFilter TW TWRecycled TWKilled PAWSActive PAWSEstab DelayedACKs DelayedACKLocked DelayedACKLost ListenOverflows ListenDrops
+TcpExt: 1500 3 0 0 19 0 0 0 0 0 10755 3 0 0 0 87345 1 2821 40 42
+IpExt: InNoRoutes InTruncatedPkts InMcastPkts OutMcastPkts InBcastPkts OutBcastPkts
+IpExt: 0 0 1 2 3 4
+###snmp
+Ip: Forwarding DefaultTTL InReceives InHdrErrors InAddrErrors ForwDatagrams InUnknownProtos InDiscards InDelivers OutRequests OutDiscards OutNoRoutes ReasmTimeout ReasmReqds ReasmOKs ReasmFails FragOKs FragFails FragCreates OutTransmits
+Ip: 2 64 1670006 22 34 0 0 0 1664289 1369510 7 71 516 3486 1484 516 0 0 0 1369510
+Tcp: RtoAlgorithm RtoMin RtoMax MaxConn ActiveOpens PassiveOpens AttemptFails EstabResets CurrEstab InSegs OutSegs RetransSegs InErrs OutRsts InCsumErrors
+Tcp: 1 200 120000 -1 17065 9686 5117 551 61 1577356 1588377 1261 1 7804 0
+Udp: InDatagrams NoPorts InErrors OutDatagrams RcvbufErrors SndbufErrors InCsumErrors IgnoredMulti MemErrors
+Udp: 148617 434 0 23691 0 7 0 172646 0
+###dev
+Inter-|   Receive                                                |  Transmit
+ face |bytes    packets errs drop fifo frame compressed multicast|bytes    packets errs drop fifo colls carrier compressed
+    lo: 100 50 0 0 0 0 0 0 100 50 0 0 0 0 0 0
+  eth0: 900000000 1000000 0 0 0 0 0 0 800000000 700000 0 0 0 0 0 0
+ wlan0: 9000 5000 0 0 0 0 0 0 8000 4000 0 0 0 0 0 0
+###conntrack
+260000
+262144

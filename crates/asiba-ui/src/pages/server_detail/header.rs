@@ -2,6 +2,7 @@ use asiba_core::ServerState;
 use egui::{RichText, Ui};
 
 use crate::components::{badge, status_label};
+use crate::modules::attack_badge;
 use crate::pages::servers::environment_label;
 use crate::pages::{Action, Page};
 use crate::text;
@@ -26,6 +27,7 @@ pub fn show(ui: &mut Ui, server: &ServerState) -> Option<Action> {
         );
         ui.monospace(RichText::new(address).color(p.text_secondary));
         status_label(ui, &server.connection);
+        attack_badge(ui, server);
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
             if ui.button(text::BTN_DELETE).clicked() {
                 action = Some(Action::AskDelete(server.spec.id.clone()));

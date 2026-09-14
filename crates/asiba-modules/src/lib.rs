@@ -1,3 +1,4 @@
+pub mod anomalies;
 mod common;
 pub mod cpu;
 pub mod disk;
@@ -32,4 +33,5 @@ pub fn default_registry() -> ModuleRegistry {
         .register(updates::UpdatesModule)
         .register(projects::ProjectsModule)
         .register(security::SecurityModule)
+        .register(anomalies::AnomaliesModule)
 }

@@ -6,6 +6,7 @@ use egui::{RichText, ScrollArea, Ui};
 use super::{Action, Page};
 use crate::components::{Table, page_title, panel, severity_color, status_label, tile};
 use crate::format;
+use crate::modules::attack_badge;
 use crate::text;
 use crate::theme::{GAP, Palette};
 
@@ -131,7 +132,10 @@ fn servers_table(ui: &mut Ui, state: &AppState) -> Option<Action> {
             {
                 action = Some(Action::Navigate(Page::ServerDetail(server.spec.id.clone())));
             }
-            status_label(ui, &server.connection);
+            ui.horizontal(|ui| {
+                status_label(ui, &server.connection);
+                attack_badge(ui, server);
+            });
             ui.monospace(&server.spec.host);
             server_metrics(ui, server);
             ui.end_row();

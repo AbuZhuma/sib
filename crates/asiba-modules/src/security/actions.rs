@@ -1,5 +1,6 @@
 use asiba_core::{ActionOutcome, ActionRequest, ActionSpec, Danger, ModuleError, Transport};
 
+use super::ID;
 use super::model::BanBackend;
 use crate::common::root::{exec_as_root, require_success, validate_ip, validate_name};
 
@@ -7,8 +8,9 @@ pub const ACTION_BAN: &str = "ban";
 pub const ACTION_UNBAN: &str = "unban";
 pub const PERMANENT: &str = "";
 
-pub const SPEC_BAN: ActionSpec = ActionSpec::new(ACTION_BAN, "Забанить IP", Danger::Normal);
-pub const SPEC_UNBAN: ActionSpec = ActionSpec::new(ACTION_UNBAN, "Разбанить IP", Danger::Normal);
+pub const SPEC_BAN: ActionSpec = ActionSpec::new(ID, ACTION_BAN, "Забанить IP", Danger::Normal);
+pub const SPEC_UNBAN: ActionSpec =
+    ActionSpec::new(ID, ACTION_UNBAN, "Разбанить IP", Danger::Normal);
 pub const SPECS: [ActionSpec; 2] = [SPEC_BAN, SPEC_UNBAN];
 
 const NFT_SETUP: &str = "nft list table inet asiba >/dev/null 2>&1 || { nft add table inet asiba && nft add set inet asiba bans '{ type ipv4_addr; flags timeout; }' && nft add set inet asiba bans6 '{ type ipv6_addr; flags timeout; }' && nft add chain inet asiba input '{ type filter hook input priority -10; policy accept; }' && nft add rule inet asiba input ip saddr @bans drop && nft add rule inet asiba input ip6 saddr @bans6 drop; }";
