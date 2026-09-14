@@ -89,6 +89,12 @@ impl ServerState {
         }
     }
 
+    pub fn prepend_history(&mut self, history: BTreeMap<String, Vec<Point>>) {
+        for (key, points) in history {
+            self.series.entry(key).or_default().prepend_history(&points);
+        }
+    }
+
     pub fn latest_value(&self, key: &str) -> Option<f64> {
         self.series.get(key)?.latest().map(|p| p.value)
     }

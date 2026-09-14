@@ -10,6 +10,7 @@ const LINE_WIDTH: f32 = 1.25;
 const FILL_ALPHA: f32 = 0.10;
 const DEFAULT_HEIGHT: f32 = 140.0;
 const DEFAULT_WINDOW_SECS: i64 = 600;
+const MIN_SPAN_SECS: f64 = 30.0;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Unit {
@@ -77,11 +78,27 @@ impl<'a> TimeSeriesPlot<'a> {
         self
     }
 
+    fn left_edge_secs(&self, now: chrono::DateTime<Utc>) -> f64 {
+        let window = -(self.window_secs as f64);
+        let oldest = self
+            .series
+            .iter()
+            .filter_map(|entry| entry.series.oldest())
+            .map(|point| (point.at - now).num_milliseconds() as f64 / 1000.0)
+            .fold(f64::INFINITY, f64::min);
+        if oldest.is_finite() && oldest > window {
+            oldest.min(-MIN_SPAN_SECS)
+        } else {
+            window
+        }
+    }
+
     pub fn show(self, ui: &mut Ui) {
         let p = Palette::current(ui.ctx());
         let unit = self.unit;
         let now = Utc::now();
         let window = ChronoDuration::seconds(self.window_secs);
+        let left = self.left_edge_secs(now);
         let mut plot = Plot::new(self.id)
             .height(self.height)
             .allow_drag(false)
@@ -90,7 +107,7 @@ impl<'a> TimeSeriesPlot<'a> {
             .allow_boxed_zoom(false)
             .show_background(false)
             .grid_color(p.border)
-            .include_x(-(self.window_secs as f64))
+            .include_x(left)
             .include_x(0.0)
             .include_y(0.0)
             .x_axis_formatter(|mark: GridMark, _| format_offset(mark.value))
@@ -126,10 +143,13 @@ fn format_offset(seconds: f64) -> String {
     if total <= 0 {
         return "now".to_owned();
     }
+    if total < 60 {
+        return format!("-{total}s");
+    }
     if total % 60 == 0 {
         return format!("-{}m", total / 60);
     }
-    format!("-{total}s")
+    format!("-{}:{:02}", total / 60, total % 60)
 }
 
 fn hover_label(hover: &HoverPosition<'_>, unit: Unit) -> Option<String> {
@@ -140,5 +160,18 @@ fn hover_label(hover: &HoverPosition<'_>, unit: Unit) -> Option<String> {
             ..
         } => Some(format!("{plot_name}: {}", unit.format(position.y))),
         HoverPosition::Elsewhere { .. } => None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn format_offset_uses_minutes_and_seconds() {
+        assert_eq!(format_offset(0.0), "now");
+        assert_eq!(format_offset(-45.0), "-45s");
+        assert_eq!(format_offset(-600.0), "-10m");
+        assert_eq!(format_offset(-500.0), "-8:20");
     }
 }

@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 use asiba_core::{ModuleId, QueryRequest};
@@ -10,6 +11,7 @@ use tokio::sync::mpsc;
 use tokio::task::JoinHandle;
 
 use crate::command::{Command, EngineEvent, TestRequest};
+use crate::history;
 use crate::persistence::Persistence;
 use crate::test_connection;
 use crate::worker::{self, DocWriter, TransportSlot, WorkerContext};
@@ -51,6 +53,7 @@ pub struct EngineDeps {
     pub state: SharedState,
     pub persistence: Persistence,
     pub storage: Option<StorageWriter>,
+    pub history_path: Option<PathBuf>,
 }
 
 struct Engine {
@@ -58,6 +61,7 @@ struct Engine {
     state: SharedState,
     persistence: Persistence,
     storage: Option<StorageWriter>,
+    history_path: Option<PathBuf>,
     notify: RepaintNotifier,
     events: mpsc::UnboundedSender<EngineEvent>,
     workers: HashMap<ServerId, WorkerEntry>,
@@ -75,6 +79,7 @@ pub fn spawn(
         state: deps.state,
         persistence: deps.persistence,
         storage: deps.storage,
+        history_path: deps.history_path,
         notify,
         events,
         workers: HashMap::new(),
@@ -197,6 +202,13 @@ impl Engine {
             docs: DocWriter::new(self.persistence.doc_path(&spec.id)),
         };
         let task = tokio::spawn(worker::run(ctx));
+        let prefill = history::Prefill {
+            path: self.history_path.clone(),
+            state: Arc::clone(&self.state),
+            server: spec.id.clone(),
+            notify: Arc::clone(&self.notify),
+        };
+        history::prefill(prefill);
         let entry = WorkerEntry {
             task,
             spec: spec.clone(),

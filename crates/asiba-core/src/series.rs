@@ -37,6 +37,24 @@ impl Series {
         self.points.push_back(point);
     }
 
+    pub fn prepend_history(&mut self, history: &[Point]) {
+        let first_live = self.points.front().map(|p| p.at);
+        let older = history
+            .iter()
+            .copied()
+            .filter(|p| first_live.is_none_or(|at| p.at < at));
+        let mut merged: VecDeque<Point> = older.collect();
+        merged.extend(self.points.drain(..));
+        while merged.len() > self.capacity {
+            merged.pop_front();
+        }
+        self.points = merged;
+    }
+
+    pub fn oldest(&self) -> Option<Point> {
+        self.points.front().copied()
+    }
+
     pub fn latest(&self) -> Option<Point> {
         self.points.back().copied()
     }
@@ -82,6 +100,29 @@ mod tests {
         series.push(point(3.0));
         let values: Vec<f64> = series.iter().map(|p| p.value).collect();
         assert_eq!(values, vec![2.0, 3.0]);
+    }
+
+    #[test]
+    fn prepend_history_keeps_only_points_older_than_live_data() {
+        let now = Utc::now();
+        let mut series = Series::with_capacity(10);
+        series.push(Point {
+            at: now,
+            value: 5.0,
+        });
+        let history = [
+            Point {
+                at: now - Duration::seconds(20),
+                value: 1.0,
+            },
+            Point {
+                at: now + Duration::seconds(1),
+                value: 9.0,
+            },
+        ];
+        series.prepend_history(&history);
+        let values: Vec<f64> = series.iter().map(|p| p.value).collect();
+        assert_eq!(values, vec![1.0, 5.0]);
     }
 
     #[test]

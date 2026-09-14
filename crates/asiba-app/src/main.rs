@@ -24,11 +24,13 @@ fn main() -> anyhow::Result<()> {
     let handle = runtime.handle().clone();
     let engine_state = Arc::clone(&state);
     let storage = open_storage(&paths);
+    let history_path = storage.is_some().then(|| paths.history_db());
     let engine_deps = EngineDeps {
         registry,
         state: engine_state,
         persistence,
         storage,
+        history_path,
     };
     let factory = Box::new(move |notify| asiba_engine::spawn(&handle, engine_deps, notify));
     let deps = AppDeps {

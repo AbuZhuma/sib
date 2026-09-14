@@ -1,6 +1,7 @@
 mod backoff;
 mod command;
 mod engine;
+mod history;
 mod persistence;
 mod test_connection;
 mod worker;
