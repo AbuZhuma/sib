@@ -16,7 +16,7 @@ asiba-core ◄── asiba-transport ◄──┐
 |---|---|---|
 | `asiba-core` | доменные типы: `ServerSpec`, `Transport`, `Module`, `Snapshot`, `AppState` | SSH, egui, SQLite, файлы |
 | `asiba-transport` | SSH-сессии (`russh`), локальный транспорт, sudo, known_hosts | модули, UI |
-| `asiba-config` | пути XDG, `config.toml`, `servers/<name>.toml`, keyring | сеть, UI |
+| `asiba-config` | пути XDG, `config.toml`, `servers/<name>.toml`, keyring, раскладка виджетов | сеть, UI |
 | `asiba-modules` | сборщики данных и их парсеры | как и когда их вызывают |
 | `asiba-storage` | SQLite: история метрик, даунсэмплинг, поток записи | модули, UI |
 | `asiba-docgen` | рендер `servers/<name>.md` из состояния сервера | движок, UI |
@@ -73,6 +73,10 @@ UI → `ViewAction::Act { spec, request }` → `Action::AskPerform` → диал
 ## Данные для графиков
 
 `Snapshot.samples` → `ServerState.series[key]` (кольцо 900 точек) → `TimeSeriesPlot`/`sparkline` в UI. Те же сэмплы уходят в `StorageWriter` → SQLite (`samples` → `samples_1m` → `samples_1h`).
+
+## Модули v1
+
+system, cpu, memory, disk, network, processes, services, docker, ports, logs, users, updates, projects, security, anomalies, deploy, gpu. Расписания: Fast (cpu, memory, disk, network, processes, anomalies, gpu), Normal (services, docker, ports, logs, users, security, deploy), Slow (system, updates, projects). Интервалы настраиваются глобально и на сервер.
 
 ## Модуль
 
