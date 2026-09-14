@@ -9,7 +9,7 @@ pub mod server_form;
 pub mod servers;
 pub mod settings;
 
-use asiba_config::ThemeChoice;
+use asiba_config::{SummaryLayout, ThemeChoice};
 use asiba_core::{
     ActionRequest, ActionSpec, AlertRule, Credentials, ModuleId, QueryRequest, ServerId, ServerSpec,
 };
@@ -42,6 +42,12 @@ pub enum Action {
         fingerprint: String,
     },
     AskDelete(ServerId),
+    OpenServerFile(ServerId),
+    SaveLayout {
+        server: ServerId,
+        layout: SummaryLayout,
+    },
+    OpenTerminal(ServerId),
     SetTheme(ThemeChoice),
     Query {
         server: ServerId,

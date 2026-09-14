@@ -162,6 +162,30 @@ pub fn all() -> Vec<Box<dyn ModuleView>> {
 }
 
 pub use anomalies::attack_badge;
+pub use deploy::timeline as deploy_timeline;
+
+pub fn short_label(id: ModuleId) -> &'static str {
+    match id.0 {
+        "system" => "sys",
+        "cpu" => "cpu",
+        "memory" => "mem",
+        "disk" => "dsk",
+        "network" => "net",
+        "processes" => "prc",
+        "services" => "svc",
+        "docker" => "dkr",
+        "ports" => "prt",
+        "logs" => "log",
+        "users" => "usr",
+        "updates" => "upd",
+        "projects" => "prj",
+        "security" => "sec",
+        "anomalies" => "anm",
+        "deploy" => "dpl",
+        "gpu" => "gpu",
+        other => other,
+    }
+}
 
 pub fn has_data(server: &ServerState, id: ModuleId) -> bool {
     server.snapshot(id).is_some()

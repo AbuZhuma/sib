@@ -44,6 +44,14 @@ impl AsibaApp {
                     fingerprint,
                 });
             }
+            Action::OpenServerFile(id) => self.open_server_file(&id),
+            Action::SaveLayout { server, layout } => {
+                self.layouts.servers.insert(server.to_string(), layout);
+                if let Err(error) = self.layouts.save(&self.paths) {
+                    self.notices.push(Notice::new(error.to_string()));
+                }
+            }
+            Action::OpenTerminal(id) => self.open_terminal(&id),
             Action::AskDelete(id) => {
                 self.delete_dialog = Some(DeleteDialog {
                     id,

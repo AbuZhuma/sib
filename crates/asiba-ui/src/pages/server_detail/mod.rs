@@ -1,7 +1,10 @@
 mod connection;
+mod events;
 mod header;
 mod modules_table;
+mod summary;
 
+use asiba_config::SummaryLayout;
 use asiba_core::{ModuleId, ServerState};
 use egui::{Id, RichText, ScrollArea, Ui};
 
@@ -18,6 +21,7 @@ pub struct DetailContext<'a> {
     pub server: &'a ServerState,
     pub views: &'a [Box<dyn ModuleView>],
     pub inspector: Option<&'a Inspector>,
+    pub layout: &'a SummaryLayout,
 }
 
 pub fn select_tab(ctx: &egui::Context, tab: Tab) {
@@ -42,12 +46,20 @@ pub fn show(ui: &mut Ui, ctx: &DetailContext<'_>) -> Option<Action> {
     }
     ScrollArea::vertical().show(ui, |ui| {
         let next = match tab {
-            Tab::Summary => summary(ui, server, views),
+            Tab::Summary => summary::show(
+                ui,
+                &summary::SummaryContext {
+                    server,
+                    views,
+                    layout: ctx.layout,
+                },
+            ),
             other => pages_for(ui, server, views, other),
         };
         if next.is_some() {
             action = next;
         }
+        events::show(ui, server);
     });
     action
 }
@@ -87,30 +99,6 @@ fn tab_bar(ui: &mut Ui, tabs: &[Tab], current: &mut Tab) -> bool {
     });
     ui.add_space(GAP);
     changed
-}
-
-fn summary(ui: &mut Ui, server: &ServerState, views: &[Box<dyn ModuleView>]) -> Option<Action> {
-    let action = panel(ui, text::DETAIL_SECTION_CONNECTION, |ui| {
-        connection::show(ui, server)
-    });
-    ui.add_space(GAP);
-    let with_data: Vec<&Box<dyn ModuleView>> =
-        views.iter().filter(|v| has_data(server, v.id())).collect();
-    ui.columns(2, |columns| {
-        for (index, view) in with_data.iter().enumerate() {
-            let column = &mut columns[index % 2];
-            panel(column, view.title(), |ui| view.summary(ui, server));
-            column.add_space(GAP);
-        }
-    });
-    panel(ui, text::DETAIL_SECTION_MODULES, |ui| {
-        modules_table::show(ui, server)
-    });
-    ui.add_space(GAP);
-    panel(ui, text::DETAIL_SECTION_DESCRIPTION, |ui| {
-        header::description(ui, server)
-    });
-    action
 }
 
 fn pages_for(

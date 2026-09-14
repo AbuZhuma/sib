@@ -1,43 +1,21 @@
 use asiba_core::{AppState, Environment, ServerState};
 use asiba_modules::system::{self, SystemInfo};
 use asiba_modules::{cpu, disk, memory, network};
-use egui::{Frame, Margin, RichText, ScrollArea, Sense, Stroke, Ui, Vec2};
+use egui::{Frame, Label, Margin, RichText, Sense, Stroke, Ui, Vec2};
 
-use super::{Action, Page};
-use crate::components::{badge, page_title, sparkline, status_label};
+use crate::components::{badge, sparkline, status_label};
 use crate::format;
-use crate::modules::attack_badge;
+use crate::modules::{attack_badge, short_label};
+use crate::pages::overview::alert_counts;
 use crate::text;
 use crate::theme::{CARD_WIDTH, GAP, Palette};
 
-const CARD_HEIGHT: f32 = 150.0;
+const CARD_HEIGHT: f32 = 170.0;
 const SPARKLINE_SIZE: Vec2 = Vec2::new(110.0, 30.0);
 
-pub fn show(ui: &mut Ui, state: &AppState) -> Option<Action> {
-    let mut action = None;
-    ui.horizontal(|ui| {
-        page_title(ui, text::SERVERS_TITLE);
-        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            if ui.button(text::BTN_ADD_SERVER).clicked() {
-                action = Some(Action::OpenForm(None));
-            }
-        });
-    });
-    if state.servers.is_empty() {
-        ui.label(text::EMPTY_SERVERS);
-        return action;
-    }
-    ScrollArea::vertical().show(ui, |ui| {
-        ui.horizontal_wrapped(|ui| {
-            ui.spacing_mut().item_spacing = Vec2::splat(GAP);
-            for server in state.servers.values() {
-                if card(ui, server).clicked() {
-                    action = Some(Action::Navigate(Page::ServerDetail(server.spec.id.clone())));
-                }
-            }
-        });
-    });
-    action
+pub fn cards_per_row(available_width: f32) -> usize {
+    let step = CARD_WIDTH + 2.0 * GAP + GAP;
+    ((available_width + GAP) / step).floor().max(1.0) as usize
 }
 
 pub fn environment_label(environment: Environment) -> &'static str {
@@ -49,7 +27,7 @@ pub fn environment_label(environment: Environment) -> &'static str {
     }
 }
 
-fn card(ui: &mut Ui, server: &ServerState) -> egui::Response {
+pub fn show(ui: &mut Ui, server: &ServerState, state: &AppState) -> egui::Response {
     let p = Palette::current(ui.ctx());
     let response = Frame::new()
         .fill(p.bg_panel)
@@ -58,14 +36,22 @@ fn card(ui: &mut Ui, server: &ServerState) -> egui::Response {
         .show(ui, |ui| {
             ui.set_min_size(Vec2::new(CARD_WIDTH, CARD_HEIGHT));
             ui.set_max_width(CARD_WIDTH);
-            header(ui, server);
-            let address = format!(
-                "{}@{}:{}",
-                server.spec.user, server.spec.host, server.spec.port
-            );
-            ui.monospace(RichText::new(address).color(p.text_secondary));
-            ui.add_space(GAP);
-            body(ui, server);
+            ui.vertical(|ui| {
+                ui.set_width(CARD_WIDTH);
+                header(ui, server, state);
+                let address = format!(
+                    "{}@{}:{}",
+                    server.spec.user, server.spec.host, server.spec.port
+                );
+                ui.add(
+                    Label::new(RichText::new(address).monospace().color(p.text_secondary))
+                        .truncate(),
+                );
+                tags(ui, server);
+                ui.add_space(GAP);
+                body(ui, server);
+                modules_row(ui, server);
+            });
         })
         .response;
     let hover = response.interact(Sense::click());
@@ -80,7 +66,7 @@ fn card(ui: &mut Ui, server: &ServerState) -> egui::Response {
     hover
 }
 
-fn header(ui: &mut Ui, server: &ServerState) {
+fn header(ui: &mut Ui, server: &ServerState, state: &AppState) {
     let p = Palette::current(ui.ctx());
     ui.horizontal(|ui| {
         ui.label(RichText::new(server.spec.id.as_str()).heading());
@@ -92,7 +78,42 @@ fn header(ui: &mut Ui, server: &ServerState) {
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
             status_label(ui, &server.connection);
             attack_badge(ui, server);
+            if state.active_alerts().any(|a| a.server == server.spec.id) {
+                alert_counts(ui, state, server);
+            }
         });
+    });
+}
+
+fn tags(ui: &mut Ui, server: &ServerState) {
+    let p = Palette::current(ui.ctx());
+    let description = &server.spec.description;
+    let mut parts = Vec::new();
+    if !description.project.is_empty() {
+        parts.push(description.project.clone());
+    }
+    parts.extend(description.tags.iter().map(|t| format!("#{t}")));
+    if parts.is_empty() {
+        return;
+    }
+    ui.add(Label::new(RichText::new(parts.join("  ")).small().color(p.text_muted)).truncate());
+}
+
+fn modules_row(ui: &mut Ui, server: &ServerState) {
+    let p = Palette::current(ui.ctx());
+    let ids: Vec<asiba_core::ModuleId> = server.available_modules().collect();
+    if ids.is_empty() {
+        return;
+    }
+    ui.horizontal_wrapped(|ui| {
+        ui.spacing_mut().item_spacing.x = 3.0;
+        for id in ids {
+            let label = RichText::new(short_label(id))
+                .small()
+                .monospace()
+                .color(p.text_muted);
+            ui.label(label).on_hover_text(id.0);
+        }
     });
 }
 
@@ -109,7 +130,7 @@ fn body(ui: &mut Ui, server: &ServerState) {
         ui.label(RichText::new(line).color(p.text_muted));
         return;
     };
-    ui.label(&info.os_name);
+    ui.add(Label::new(&info.os_name).truncate());
     ui.horizontal(|ui| {
         ui.vertical(|ui| {
             metric_line(

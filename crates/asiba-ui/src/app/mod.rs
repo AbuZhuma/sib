@@ -1,12 +1,13 @@
 mod actions;
 mod confirm;
 mod dialogs;
+mod external;
 
 use std::sync::Arc;
 use std::time::Duration;
 
-use asiba_config::{AppConfig, Paths};
-use asiba_core::{ServerId, SharedState};
+use asiba_config::{AppConfig, LayoutStore, Paths};
+use asiba_core::{AppState, ServerId, SharedState};
 use asiba_engine::{EngineEvent, EngineHandle, RepaintNotifier};
 use egui::{CentralPanel, Frame, Margin, Panel};
 
@@ -17,7 +18,7 @@ use crate::pages::inspector::Inspector;
 use crate::pages::server_detail::{self, DetailContext};
 use crate::pages::settings::SettingsContext;
 use crate::pages::{self, Action, Page, server_form::ServerForm};
-use crate::shell::{Notice, sidebar, statusbar};
+use crate::shell::{Notice, StatusContext, sidebar, statusbar};
 use crate::text;
 use crate::theme::{self, GAP, SIDEBAR_WIDTH, STATUSBAR_HEIGHT};
 
@@ -70,6 +71,9 @@ pub struct AsibaApp {
     screenshot: Option<ScreenshotOnStart>,
     start_page: Option<(Page, Option<Tab>)>,
     map: MapState,
+    paused: bool,
+    frozen: Option<Arc<AppState>>,
+    layouts: LayoutStore,
     inspector: Option<Inspector>,
     next_query_token: u64,
 }
@@ -77,8 +81,10 @@ pub struct AsibaApp {
 impl AsibaApp {
     fn new(deps: AppDeps, engine: EngineHandle, ctx: &egui::Context) -> Self {
         let map = MapState::new(ctx, deps.paths.tiles_cache());
+        let layouts = LayoutStore::load(&deps.paths);
         Self {
             map,
+            layouts,
             engine,
             state: deps.state,
             paths: deps.paths,
@@ -91,6 +97,8 @@ impl AsibaApp {
             views: modules::all(),
             screenshot: ScreenshotOnStart::from_env(),
             start_page: None,
+            paused: false,
+            frozen: None,
             inspector: None,
             next_query_token: 1,
         }
@@ -149,19 +157,33 @@ impl AsibaApp {
         self.notices.retain(|n| !n.is_expired());
     }
 
+    fn sync_pause(&mut self) {
+        match (self.paused, self.frozen.is_some()) {
+            (true, false) => {
+                self.frozen = self.state.read().ok().map(|s| Arc::new(s.clone()));
+            }
+            (false, true) => self.frozen = None,
+            _ => {}
+        }
+    }
+
     fn central(&mut self, ui: &mut egui::Ui) -> Option<Action> {
-        let Ok(state) = self.state.read() else {
+        let frozen = self.frozen.clone();
+        let Ok(guard) = self.state.read() else {
             return None;
         };
+        let state: &AppState = frozen.as_deref().unwrap_or(&guard);
         match self.page.clone() {
-            Page::Overview => pages::overview::show(ui, &state, &mut self.map),
-            Page::Servers => pages::servers::show(ui, &state),
+            Page::Overview => pages::overview::show(ui, state, &mut self.map),
+            Page::Servers => pages::servers::show(ui, state),
             Page::ServerDetail(id) => match state.servers.get(&id) {
                 Some(server) => {
+                    let layout = self.layouts.for_server(id.as_str());
                     let detail = DetailContext {
                         server,
                         views: &self.views,
                         inspector: self.inspector.as_ref(),
+                        layout: &layout,
                     };
                     pages::server_detail::show(ui, &detail)
                 }
@@ -174,14 +196,14 @@ impl AsibaApp {
                     None => Some(Action::Navigate(Page::Servers)),
                 }
             }
-            Page::Alerts => pages::alerts::show(ui, &state),
-            Page::Map => pages::map::show(ui, &state, &mut self.map),
+            Page::Alerts => pages::alerts::show(ui, state),
+            Page::Map => pages::map::show(ui, state, &mut self.map),
             Page::Settings => pages::settings::show(
                 ui,
                 &SettingsContext {
                     paths: &self.paths,
                     config: &self.config,
-                    state: &state,
+                    state,
                 },
             ),
         }
@@ -209,9 +231,17 @@ impl eframe::App for AsibaApp {
             )
             .show(root, |ui| {
                 if let Ok(state) = self.state.read() {
-                    statusbar(ui, &state, &self.notices);
+                    statusbar(
+                        ui,
+                        StatusContext {
+                            state: &state,
+                            notices: &self.notices,
+                            paused: &mut self.paused,
+                        },
+                    );
                 }
             });
+        self.sync_pause();
         Panel::left("sidebar")
             .exact_size(SIDEBAR_WIDTH)
             .resizable(false)

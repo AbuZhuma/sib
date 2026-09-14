@@ -18,7 +18,7 @@ const MAX_SERVER_EVENTS: usize = 100;
 
 pub type SharedState = Arc<RwLock<AppState>>;
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct AppState {
     pub servers: BTreeMap<ServerId, ServerState>,
     pub events: Vec<Event>,

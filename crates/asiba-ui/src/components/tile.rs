@@ -4,6 +4,24 @@ use crate::theme::{GAP, Palette};
 
 const TILE_SIZE: Vec2 = Vec2::new(150.0, 64.0);
 
+pub struct TileSpec {
+    pub label: &'static str,
+    pub value: String,
+    pub color: Option<Color32>,
+}
+
+pub fn tile_grid(ui: &mut Ui, tiles: &[TileSpec]) {
+    let step = TILE_SIZE.x + 2.0 * GAP + GAP;
+    let per_row = ((ui.available_width() + GAP) / step).floor().max(1.0) as usize;
+    for row in tiles.chunks(per_row) {
+        ui.horizontal(|ui| {
+            for spec in row {
+                tile(ui, spec.label, &spec.value, spec.color);
+            }
+        });
+    }
+}
+
 pub fn tile(ui: &mut Ui, label: &str, value: &str, color: Option<Color32>) {
     let p = Palette::current(ui.ctx());
     Frame::new()
