@@ -3,7 +3,7 @@ use asiba_modules::processes::{self, Process, ProcessSnapshot};
 use egui::{Id, RichText, TextEdit, Ui};
 use egui_extras::{Column, TableBuilder};
 
-use super::{ModuleView, Tab, ViewAction, action_button};
+use super::{ModuleView, Tab, ViewAction, ViewShared, action_button};
 use crate::format;
 use crate::text;
 use crate::theme::{GAP, Palette, ROW_HEIGHT};
@@ -88,7 +88,7 @@ impl ModuleView for ProcessesView {
             });
     }
 
-    fn page(&self, ui: &mut Ui, server: &ServerState) -> Option<ViewAction> {
+    fn page(&self, ui: &mut Ui, server: &ServerState, _shared: &ViewShared) -> Option<ViewAction> {
         let snapshot = server.data::<ProcessSnapshot>(processes::ID)?;
         let id = Id::new(("processes-table", server.spec.id.as_str()));
         let mut state: TableState = ui.ctx().data(|d| d.get_temp(id)).unwrap_or_default();

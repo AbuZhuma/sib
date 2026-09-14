@@ -165,6 +165,7 @@ pub const TAB_SECURITY: &str = "Безопасность";
 pub const SEC_SCORE: &str = "уровень защиты";
 pub const SEC_ATTACKERS: &str = "Атакующие IP";
 pub const SEC_ATTEMPTS: &str = "Попыток";
+pub const SEC_COUNTRY: &str = "Страна";
 pub const SEC_RECENT: &str = "За 10 мин";
 pub const SEC_USERS: &str = "Логины";
 pub const SEC_FIRST: &str = "Первый раз";

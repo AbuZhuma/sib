@@ -2,7 +2,7 @@ use asiba_core::{ModuleId, ServerState};
 use asiba_modules::memory::{self, MemorySnapshot};
 use egui::{Grid, RichText, Ui};
 
-use super::{ModuleView, Tab, ViewAction};
+use super::{ModuleView, Tab, ViewAction, ViewShared};
 use crate::components::{TimeSeriesPlot, Unit, meter, sparkline_fill};
 use crate::format;
 use crate::text;
@@ -47,7 +47,7 @@ impl ModuleView for MemoryView {
         sparkline_fill(ui, series, SUMMARY_RATE_HEIGHT, p.chart[0], Some(100.0));
     }
 
-    fn page(&self, ui: &mut Ui, server: &ServerState) -> Option<ViewAction> {
+    fn page(&self, ui: &mut Ui, server: &ServerState, _shared: &ViewShared) -> Option<ViewAction> {
         let p = Palette::current(ui.ctx());
         let snapshot = server.data::<MemorySnapshot>(memory::ID)?;
         self.summary(ui, server);

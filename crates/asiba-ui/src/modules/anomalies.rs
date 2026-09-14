@@ -3,7 +3,7 @@ use asiba_modules::anomalies::{self, AnomaliesSnapshot, AttackSign};
 use asiba_modules::security;
 use egui::{RichText, Ui};
 
-use super::{ModuleView, Tab, ViewAction, action_button};
+use super::{ModuleView, Tab, ViewAction, ViewShared, action_button};
 use crate::components::{Table, TimeSeriesPlot, Unit, badge, severity_color, status_dot};
 use crate::text;
 use crate::theme::{GAP, Palette, SECONDARY_PLOT_HEIGHT};
@@ -37,7 +37,7 @@ impl ModuleView for AnomaliesView {
         counters(ui, snapshot);
     }
 
-    fn page(&self, ui: &mut Ui, server: &ServerState) -> Option<ViewAction> {
+    fn page(&self, ui: &mut Ui, server: &ServerState, shared: &ViewShared) -> Option<ViewAction> {
         let p = Palette::current(ui.ctx());
         let snapshot = server.data::<AnomaliesSnapshot>(anomalies::ID)?;
         headline(ui, snapshot);
@@ -46,7 +46,7 @@ impl ModuleView for AnomaliesView {
         counters(ui, snapshot);
         ui.add_space(GAP);
         plots(ui, server, &p);
-        if let Some(next) = peers_table(ui, snapshot) {
+        if let Some(next) = peers_table(ui, snapshot, shared) {
             action = Some(next);
         }
         ui.add_space(GAP);
@@ -184,7 +184,11 @@ fn plots(ui: &mut Ui, server: &ServerState, p: &Palette) {
     ui.add_space(GAP);
 }
 
-fn peers_table(ui: &mut Ui, snapshot: &AnomaliesSnapshot) -> Option<ViewAction> {
+fn peers_table(
+    ui: &mut Ui,
+    snapshot: &AnomaliesSnapshot,
+    shared: &ViewShared,
+) -> Option<ViewAction> {
     let p = Palette::current(ui.ctx());
     let mut action = None;
     ui.label(
@@ -208,6 +212,7 @@ fn peers_table(ui: &mut Ui, snapshot: &AnomaliesSnapshot) -> Option<ViewAction> 
                 p.text
             };
             ui.label(RichText::new(&peer.ip).monospace().color(color));
+            ui.monospace(shared.country(&peer.ip));
             ui.monospace(peer.connections.to_string());
             ui.monospace(peer.syn_recv.to_string());
             let share = if snapshot.total_connections > 0 {

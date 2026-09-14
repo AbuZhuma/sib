@@ -3,7 +3,7 @@ use asiba_modules::logs::{self, LogsSnapshot};
 use chrono::Duration;
 use egui::{Id, RichText, TextEdit, Ui};
 
-use super::{ModuleView, Tab};
+use super::{ModuleView, Tab, ViewShared};
 use crate::components::Table;
 use crate::format;
 use crate::text;
@@ -74,7 +74,12 @@ impl ModuleView for LogsView {
         }
     }
 
-    fn page(&self, ui: &mut Ui, server: &ServerState) -> Option<super::ViewAction> {
+    fn page(
+        &self,
+        ui: &mut Ui,
+        server: &ServerState,
+        _shared: &ViewShared,
+    ) -> Option<super::ViewAction> {
         let snapshot = server.data::<LogsSnapshot>(logs::ID)?;
         let id = Id::new(("logs-filter", server.spec.id.as_str()));
         let mut filter: LogFilter = ui.ctx().data(|d| d.get_temp(id)).unwrap_or_default();

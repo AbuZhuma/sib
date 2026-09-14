@@ -2,7 +2,7 @@ use asiba_core::{ModuleId, ServerState};
 use asiba_modules::network::{self, NetworkSnapshot};
 use egui::{RichText, Ui, Vec2};
 
-use super::{ModuleView, Tab, ViewAction};
+use super::{ModuleView, Tab, ViewAction, ViewShared};
 use crate::components::{Table, TimeSeriesPlot, Unit, sparkline_fill};
 use crate::format;
 use crate::text;
@@ -48,7 +48,7 @@ impl ModuleView for NetworkView {
         }
     }
 
-    fn page(&self, ui: &mut Ui, server: &ServerState) -> Option<ViewAction> {
+    fn page(&self, ui: &mut Ui, server: &ServerState, _shared: &ViewShared) -> Option<ViewAction> {
         let p = Palette::current(ui.ctx());
         let snapshot = server.data::<NetworkSnapshot>(network::ID)?;
         let mut plot = TimeSeriesPlot::new("network-plot", Unit::BytesPerSecond);

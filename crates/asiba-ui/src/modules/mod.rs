@@ -16,6 +16,8 @@ mod system;
 mod updates;
 mod users;
 
+use std::collections::BTreeMap;
+
 use asiba_core::{ActionRequest, ActionSpec, ModuleId, QueryRequest, ServerState, Snapshot};
 use egui::Ui;
 
@@ -128,6 +130,16 @@ pub fn action_button(
         .then(|| ViewAction::act(spec, target))
 }
 
+pub struct ViewShared<'a> {
+    pub countries: &'a BTreeMap<String, String>,
+}
+
+impl ViewShared<'_> {
+    pub fn country(&self, ip: &str) -> &str {
+        self.countries.get(ip).map(String::as_str).unwrap_or("")
+    }
+}
+
 pub trait ModuleView: Send + Sync {
     fn id(&self) -> ModuleId;
 
@@ -137,7 +149,7 @@ pub trait ModuleView: Send + Sync {
 
     fn summary(&self, ui: &mut Ui, server: &ServerState);
 
-    fn page(&self, ui: &mut Ui, server: &ServerState) -> Option<ViewAction> {
+    fn page(&self, ui: &mut Ui, server: &ServerState, _shared: &ViewShared) -> Option<ViewAction> {
         self.summary(ui, server);
         None
     }

@@ -25,6 +25,7 @@ pub struct AppState {
     pub actions: Vec<ActionRecord>,
     pub alerts: Vec<Alert>,
     pub self_location: Option<Location>,
+    pub ip_countries: BTreeMap<String, String>,
 }
 
 impl AppState {
@@ -43,6 +44,10 @@ impl AppState {
     pub fn push_action(&mut self, record: ActionRecord) {
         self.actions.insert(0, record);
         self.actions.truncate(MAX_ACTIONS);
+    }
+
+    pub fn country_of(&self, ip: &str) -> Option<&str> {
+        self.ip_countries.get(ip).map(String::as_str)
     }
 
     pub fn active_alerts(&self) -> impl Iterator<Item = &Alert> {

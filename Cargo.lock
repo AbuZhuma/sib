@@ -388,6 +388,7 @@ dependencies = [
  "asiba-config",
  "asiba-core",
  "asiba-docgen",
+ "asiba-modules",
  "asiba-storage",
  "asiba-transport",
  "chrono",

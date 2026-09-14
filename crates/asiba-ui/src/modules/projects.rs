@@ -2,7 +2,7 @@ use asiba_core::{ModuleId, ServerState};
 use asiba_modules::projects::{self, Project, ProjectsSnapshot};
 use egui::{Frame, Grid, Margin, RichText, Stroke, Ui};
 
-use super::{ModuleView, Tab};
+use super::{ModuleView, Tab, ViewShared};
 use crate::components::{Table, badge};
 use crate::text;
 use crate::theme::{GAP, Palette};
@@ -45,7 +45,12 @@ impl ModuleView for ProjectsView {
         }
     }
 
-    fn page(&self, ui: &mut Ui, server: &ServerState) -> Option<super::ViewAction> {
+    fn page(
+        &self,
+        ui: &mut Ui,
+        server: &ServerState,
+        _shared: &ViewShared,
+    ) -> Option<super::ViewAction> {
         let snapshot = server.data::<ProjectsSnapshot>(projects::ID)?;
         for project in &snapshot.projects {
             card(ui, project);

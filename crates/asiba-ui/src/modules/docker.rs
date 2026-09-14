@@ -2,7 +2,7 @@ use asiba_core::{ModuleId, QueryRequest, ServerState};
 use asiba_modules::docker::{self, Container, DockerSnapshot};
 use egui::{RichText, Ui};
 
-use super::{ModuleView, Tab, ViewAction, action_button};
+use super::{ModuleView, Tab, ViewAction, ViewShared, action_button};
 use crate::components::{Table, badge};
 use crate::format;
 use crate::text;
@@ -60,7 +60,7 @@ impl ModuleView for DockerView {
         running_table(ui, snapshot, &p);
     }
 
-    fn page(&self, ui: &mut Ui, server: &ServerState) -> Option<ViewAction> {
+    fn page(&self, ui: &mut Ui, server: &ServerState, _shared: &ViewShared) -> Option<ViewAction> {
         let snapshot = server.data::<DockerSnapshot>(docker::ID)?;
         let mut action = None;
         let projects = snapshot.compose_projects();

@@ -2,7 +2,7 @@ use asiba_core::{ModuleId, ServerState};
 use asiba_modules::users::{self, UsersSnapshot};
 use egui::{RichText, Ui};
 
-use super::{ModuleView, Tab};
+use super::{ModuleView, Tab, ViewShared};
 use crate::components::{Table, badge};
 use crate::text;
 use crate::theme::{GAP, Palette};
@@ -45,7 +45,12 @@ impl ModuleView for UsersView {
         }
     }
 
-    fn page(&self, ui: &mut Ui, server: &ServerState) -> Option<super::ViewAction> {
+    fn page(
+        &self,
+        ui: &mut Ui,
+        server: &ServerState,
+        _shared: &ViewShared,
+    ) -> Option<super::ViewAction> {
         let snapshot = server.data::<UsersSnapshot>(users::ID)?;
         sessions(ui, snapshot);
         ui.add_space(GAP);

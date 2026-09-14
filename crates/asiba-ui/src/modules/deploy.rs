@@ -3,7 +3,7 @@ use asiba_modules::deploy::{self, Deploy, DeployState, DeployStatus, StageStatus
 use chrono::Utc;
 use egui::{Color32, CornerRadius, Frame, Id, Margin, RichText, Stroke, TextEdit, Ui};
 
-use super::{ModuleView, Tab, ViewAction};
+use super::{ModuleView, Tab, ViewAction, ViewShared};
 use crate::components::{Table, badge};
 use crate::format;
 use crate::text;
@@ -72,7 +72,7 @@ impl ModuleView for DeployView {
         }
     }
 
-    fn page(&self, ui: &mut Ui, server: &ServerState) -> Option<ViewAction> {
+    fn page(&self, ui: &mut Ui, server: &ServerState, _shared: &ViewShared) -> Option<ViewAction> {
         let p = Palette::current(ui.ctx());
         let state = server.data::<DeployState>(deploy::ID)?;
         let snapshot = &state.snapshot;

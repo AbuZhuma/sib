@@ -2,7 +2,7 @@ use asiba_core::ActionRequest;
 use asiba_modules::security::{self, SecuritySnapshot};
 use egui::{RichText, Ui};
 
-use super::super::ViewAction;
+use super::super::{ViewAction, ViewShared};
 use crate::components::{Table, badge};
 use crate::format;
 use crate::text;
@@ -17,7 +17,11 @@ fn title(ui: &mut Ui, label: &str) {
     );
 }
 
-pub fn attackers(ui: &mut Ui, snapshot: &SecuritySnapshot) -> Option<ViewAction> {
+pub fn attackers(
+    ui: &mut Ui,
+    snapshot: &SecuritySnapshot,
+    shared: &ViewShared,
+) -> Option<ViewAction> {
     let p = Palette::current(ui.ctx());
     let mut action = None;
     title(ui, text::SEC_ATTACKERS);
@@ -27,6 +31,7 @@ pub fn attackers(ui: &mut Ui, snapshot: &SecuritySnapshot) -> Option<ViewAction>
     }
     let columns = [
         "IP",
+        text::SEC_COUNTRY,
         text::SEC_ATTEMPTS,
         text::SEC_RECENT,
         text::SEC_USERS,
@@ -37,6 +42,7 @@ pub fn attackers(ui: &mut Ui, snapshot: &SecuritySnapshot) -> Option<ViewAction>
     Table::new("security-attackers", &columns).show(ui, |ui| {
         for attacker in &snapshot.attackers {
             ui.monospace(&attacker.ip);
+            ui.monospace(shared.country(&attacker.ip));
             ui.monospace(attacker.failures.to_string());
             let color = if attacker.is_brute_force() {
                 p.critical

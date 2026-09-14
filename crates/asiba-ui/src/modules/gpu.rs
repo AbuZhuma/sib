@@ -2,7 +2,7 @@ use asiba_core::{ModuleId, ServerState};
 use asiba_modules::gpu::{self, Gpu, GpuSnapshot};
 use egui::{RichText, Ui};
 
-use super::{ModuleView, Tab, ViewAction};
+use super::{ModuleView, Tab, ViewAction, ViewShared};
 use crate::components::{Table, TimeSeriesPlot, Unit, meter};
 use crate::format;
 use crate::text;
@@ -32,7 +32,7 @@ impl ModuleView for GpuView {
         }
     }
 
-    fn page(&self, ui: &mut Ui, server: &ServerState) -> Option<ViewAction> {
+    fn page(&self, ui: &mut Ui, server: &ServerState, _shared: &ViewShared) -> Option<ViewAction> {
         let p = Palette::current(ui.ctx());
         let snapshot = server.data::<GpuSnapshot>(gpu::ID)?;
         for gpu in &snapshot.gpus {

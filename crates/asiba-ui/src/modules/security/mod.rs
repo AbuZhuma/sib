@@ -4,7 +4,7 @@ use asiba_core::{ModuleId, ServerState};
 use asiba_modules::security::{self, CheckStatus, SecuritySnapshot};
 use egui::{RichText, Ui};
 
-use super::{ModuleView, Tab, ViewAction};
+use super::{ModuleView, Tab, ViewAction, ViewShared};
 use crate::components::status_dot;
 use crate::text;
 use crate::theme::{GAP, Palette};
@@ -37,13 +37,13 @@ impl ModuleView for SecurityView {
         counters(ui, snapshot);
     }
 
-    fn page(&self, ui: &mut Ui, server: &ServerState) -> Option<ViewAction> {
+    fn page(&self, ui: &mut Ui, server: &ServerState, shared: &ViewShared) -> Option<ViewAction> {
         let snapshot = server.data::<SecuritySnapshot>(security::ID)?;
         score_line(ui, snapshot);
         ui.add_space(GAP);
         checklist(ui, snapshot);
         ui.add_space(GAP);
-        let mut action = tables::attackers(ui, snapshot);
+        let mut action = tables::attackers(ui, snapshot, shared);
         ui.add_space(GAP);
         if let Some(next) = tables::bans(ui, snapshot) {
             action = Some(next);

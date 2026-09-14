@@ -10,7 +10,7 @@ use egui::{Id, RichText, ScrollArea, Ui};
 
 use super::Action;
 use crate::components::panel;
-use crate::modules::{ModuleView, Tab, ViewAction, has_data};
+use crate::modules::{ModuleView, Tab, ViewAction, ViewShared, has_data};
 use crate::pages::inspector::{self, Inspector};
 use crate::text;
 use crate::theme::{GAP, Palette};
@@ -22,6 +22,7 @@ pub struct DetailContext<'a> {
     pub views: &'a [Box<dyn ModuleView>],
     pub inspector: Option<&'a Inspector>,
     pub layout: &'a SummaryLayout,
+    pub shared: ViewShared<'a>,
 }
 
 pub fn select_tab(ctx: &egui::Context, tab: Tab) {
@@ -54,7 +55,7 @@ pub fn show(ui: &mut Ui, ctx: &DetailContext<'_>) -> Option<Action> {
                     layout: ctx.layout,
                 },
             ),
-            other => pages_for(ui, server, views, other),
+            other => pages_for(ui, ctx, other),
         };
         if next.is_some() {
             action = next;
@@ -101,18 +102,14 @@ fn tab_bar(ui: &mut Ui, tabs: &[Tab], current: &mut Tab) -> bool {
     changed
 }
 
-fn pages_for(
-    ui: &mut Ui,
-    server: &ServerState,
-    views: &[Box<dyn ModuleView>],
-    tab: Tab,
-) -> Option<Action> {
+fn pages_for(ui: &mut Ui, ctx: &DetailContext<'_>, tab: Tab) -> Option<Action> {
+    let (server, views) = (ctx.server, ctx.views);
     let mut action = None;
     for view in views
         .iter()
         .filter(|v| v.tab() == tab && has_data(server, v.id()))
     {
-        let view_action = panel(ui, view.title(), |ui| view.page(ui, server));
+        let view_action = panel(ui, view.title(), |ui| view.page(ui, server, &ctx.shared));
         if let Some(view_action) = view_action {
             action = Some(to_action(view_action, server, view.id()));
         }

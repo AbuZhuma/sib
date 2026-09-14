@@ -2,7 +2,7 @@ use asiba_core::{ModuleId, QueryRequest, ServerState};
 use asiba_modules::services::{self, ServicesSnapshot, Unit, UnitOrigin};
 use egui::{Id, RichText, Ui};
 
-use super::{ModuleView, Tab, ViewAction, action_button};
+use super::{ModuleView, Tab, ViewAction, ViewShared, action_button};
 use crate::components::{Table, badge};
 use crate::format;
 use crate::text;
@@ -78,7 +78,7 @@ impl ModuleView for ServicesView {
         }
     }
 
-    fn page(&self, ui: &mut Ui, server: &ServerState) -> Option<ViewAction> {
+    fn page(&self, ui: &mut Ui, server: &ServerState, _shared: &ViewShared) -> Option<ViewAction> {
         let snapshot = server.data::<ServicesSnapshot>(services::ID)?;
         let id = Id::new(("services-filters", server.spec.id.as_str()));
         let mut filters: Filters = ui.ctx().data(|d| d.get_temp(id)).unwrap_or_default();

@@ -2,7 +2,7 @@ use asiba_core::{ModuleId, ServerState};
 use asiba_modules::ports::{self, ListeningPort, PortsSnapshot};
 use egui::{RichText, Ui};
 
-use super::{ModuleView, Tab};
+use super::{ModuleView, Tab, ViewShared};
 use crate::components::{Table, badge};
 use crate::text;
 use crate::theme::Palette;
@@ -52,7 +52,12 @@ impl ModuleView for PortsView {
         }
     }
 
-    fn page(&self, ui: &mut Ui, server: &ServerState) -> Option<super::ViewAction> {
+    fn page(
+        &self,
+        ui: &mut Ui,
+        server: &ServerState,
+        _shared: &ViewShared,
+    ) -> Option<super::ViewAction> {
         let p = Palette::current(ui.ctx());
         let snapshot = server.data::<PortsSnapshot>(ports::ID)?;
         if let Some(firewall) = &snapshot.firewall {

@@ -5,6 +5,7 @@ mod command;
 mod engine;
 mod geo;
 mod history;
+mod peers;
 mod persistence;
 mod test_connection;
 mod worker;

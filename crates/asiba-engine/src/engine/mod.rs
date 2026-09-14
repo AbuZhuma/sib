@@ -17,6 +17,7 @@ use crate::alerts::{self, AlertLoop, AlertSettings};
 use crate::command::{Command, EngineEvent};
 use crate::geo;
 use crate::history;
+use crate::peers;
 use crate::persistence::Persistence;
 use crate::worker::{self, DocWriter, TransportSlot, WorkerContext};
 
@@ -106,6 +107,11 @@ pub fn spawn(
     runtime.spawn(async move {
         alerts::spawn(alert_loop);
         geo::resolve_self(engine.geo_request());
+        peers::spawn(peers::PeerLookup {
+            cache: engine.geo_cache.clone(),
+            state: Arc::clone(&engine.state),
+            notify: Arc::clone(&engine.notify),
+        });
         engine.load_action_journal();
         engine.load_saved().await;
         while let Some(command) = receiver.recv().await {

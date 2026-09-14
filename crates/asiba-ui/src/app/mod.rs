@@ -13,7 +13,7 @@ use egui::{CentralPanel, Frame, Margin, Panel};
 
 use crate::components::MapState;
 use crate::devtools::{self, ScreenshotOnStart};
-use crate::modules::{self, ModuleView, Tab};
+use crate::modules::{self, ModuleView, Tab, ViewShared};
 use crate::pages::inspector::Inspector;
 use crate::pages::server_detail::{self, DetailContext};
 use crate::pages::settings::SettingsContext;
@@ -184,6 +184,9 @@ impl AsibaApp {
                         views: &self.views,
                         inspector: self.inspector.as_ref(),
                         layout: &layout,
+                        shared: ViewShared {
+                            countries: &state.ip_countries,
+                        },
                     };
                     pages::server_detail::show(ui, &detail)
                 }

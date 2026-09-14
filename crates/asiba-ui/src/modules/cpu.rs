@@ -2,7 +2,7 @@ use asiba_core::{ModuleId, ServerState};
 use asiba_modules::cpu::{self, CpuSnapshot};
 use egui::{Grid, RichText, Ui, Vec2};
 
-use super::{ModuleView, Tab, ViewAction};
+use super::{ModuleView, Tab, ViewAction, ViewShared};
 use crate::components::{TimeSeriesPlot, Unit, meter, sparkline_fill};
 use crate::text;
 use crate::theme::{GAP, Palette, SECONDARY_PLOT_HEIGHT, SUMMARY_SPARKLINE_HEIGHT};
@@ -71,7 +71,7 @@ impl ModuleView for CpuView {
         }
     }
 
-    fn page(&self, ui: &mut Ui, server: &ServerState) -> Option<ViewAction> {
+    fn page(&self, ui: &mut Ui, server: &ServerState, _shared: &ViewShared) -> Option<ViewAction> {
         let p = Palette::current(ui.ctx());
         let snapshot = server.data::<CpuSnapshot>(cpu::ID)?;
         let mut plot = TimeSeriesPlot::new("cpu-plot", Unit::Percent);
