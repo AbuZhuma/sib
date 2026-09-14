@@ -8,6 +8,8 @@ use crate::format;
 use crate::text;
 use crate::theme::{GAP, Palette};
 
+const SUMMARY_CONTAINERS: usize = 8;
+
 pub struct DockerView;
 
 impl ModuleView for DockerView {
@@ -55,6 +57,7 @@ impl ModuleView for DockerView {
                     .color(p.warning),
             );
         }
+        running_table(ui, snapshot, &p);
     }
 
     fn page(&self, ui: &mut Ui, server: &ServerState) -> Option<ViewAction> {
@@ -90,6 +93,34 @@ impl ModuleView for DockerView {
         images_table(ui, snapshot);
         action
     }
+}
+
+fn running_table(ui: &mut Ui, snapshot: &DockerSnapshot, p: &Palette) {
+    let running: Vec<&Container> = snapshot
+        .containers
+        .iter()
+        .filter(|c| c.is_running())
+        .take(SUMMARY_CONTAINERS)
+        .collect();
+    if running.is_empty() {
+        return;
+    }
+    ui.add_space(GAP);
+    let columns = [text::DOCKER_CONTAINER, "CPU", "RAM", text::COL_STATUS];
+    Table::new("docker-summary", &columns).show(ui, |ui| {
+        for container in running {
+            ui.monospace(&container.name);
+            let (cpu, mem) = container
+                .stats
+                .as_ref()
+                .map(|s| (format!("{:.1}%", s.cpu_pct), format::bytes(s.mem_usage)))
+                .unwrap_or_else(|| ("—".to_owned(), "—".to_owned()));
+            ui.monospace(cpu);
+            ui.monospace(mem);
+            ui.label(RichText::new(&container.status).color(p.text_secondary));
+            ui.end_row();
+        }
+    });
 }
 
 fn section_title(ui: &mut Ui, title: &str) {

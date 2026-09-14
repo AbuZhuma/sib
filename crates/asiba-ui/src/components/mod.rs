@@ -15,7 +15,7 @@ pub use meter::meter;
 pub use nav::nav_item;
 pub use panel::{page_title, panel};
 pub use plot::{TimeSeriesPlot, Unit};
-pub use sparkline::sparkline;
+pub use sparkline::{sparkline, sparkline_fill};
 pub use status::{status_dot, status_label};
 pub use table::Table;
 pub use tile::tile;

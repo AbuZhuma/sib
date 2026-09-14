@@ -3,10 +3,10 @@ use asiba_modules::memory::{self, MemorySnapshot};
 use egui::{Grid, RichText, Ui};
 
 use super::{ModuleView, Tab, ViewAction};
-use crate::components::{TimeSeriesPlot, Unit, meter};
+use crate::components::{TimeSeriesPlot, Unit, meter, sparkline_fill};
 use crate::format;
 use crate::text;
-use crate::theme::{GAP, Palette};
+use crate::theme::{GAP, Palette, SUMMARY_RATE_HEIGHT};
 
 pub struct MemoryView;
 
@@ -41,6 +41,10 @@ impl ModuleView for MemoryView {
             );
             meter(ui, text::MEM_SWAP, snapshot.swap_used_pct(), &swap);
         }
+        let p = Palette::current(ui.ctx());
+        ui.add_space(GAP);
+        let series = server.series.get(memory::KEY_USED_PCT);
+        sparkline_fill(ui, series, SUMMARY_RATE_HEIGHT, p.chart[0], Some(100.0));
     }
 
     fn page(&self, ui: &mut Ui, server: &ServerState) -> Option<ViewAction> {
@@ -48,7 +52,7 @@ impl ModuleView for MemoryView {
         let snapshot = server.data::<MemorySnapshot>(memory::ID)?;
         self.summary(ui, server);
         ui.add_space(GAP);
-        let mut plot = TimeSeriesPlot::new("memory-plot", Unit::Bytes).height(180.0);
+        let mut plot = TimeSeriesPlot::new("memory-plot", Unit::Bytes);
         let keys = [
             (memory::KEY_USED_BYTES, text::MEM_USED, p.chart[0]),
             (memory::KEY_CACHED_BYTES, text::MEM_CACHED, p.chart[1]),

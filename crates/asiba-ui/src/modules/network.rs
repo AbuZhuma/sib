@@ -3,12 +3,12 @@ use asiba_modules::network::{self, NetworkSnapshot};
 use egui::{RichText, Ui, Vec2};
 
 use super::{ModuleView, Tab, ViewAction};
-use crate::components::{Table, TimeSeriesPlot, Unit, sparkline};
+use crate::components::{Table, TimeSeriesPlot, Unit, sparkline_fill};
 use crate::format;
 use crate::text;
-use crate::theme::{GAP, Palette};
+use crate::theme::{GAP, Palette, SECONDARY_PLOT_HEIGHT, SUMMARY_RATE_HEIGHT};
 
-const SPARKLINE_SIZE: Vec2 = Vec2::new(120.0, 28.0);
+const RATE_LABEL_WIDTH: f32 = 130.0;
 
 pub struct NetworkView;
 
@@ -51,7 +51,7 @@ impl ModuleView for NetworkView {
     fn page(&self, ui: &mut Ui, server: &ServerState) -> Option<ViewAction> {
         let p = Palette::current(ui.ctx());
         let snapshot = server.data::<NetworkSnapshot>(network::ID)?;
-        let mut plot = TimeSeriesPlot::new("network-plot", Unit::BytesPerSecond).height(180.0);
+        let mut plot = TimeSeriesPlot::new("network-plot", Unit::BytesPerSecond);
         if let Some(series) = server.series.get(network::KEY_RX_BPS) {
             plot = plot.series("RX", series, p.chart[0]);
         }
@@ -62,14 +62,14 @@ impl ModuleView for NetworkView {
         ui.add_space(GAP);
         if let Some(series) = server.series.get(asiba_engine::PING_SERIES_KEY) {
             TimeSeriesPlot::new("ping-plot", Unit::Milliseconds)
-                .height(90.0)
+                .height(SECONDARY_PLOT_HEIGHT)
                 .series(text::NET_PING, series, p.chart[1])
                 .show(ui);
             ui.add_space(GAP);
         }
         if let Some(series) = server.series.get(network::KEY_ESTABLISHED) {
             TimeSeriesPlot::new("connections-plot", Unit::Count)
-                .height(90.0)
+                .height(SECONDARY_PLOT_HEIGHT)
                 .series(text::NET_ESTABLISHED, series, p.chart[4])
                 .show(ui);
             ui.add_space(GAP);
@@ -84,13 +84,17 @@ impl ModuleView for NetworkView {
 fn rate_row(ui: &mut Ui, server: &ServerState, label: &str, key: &str, color: egui::Color32) {
     let p = Palette::current(ui.ctx());
     ui.horizontal(|ui| {
-        ui.label(RichText::new(label).color(p.text_secondary));
         let value = server
             .latest_value(key)
             .map(format::bytes_per_second)
             .unwrap_or_else(|| "—".to_owned());
-        ui.monospace(format!("{value:>12}"));
-        sparkline(ui, server.series.get(key), SPARKLINE_SIZE, color, None);
+        ui.allocate_ui(Vec2::new(RATE_LABEL_WIDTH, SUMMARY_RATE_HEIGHT), |ui| {
+            ui.vertical(|ui| {
+                ui.label(RichText::new(label).color(p.text_secondary));
+                ui.monospace(value);
+            });
+        });
+        sparkline_fill(ui, server.series.get(key), SUMMARY_RATE_HEIGHT, color, None);
     });
 }
 

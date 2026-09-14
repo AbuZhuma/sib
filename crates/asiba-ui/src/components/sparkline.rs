@@ -1,7 +1,7 @@
 use asiba_core::Series;
 use egui::{Color32, Pos2, Sense, Stroke, Ui, Vec2};
 
-const LINE_WIDTH: f32 = 1.0;
+const LINE_WIDTH: f32 = 1.25;
 
 pub fn sparkline(
     ui: &mut Ui,
@@ -42,4 +42,15 @@ pub fn sparkline(
         ));
     }
     painter.add(egui::Shape::line(points, Stroke::new(LINE_WIDTH, color)));
+}
+
+pub fn sparkline_fill(
+    ui: &mut Ui,
+    series: Option<&Series>,
+    height: f32,
+    color: Color32,
+    max: Option<f64>,
+) {
+    let width = ui.available_width();
+    sparkline(ui, series, Vec2::new(width, height), color, max);
 }

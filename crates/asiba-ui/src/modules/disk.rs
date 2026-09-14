@@ -8,7 +8,7 @@ use crate::format;
 use crate::text;
 use crate::theme::{GAP, Palette};
 
-const SUMMARY_FILESYSTEMS: usize = 4;
+const SUMMARY_FILESYSTEMS: usize = 6;
 
 pub struct DiskView;
 
@@ -45,7 +45,7 @@ impl ModuleView for DiskView {
         let snapshot = server.data::<DiskSnapshot>(disk::ID)?;
         filesystems_table(ui, snapshot);
         ui.add_space(GAP);
-        let mut plot = TimeSeriesPlot::new("disk-io-plot", Unit::BytesPerSecond).height(160.0);
+        let mut plot = TimeSeriesPlot::new("disk-io-plot", Unit::BytesPerSecond);
         if let Some(series) = server.series.get(disk::KEY_READ_BPS) {
             plot = plot.series(text::DISK_READ, series, p.chart[0]);
         }

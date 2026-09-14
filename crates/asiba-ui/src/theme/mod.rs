@@ -13,6 +13,9 @@ pub const SIDEBAR_WIDTH: f32 = 200.0;
 pub const STATUSBAR_HEIGHT: f32 = 28.0;
 pub const CARD_WIDTH: f32 = 300.0;
 pub const FIELD_WIDTH: f32 = 320.0;
+pub const SECONDARY_PLOT_HEIGHT: f32 = 130.0;
+pub const SUMMARY_SPARKLINE_HEIGHT: f32 = 64.0;
+pub const SUMMARY_RATE_HEIGHT: f32 = 44.0;
 
 pub fn install(ctx: &egui::Context, choice: ThemeChoice) {
     fonts::install(ctx);

@@ -14,6 +14,8 @@ struct Filters {
     only_custom: bool,
 }
 
+const SUMMARY_UNITS: usize = 8;
+
 pub struct ServicesView;
 
 impl ModuleView for ServicesView {
@@ -50,6 +52,29 @@ impl ModuleView for ServicesView {
         });
         for unit in failed.iter().take(5) {
             ui.label(RichText::new(format!("{} — {}", unit.name, unit.result)).color(p.critical));
+        }
+        let custom: Vec<&Unit> = snapshot
+            .custom()
+            .filter(|u| u.is_active())
+            .take(SUMMARY_UNITS)
+            .collect();
+        if !custom.is_empty() {
+            ui.add_space(GAP);
+            let columns = [
+                text::COL_MODULE,
+                text::COL_STATUS,
+                text::SVC_RESTARTS,
+                text::COL_MESSAGE,
+            ];
+            Table::new("services-summary", &columns).show(ui, |ui| {
+                for unit in custom {
+                    ui.monospace(unit.short_name());
+                    badge(ui, &unit.sub, p.ok);
+                    ui.monospace(unit.restarts.to_string());
+                    ui.label(RichText::new(&unit.description).color(p.text_secondary));
+                    ui.end_row();
+                }
+            });
         }
     }
 

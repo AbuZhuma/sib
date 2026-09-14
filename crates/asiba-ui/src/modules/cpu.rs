@@ -3,12 +3,13 @@ use asiba_modules::cpu::{self, CpuSnapshot};
 use egui::{Grid, RichText, Ui, Vec2};
 
 use super::{ModuleView, Tab, ViewAction};
-use crate::components::{TimeSeriesPlot, Unit, meter, sparkline};
+use crate::components::{TimeSeriesPlot, Unit, meter, sparkline_fill};
 use crate::text;
-use crate::theme::{GAP, Palette};
+use crate::theme::{GAP, Palette, SECONDARY_PLOT_HEIGHT, SUMMARY_SPARKLINE_HEIGHT};
 
-const SPARKLINE_SIZE: Vec2 = Vec2::new(160.0, 36.0);
 const CORE_COLUMNS: usize = 4;
+const CORE_CELL: f32 = 22.0;
+const BIG_NUMBER_WIDTH: f32 = 96.0;
 
 pub struct CpuView;
 
@@ -35,11 +36,19 @@ impl ModuleView for CpuView {
             let value = busy
                 .map(|v| format!("{v:.0}%"))
                 .unwrap_or_else(|| "—".to_owned());
-            ui.label(RichText::new(value).size(28.0).monospace());
-            sparkline(
+            ui.allocate_ui(
+                Vec2::new(BIG_NUMBER_WIDTH, SUMMARY_SPARKLINE_HEIGHT),
+                |ui| {
+                    ui.centered_and_justified(|ui| {
+                        ui.label(RichText::new(value).size(32.0).monospace())
+                    });
+                },
+            );
+            let series = server.series.get(cpu::KEY_TOTAL);
+            sparkline_fill(
                 ui,
-                server.series.get(cpu::KEY_TOTAL),
-                SPARKLINE_SIZE,
+                series,
+                SUMMARY_SPARKLINE_HEIGHT,
                 p.chart[0],
                 Some(100.0),
             );
@@ -65,7 +74,7 @@ impl ModuleView for CpuView {
     fn page(&self, ui: &mut Ui, server: &ServerState) -> Option<ViewAction> {
         let p = Palette::current(ui.ctx());
         let snapshot = server.data::<CpuSnapshot>(cpu::ID)?;
-        let mut plot = TimeSeriesPlot::new("cpu-plot", Unit::Percent).height(180.0);
+        let mut plot = TimeSeriesPlot::new("cpu-plot", Unit::Percent);
         let keys = [
             (cpu::KEY_TOTAL, text::CPU_TOTAL, p.chart[0]),
             (cpu::KEY_USER, text::CPU_USER, p.chart[1]),
@@ -82,7 +91,7 @@ impl ModuleView for CpuView {
         ui.add_space(GAP);
         if let Some(series) = server.series.get(cpu::KEY_TEMPERATURE) {
             TimeSeriesPlot::new("cpu-temperature", Unit::Celsius)
-                .height(80.0)
+                .height(SECONDARY_PLOT_HEIGHT)
                 .series(text::CPU_TEMPERATURE, series, p.chart[3])
                 .show(ui);
             ui.add_space(GAP);
@@ -99,14 +108,16 @@ impl ModuleView for CpuView {
 fn cores_grid(ui: &mut Ui, cores: impl Iterator<Item = f64>) {
     let p = Palette::current(ui.ctx());
     ui.horizontal_wrapped(|ui| {
-        ui.spacing_mut().item_spacing = Vec2::new(2.0, 2.0);
-        for busy in cores {
-            let (rect, _) = ui.allocate_exact_size(Vec2::new(14.0, 14.0), egui::Sense::hover());
+        ui.spacing_mut().item_spacing = Vec2::new(3.0, 3.0);
+        for (index, busy) in cores.enumerate() {
+            let (rect, response) =
+                ui.allocate_exact_size(Vec2::splat(CORE_CELL), egui::Sense::hover());
             let fill = p
                 .accent
                 .gamma_multiply((busy / 100.0).clamp(0.08, 1.0) as f32);
             ui.painter().rect_filled(rect, 0.0, p.bg_window);
             ui.painter().rect_filled(rect, 0.0, fill);
+            response.on_hover_text(format!("cpu{index}: {busy:.0}%"));
         }
     });
 }

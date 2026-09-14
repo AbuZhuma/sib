@@ -8,7 +8,9 @@ use crate::theme::Palette;
 
 const LINE_WIDTH: f32 = 1.25;
 const FILL_ALPHA: f32 = 0.10;
-const DEFAULT_HEIGHT: f32 = 140.0;
+const MIN_HEIGHT: f32 = 200.0;
+const MAX_HEIGHT: f32 = 380.0;
+const HEIGHT_RATIO: f32 = 0.26;
 const DEFAULT_WINDOW_SECS: i64 = 600;
 const MIN_SPAN_SECS: f64 = 30.0;
 
@@ -48,7 +50,7 @@ pub struct PlotSeries<'a> {
 pub struct TimeSeriesPlot<'a> {
     pub id: &'a str,
     pub unit: Unit,
-    pub height: f32,
+    pub height: Option<f32>,
     pub window_secs: i64,
     pub series: Vec<PlotSeries<'a>>,
 }
@@ -58,15 +60,20 @@ impl<'a> TimeSeriesPlot<'a> {
         Self {
             id,
             unit,
-            height: DEFAULT_HEIGHT,
+            height: None,
             window_secs: DEFAULT_WINDOW_SECS,
             series: Vec::new(),
         }
     }
 
     pub fn height(mut self, height: f32) -> Self {
-        self.height = height;
+        self.height = Some(height);
         self
+    }
+
+    fn resolved_height(&self, ui: &Ui) -> f32 {
+        self.height
+            .unwrap_or_else(|| (ui.available_width() * HEIGHT_RATIO).clamp(MIN_HEIGHT, MAX_HEIGHT))
     }
 
     pub fn series(mut self, label: &'a str, series: &'a Series, color: Color32) -> Self {
@@ -99,8 +106,9 @@ impl<'a> TimeSeriesPlot<'a> {
         let now = Utc::now();
         let window = ChronoDuration::seconds(self.window_secs);
         let left = self.left_edge_secs(now);
+        let height = self.resolved_height(ui);
         let mut plot = Plot::new(self.id)
-            .height(self.height)
+            .height(height)
             .allow_drag(false)
             .allow_zoom(false)
             .allow_scroll(false)

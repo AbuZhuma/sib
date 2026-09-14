@@ -8,7 +8,7 @@ use crate::format;
 use crate::text;
 use crate::theme::{GAP, Palette, ROW_HEIGHT};
 
-const SUMMARY_TOP: usize = 5;
+const SUMMARY_TOP: usize = 8;
 const CMD_MAX_CHARS: usize = 120;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
