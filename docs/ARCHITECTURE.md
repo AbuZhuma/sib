@@ -20,6 +20,7 @@ asiba-core ◄── asiba-transport ◄──┐
 | `asiba-modules` | сборщики данных и их парсеры | как и когда их вызывают |
 | `asiba-storage` | SQLite: история метрик, даунсэмплинг, поток записи | модули, UI |
 | `asiba-docgen` | рендер `servers/<name>.md` из состояния сервера | движок, UI |
+| `asiba-alerts` | встроенные правила, оценка правил и базовой линии над `AppState`, уведомления на рабочий стол | транспорт, UI |
 | `asiba-engine` | воркеры серверов, задачи сбора по модулям, пинг, переподключение, команды от UI | egui |
 | `asiba-ui` | тема, страницы, виджеты модулей | сеть напрямую |
 | `asiba-app` | точка входа, tokio runtime, сборка зависимостей | — |
@@ -52,6 +53,14 @@ Command::AddServer ─► Persistence::save ─► start_worker
 ## Запросы по требованию
 
 UI (`ModuleView::page`) → `ViewAction::Query` → `Action::Query` → `Command::Query { token, server, module, request }` → движок берёт транспорт сервера из слота воркера → `Module::query` → `EngineEvent::QueryFinished` → панель «Просмотр» на странице сервера.
+
+## Действия
+
+UI → `ViewAction::Act { spec, request }` → `Action::AskPerform` → диалог подтверждения (`Danger::High` или production — с вводом имени сервера) → `Command::Perform` → `Module::perform` на транспорте сервера → `ActionRecord` в SQLite (`actions`), в `AppState.actions` и `EngineEvent::ActionFinished` (уведомление в статусбаре). Журнал — в настройках.
+
+## Алерты
+
+Задача движка раз в 5 с: `Evaluator::evaluate(&mut AppState)` — правила (встроенные из `asiba-alerts::builtin_rules` + пользовательские из `config.toml`) по последним значениям серий и виртуальной метрике `connection.offline`, плюс базовая линия EWMA по ключевым метрикам. Поднятые алерты — в `AppState.alerts`, warning/critical уходят на рабочий стол. `Command::AcknowledgeAlert` / `MuteAlert` меняют запись; `SetAlertSettings` обновляет правила через `watch`.
 
 ## Файл сервера
 
