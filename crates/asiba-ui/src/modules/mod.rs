@@ -7,6 +7,7 @@ mod network;
 mod ports;
 mod processes;
 mod projects;
+mod security;
 mod services;
 mod system;
 mod updates;
@@ -29,10 +30,11 @@ pub enum Tab {
     Projects,
     Logs,
     Users,
+    Security,
 }
 
 impl Tab {
-    pub const ALL: [Tab; 10] = [
+    pub const ALL: [Tab; 11] = [
         Tab::Summary,
         Tab::Processes,
         Tab::Resources,
@@ -43,7 +45,28 @@ impl Tab {
         Tab::Projects,
         Tab::Logs,
         Tab::Users,
+        Tab::Security,
     ];
+
+    pub fn from_key(key: &str) -> Option<Self> {
+        Self::ALL.into_iter().find(|tab| tab.key() == key)
+    }
+
+    pub fn key(self) -> &'static str {
+        match self {
+            Tab::Summary => "summary",
+            Tab::Processes => "processes",
+            Tab::Resources => "resources",
+            Tab::Network => "network",
+            Tab::Ports => "ports",
+            Tab::Docker => "docker",
+            Tab::Services => "services",
+            Tab::Projects => "projects",
+            Tab::Logs => "logs",
+            Tab::Users => "users",
+            Tab::Security => "security",
+        }
+    }
 
     pub fn label(self) -> &'static str {
         match self {
@@ -57,6 +80,7 @@ impl Tab {
             Tab::Projects => text::TAB_PROJECTS,
             Tab::Logs => text::TAB_LOGS,
             Tab::Users => text::TAB_USERS,
+            Tab::Security => text::TAB_SECURITY,
         }
     }
 }
@@ -97,6 +121,7 @@ pub fn all() -> Vec<Box<dyn ModuleView>> {
         Box::new(logs::LogsView),
         Box::new(users::UsersView),
         Box::new(updates::UpdatesView),
+        Box::new(security::SecurityView),
     ]
 }
 

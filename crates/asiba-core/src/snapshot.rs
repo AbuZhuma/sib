@@ -71,6 +71,13 @@ pub struct CollectContext {
 }
 
 impl CollectContext {
+    pub fn previous_taken_at(&self) -> DateTime<Utc> {
+        self.previous
+            .as_ref()
+            .map(|s| s.taken_at)
+            .unwrap_or_else(Utc::now)
+    }
+
     pub fn previous<T: ModuleData>(&self) -> Option<(&T, f64)> {
         let snapshot = self.previous.as_ref()?;
         let elapsed = (Utc::now() - snapshot.taken_at).num_milliseconds() as f64 / 1000.0;

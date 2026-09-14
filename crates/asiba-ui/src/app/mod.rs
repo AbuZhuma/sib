@@ -9,10 +9,10 @@ use asiba_core::{ServerId, SharedState};
 use asiba_engine::{EngineEvent, EngineHandle, RepaintNotifier};
 use egui::{CentralPanel, Frame, Margin, Panel};
 
-use crate::devtools::ScreenshotOnStart;
+use crate::devtools::{self, ScreenshotOnStart};
 use crate::modules::{self, ModuleView};
 use crate::pages::inspector::Inspector;
-use crate::pages::server_detail::DetailContext;
+use crate::pages::server_detail::{self, DetailContext};
 use crate::pages::{self, Action, Page, server_form::ServerForm};
 use crate::shell::{Notice, sidebar, statusbar};
 use crate::text;
@@ -46,7 +46,14 @@ pub fn run(deps: AppDeps, engine_factory: EngineFactory) -> eframe::Result<()> {
             let ctx = cc.egui_ctx.clone();
             let notifier: RepaintNotifier = Arc::new(move || ctx.request_repaint());
             let engine = engine_factory(notifier);
-            Ok(Box::new(AsibaApp::new(deps, engine)))
+            let mut app = AsibaApp::new(deps, engine);
+            if let Some((page, tab)) = devtools::start_page() {
+                app.page = page;
+                if let Some(tab) = tab {
+                    server_detail::select_tab(&cc.egui_ctx, tab);
+                }
+            }
+            Ok(Box::new(app))
         }),
     )
 }

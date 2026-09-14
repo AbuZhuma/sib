@@ -1,0 +1,27 @@
+###whoami
+ubuntu
+###units
+firewalld inactive
+ufw active
+nftables inactive
+iptables inactive
+netfilter-persistent inactive
+fail2ban inactive
+###tools
+ufw
+###ssh
+Sep 14 09:00:01 web sshd[2001]: Failed password for root from 203.0.113.9 port 40000 ssh2
+Sep 14 09:00:03 web sshd[2001]: Failed password for root from 203.0.113.9 port 40000 ssh2
+Sep 14 09:00:05 web sshd[2001]: Failed password for root from 203.0.113.9 port 40000 ssh2
+Sep 14 09:10:00 web sshd[2010]: Accepted publickey for ubuntu from 198.51.100.20 port 3333 ssh2: RSA SHA256:qq
+###sudo
+Sep 14 09:11:00 web sudo:   ubuntu : TTY=pts/1 ; PWD=/home/ubuntu ; USER=root ; COMMAND=/usr/bin/apt update
+###fail2ban
+###sshd
+###hashes
+dddd  /etc/passwd
+eeee  /etc/group
+###nftbans
+###iptbans
+###ufwbans
+Anywhere                   DENY IN     203.0.113.9

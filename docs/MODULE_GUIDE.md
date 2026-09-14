@@ -73,3 +73,6 @@
 
 ### projects
 `find` по `/opt /srv /var/www /home/* /root /app /docker /data` (глубина 3) маркеров `.git`, `compose*.yml`, `package.json`, `Cargo.toml`, `pyproject.toml`, `go.mod`, `Dockerfile`, `ecosystem.config.js`; `git -C <repo> rev-parse --abbrev-ref HEAD`, `git log -1`, `git status --porcelain | wc -l`; `systemctl show '*.service' -p Id -p WorkingDirectory -p MainPID -p ActiveState`; `readlink /proc/[pid]/cwd` + `/proc/[pid]/comm`; `docker inspect --format` (имя, compose-проект, working_dir); `ss -tlnpH`. Выполняется через sudo, если он настроен (cwd чужих процессов).
+
+### security
+Выполняется через sudo, если он настроен (иначе `Partial`). `id -un`, `systemctl is-active` для `firewalld ufw nftables iptables netfilter-persistent fail2ban`, `command -v fail2ban-client nft iptables ufw`, `journalctl -q -o short-iso --since -24h -t sshd -t sshd-session -n 2000` (без journald — `grep sshd /var/log/auth.log /var/log/secure`), то же для `-t sudo -n 500`, `fail2ban-client status` и `fail2ban-client status <jail>` по каждому джейлу, `sshd -T` (fallback — `grep` по `/etc/ssh/sshd_config` и `sshd_config.d/*.conf`), `sha256sum /etc/passwd /etc/group /etc/sudoers /etc/sudoers.d/*`, `nft list set inet asiba bans|bans6`, `iptables -S ASIBA`, `ip6tables -S ASIBA`, `ufw status | grep DENY`.

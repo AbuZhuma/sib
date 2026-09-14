@@ -3,9 +3,25 @@ use std::time::{Duration, Instant};
 
 use egui::{ColorImage, Context, Event, UserData, ViewportCommand};
 
+use asiba_core::ServerId;
+
+use crate::modules::Tab;
+use crate::pages::Page;
+
 const ENV_SCREENSHOT: &str = "ASIBA_SCREENSHOT";
+const ENV_OPEN: &str = "ASIBA_OPEN";
 const ENV_SCREENSHOT_DELAY: &str = "ASIBA_SCREENSHOT_DELAY";
 const DEFAULT_DELAY: Duration = Duration::from_secs(4);
+
+pub fn start_page() -> Option<(Page, Option<Tab>)> {
+    let value = std::env::var(ENV_OPEN).ok()?;
+    let (server, tab) = match value.split_once('/') {
+        Some((server, tab)) => (server, Tab::from_key(tab)),
+        None => (value.as_str(), None),
+    };
+    let id = ServerId::parse(server).ok()?;
+    Some((Page::ServerDetail(id), tab))
+}
 
 pub struct ScreenshotOnStart {
     target: PathBuf,

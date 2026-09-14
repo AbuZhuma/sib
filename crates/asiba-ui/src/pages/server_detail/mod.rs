@@ -20,13 +20,18 @@ pub struct DetailContext<'a> {
     pub inspector: Option<&'a Inspector>,
 }
 
+pub fn select_tab(ctx: &egui::Context, tab: Tab) {
+    ctx.data_mut(|d| d.insert_temp(Id::new(TAB_KEY), tab));
+}
+
 pub fn show(ui: &mut Ui, ctx: &DetailContext<'_>) -> Option<Action> {
     let (server, views) = (ctx.server, ctx.views);
     let mut action = header::show(ui, server);
     let tabs = visible_tabs(server, views);
     let mut tab = current_tab(ui, &tabs);
-    tab_bar(ui, &tabs, &mut tab);
-    ui.ctx().data_mut(|d| d.insert_temp(Id::new(TAB_KEY), tab));
+    if tab_bar(ui, &tabs, &mut tab) {
+        select_tab(ui.ctx(), tab);
+    }
     if let Some(inspector) = ctx.inspector.filter(|i| i.server == server.spec.id) {
         panel(ui, text::INSPECTOR_TITLE, |ui| {
             if let Some(next) = inspector::show(ui, inspector) {
@@ -64,8 +69,9 @@ fn current_tab(ui: &Ui, tabs: &[Tab]) -> Tab {
     stored.filter(|t| tabs.contains(t)).unwrap_or(Tab::Summary)
 }
 
-fn tab_bar(ui: &mut Ui, tabs: &[Tab], current: &mut Tab) {
+fn tab_bar(ui: &mut Ui, tabs: &[Tab], current: &mut Tab) -> bool {
     let p = Palette::current(ui.ctx());
+    let mut changed = false;
     ui.horizontal(|ui| {
         for tab in tabs {
             let selected = tab == current;
@@ -75,10 +81,12 @@ fn tab_bar(ui: &mut Ui, tabs: &[Tab], current: &mut Tab) {
                 .clicked()
             {
                 *current = *tab;
+                changed = true;
             }
         }
     });
     ui.add_space(GAP);
+    changed
 }
 
 fn summary(ui: &mut Ui, server: &ServerState, views: &[Box<dyn ModuleView>]) -> Option<Action> {
