@@ -7,8 +7,8 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use asiba_core::{
-    ConnectionStatus, Credentials, ModuleRegistry, ServerSpec, SharedState, Transport,
-    TransportError,
+    ConnectionStatus, Credentials, Intervals, ModuleRegistry, ModuleSettings, SETTING_ENABLED,
+    SETTING_INTERVAL, Schedule, ServerSpec, SharedState, Transport, TransportError,
 };
 use asiba_storage::StorageWriter;
 use asiba_transport::{HostKeyPolicy, connect};
@@ -30,6 +30,7 @@ pub type TransportSlot = Arc<Mutex<Option<Arc<dyn Transport>>>>;
 
 pub struct WorkerContext {
     pub spec: ServerSpec,
+    pub intervals: Intervals,
     pub credentials: Credentials,
     pub policy: HostKeyPolicy,
     pub registry: ModuleRegistry,
@@ -38,6 +39,20 @@ pub struct WorkerContext {
     pub storage: Option<StorageWriter>,
     pub transport: TransportSlot,
     pub docs: docs::DocWriter,
+}
+
+fn collect_interval(
+    schedule: Schedule,
+    intervals: &Intervals,
+    settings: &ModuleSettings,
+) -> Option<Duration> {
+    let base = schedule.interval_with(intervals)?;
+    let custom = settings
+        .get(SETTING_INTERVAL)
+        .and_then(|v| v.trim().parse::<u64>().ok())
+        .filter(|secs| *secs > 0)
+        .map(Duration::from_secs);
+    Some(custom.unwrap_or(base))
 }
 
 fn share_transport(ctx: &WorkerContext, transport: Option<Arc<dyn Transport>>) {
@@ -123,7 +138,14 @@ async fn spawn_collectors(
         let Some(module) = ctx.registry.get(detection.id) else {
             continue;
         };
-        let Some(interval) = module.schedule().interval() else {
+        let settings = ctx.spec.module_settings(detection.id.0);
+        if settings
+            .get(SETTING_ENABLED)
+            .is_some_and(|v| v.trim() == "false")
+        {
+            continue;
+        }
+        let Some(interval) = collect_interval(module.schedule(), &ctx.intervals, &settings) else {
             continue;
         };
         let loop_ctx = collect::LoopContext {

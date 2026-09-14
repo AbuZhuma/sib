@@ -1,8 +1,8 @@
 use std::time::Duration;
 
 use asiba_core::{
-    ActionRecord, ActionRequest, Availability, Credentials, ModuleId, QueryRequest, QueryResponse,
-    ServerId, ServerSpec, Snapshot, TransportError,
+    ActionRecord, ActionRequest, Availability, Credentials, Intervals, ModuleId, QueryRequest,
+    QueryResponse, ServerId, ServerSpec, Snapshot, TransportError,
 };
 use asiba_transport::HostKeyPolicy;
 use chrono::{DateTime, Utc};
@@ -43,6 +43,7 @@ pub enum Command {
         until: DateTime<Utc>,
     },
     SetAlertSettings(AlertSettings),
+    SetIntervals(Intervals),
 }
 
 #[derive(Debug, Clone)]

@@ -26,14 +26,50 @@ pub enum Schedule {
     OnDemand,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct Intervals {
+    pub fast_secs: u64,
+    pub normal_secs: u64,
+    pub slow_secs: u64,
+}
+
+impl Default for Intervals {
+    fn default() -> Self {
+        Self {
+            fast_secs: 2,
+            normal_secs: 20,
+            slow_secs: 300,
+        }
+    }
+}
+
+impl Intervals {
+    pub fn clamped(self) -> Self {
+        Self {
+            fast_secs: self.fast_secs.clamp(1, 60),
+            normal_secs: self.normal_secs.clamp(5, 600),
+            slow_secs: self.slow_secs.clamp(30, 3600),
+        }
+    }
+}
+
+pub const SETTING_ENABLED: &str = "enabled";
+pub const SETTING_INTERVAL: &str = "interval";
+
 impl Schedule {
     pub fn interval(self) -> Option<Duration> {
-        match self {
-            Self::Fast => Some(Duration::from_secs(2)),
-            Self::Normal => Some(Duration::from_secs(20)),
-            Self::Slow => Some(Duration::from_secs(300)),
-            Self::OnDemand => None,
-        }
+        self.interval_with(&Intervals::default())
+    }
+
+    pub fn interval_with(self, intervals: &Intervals) -> Option<Duration> {
+        let secs = match self {
+            Self::Fast => intervals.fast_secs,
+            Self::Normal => intervals.normal_secs,
+            Self::Slow => intervals.slow_secs,
+            Self::OnDemand => return None,
+        };
+        Some(Duration::from_secs(secs))
     }
 }
 

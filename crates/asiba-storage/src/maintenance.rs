@@ -3,15 +3,36 @@ use rusqlite::{Connection, params};
 
 use crate::error::StorageError;
 
-const RAW_RETENTION: Duration = Duration::hours(48);
-const MINUTE_RETENTION: Duration = Duration::days(30);
-const HOUR_RETENTION: Duration = Duration::days(365);
+use serde::{Deserialize, Serialize};
+
 const MINUTE: i64 = 60;
 const HOUR: i64 = 3600;
 
-pub fn run(connection: &mut Connection, now: DateTime<Utc>) -> Result<(), StorageError> {
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct Retention {
+    pub raw_hours: u32,
+    pub minute_days: u32,
+    pub hour_days: u32,
+}
+
+impl Default for Retention {
+    fn default() -> Self {
+        Self {
+            raw_hours: 48,
+            minute_days: 30,
+            hour_days: 365,
+        }
+    }
+}
+
+pub fn run(
+    connection: &mut Connection,
+    now: DateTime<Utc>,
+    retention: &Retention,
+) -> Result<(), StorageError> {
     let transaction = connection.transaction()?;
-    let raw_cutoff = (now - RAW_RETENTION).timestamp();
+    let raw_cutoff = (now - Duration::hours(i64::from(retention.raw_hours))).timestamp();
     transaction.execute(
         "INSERT OR REPLACE INTO samples_1m (server, key, at, avg, min, max)
          SELECT server, key, (at / ?1) * ?1, AVG(value), MIN(value), MAX(value)
@@ -19,7 +40,7 @@ pub fn run(connection: &mut Connection, now: DateTime<Utc>) -> Result<(), Storag
         params![MINUTE, raw_cutoff],
     )?;
     transaction.execute("DELETE FROM samples WHERE at < ?1", params![raw_cutoff])?;
-    let minute_cutoff = (now - MINUTE_RETENTION).timestamp();
+    let minute_cutoff = (now - Duration::days(i64::from(retention.minute_days))).timestamp();
     transaction.execute(
         "INSERT OR REPLACE INTO samples_1h (server, key, at, avg, min, max)
          SELECT server, key, (at / ?1) * ?1, AVG(avg), MIN(min), MAX(max)
@@ -30,7 +51,7 @@ pub fn run(connection: &mut Connection, now: DateTime<Utc>) -> Result<(), Storag
         "DELETE FROM samples_1m WHERE at < ?1",
         params![minute_cutoff],
     )?;
-    let hour_cutoff = (now - HOUR_RETENTION).timestamp();
+    let hour_cutoff = (now - Duration::days(i64::from(retention.hour_days))).timestamp();
     transaction.execute("DELETE FROM samples_1h WHERE at < ?1", params![hour_cutoff])?;
     transaction.commit()?;
     Ok(())
@@ -63,7 +84,8 @@ mod tests {
             sample(now, 5.0),
         ])
         .expect("insert");
-        db.run_maintenance(now).expect("maintenance");
+        db.run_maintenance(now, &Retention::default())
+            .expect("maintenance");
         assert_eq!(db.count("samples").expect("count"), 1);
         assert_eq!(db.count("samples_1m").expect("count"), 1);
     }
@@ -74,8 +96,10 @@ mod tests {
         let now = Utc::now();
         let old = now - Duration::days(40);
         db.insert_batch(&[sample(old, 1.0)]).expect("insert");
-        db.run_maintenance(now).expect("first pass");
-        db.run_maintenance(now).expect("second pass");
+        db.run_maintenance(now, &Retention::default())
+            .expect("first pass");
+        db.run_maintenance(now, &Retention::default())
+            .expect("second pass");
         assert_eq!(db.count("samples_1m").expect("count"), 0);
         assert_eq!(db.count("samples_1h").expect("count"), 1);
     }

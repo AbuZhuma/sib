@@ -4,7 +4,9 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
-use asiba_core::{Credentials, ModuleRegistry, ServerId, ServerSpec, ServerState, SharedState};
+use asiba_core::{
+    Credentials, Intervals, ModuleRegistry, ServerId, ServerSpec, ServerState, SharedState,
+};
 use asiba_storage::StorageWriter;
 use asiba_transport::HostKeyPolicy;
 use tokio::sync::{mpsc, watch};
@@ -58,6 +60,7 @@ pub struct EngineDeps {
     pub history_path: Option<PathBuf>,
     pub geo_cache: Option<PathBuf>,
     pub alert_settings: AlertSettings,
+    pub intervals: Intervals,
 }
 
 struct Engine {
@@ -67,6 +70,7 @@ struct Engine {
     storage: Option<StorageWriter>,
     history_path: Option<PathBuf>,
     geo_cache: Option<PathBuf>,
+    intervals: Intervals,
     notify: RepaintNotifier,
     events: mpsc::UnboundedSender<EngineEvent>,
     workers: HashMap<ServerId, WorkerEntry>,
@@ -93,6 +97,7 @@ pub fn spawn(
         storage: deps.storage,
         history_path: deps.history_path,
         geo_cache: deps.geo_cache,
+        intervals: deps.intervals.clamped(),
         notify,
         events,
         workers: HashMap::new(),
@@ -114,6 +119,18 @@ pub fn spawn(
 }
 
 impl Engine {
+    fn set_intervals(&mut self, intervals: Intervals) {
+        let clamped = intervals.clamped();
+        if clamped == self.intervals {
+            return;
+        }
+        self.intervals = clamped;
+        let ids: Vec<ServerId> = self.workers.keys().cloned().collect();
+        for id in ids {
+            self.restart(&id, HostKeyPolicy::KnownHostsOnly);
+        }
+    }
+
     fn geo_request(&self) -> geo::GeoRequest {
         geo::GeoRequest {
             cache: self.geo_cache.clone(),
@@ -189,6 +206,7 @@ impl Engine {
             Command::SetAlertSettings(settings) => {
                 let _ = self.alert_settings.send(settings);
             }
+            Command::SetIntervals(intervals) => self.set_intervals(intervals),
         }
     }
 
@@ -241,6 +259,7 @@ impl Engine {
         let transport: TransportSlot = Arc::new(Mutex::new(None));
         let ctx = WorkerContext {
             spec: spec.clone(),
+            intervals: self.intervals,
             credentials: credentials.clone(),
             policy,
             registry: self.registry.clone(),

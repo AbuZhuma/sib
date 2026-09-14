@@ -8,7 +8,7 @@ use asiba_core::ActionRecord;
 
 use crate::actions;
 use crate::error::StorageError;
-use crate::maintenance;
+use crate::maintenance::{self, Retention};
 use crate::sample::StoredSample;
 use crate::schema;
 
@@ -86,8 +86,12 @@ impl Database {
         actions::list_recent(&self.connection, limit)
     }
 
-    pub fn run_maintenance(&mut self, now: DateTime<Utc>) -> Result<(), StorageError> {
-        maintenance::run(&mut self.connection, now)
+    pub fn run_maintenance(
+        &mut self,
+        now: DateTime<Utc>,
+        retention: &Retention,
+    ) -> Result<(), StorageError> {
+        maintenance::run(&mut self.connection, now, retention)
     }
 
     pub fn count(&self, table: &str) -> Result<i64, StorageError> {

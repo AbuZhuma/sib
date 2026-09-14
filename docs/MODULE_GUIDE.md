@@ -24,7 +24,7 @@
 
 ## Настройки модуля
 
-`CollectContext.settings` — `BTreeMap<String, String>` из секции `[modules.<id>]` файла `servers/<name>.toml`. Ключи и формат значений объявляет модуль константами (`deploy::SETTING_LOGS`), отсутствие ключа — поведение по умолчанию.
+`CollectContext.settings` — `BTreeMap<String, String>` из секции `[modules.<id>]` файла `servers/<name>.toml`. Ключи и формат значений объявляет модуль константами (`deploy::SETTING_LOGS`), отсутствие ключа — поведение по умолчанию. Два ключа общие для всех модулей и обрабатываются движком: `enabled = "false"` выключает модуль на сервере, `interval = "<секунды>"` переопределяет интервал сбора. Глобальные интервалы Fast/Normal/Slow — в `config.toml` (`[intervals]`), в настройках приложения.
 
 ## Скорости и дельты
 

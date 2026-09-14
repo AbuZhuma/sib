@@ -23,7 +23,12 @@ fn main() -> anyhow::Result<()> {
         .context("tokio runtime")?;
     let handle = runtime.handle().clone();
     let engine_state = Arc::clone(&state);
-    let storage = open_storage(&paths);
+    let retention = asiba_storage::Retention {
+        raw_hours: config.retention.raw_hours,
+        minute_days: config.retention.minute_days,
+        hour_days: config.retention.hour_days,
+    };
+    let storage = open_storage(&paths, retention);
     let history_path = storage.is_some().then(|| paths.history_db());
     let alert_settings =
         AlertSettings::from_custom(&config.alert_rules, config.desktop_notifications);
@@ -35,6 +40,7 @@ fn main() -> anyhow::Result<()> {
         history_path,
         geo_cache: Some(paths.geo_cache()),
         alert_settings,
+        intervals: config.intervals,
     };
     let factory = Box::new(move |notify| asiba_engine::spawn(&handle, engine_deps, notify));
     let deps = AppDeps {
@@ -47,9 +53,12 @@ fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-fn open_storage(paths: &Paths) -> Option<asiba_storage::StorageWriter> {
+fn open_storage(
+    paths: &Paths,
+    retention: asiba_storage::Retention,
+) -> Option<asiba_storage::StorageWriter> {
     match Database::open(&paths.history_db()) {
-        Ok(database) => Some(spawn_writer(database)),
+        Ok(database) => Some(spawn_writer(database, retention)),
         Err(error) => {
             tracing::error!(%error, "история метрик отключена");
             None

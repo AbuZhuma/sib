@@ -7,6 +7,7 @@ use asiba_core::ActionRecord;
 
 use crate::database::Database;
 use crate::error::StorageError;
+use crate::maintenance::Retention;
 use crate::sample::StoredSample;
 
 const FLUSH_INTERVAL: Duration = Duration::from_secs(5);
@@ -37,7 +38,7 @@ impl StorageWriter {
     }
 }
 
-pub fn spawn_writer(mut database: Database) -> StorageWriter {
+pub fn spawn_writer(mut database: Database, retention: Retention) -> StorageWriter {
     let (sender, receiver) = mpsc::channel::<WriteRequest>();
     std::thread::Builder::new()
         .name("asiba-storage".to_owned())
@@ -58,7 +59,7 @@ pub fn spawn_writer(mut database: Database) -> StorageWriter {
                     last_flush = Instant::now();
                 }
                 if last_maintenance.elapsed() >= MAINTENANCE_INTERVAL {
-                    maintain(&mut database);
+                    maintain(&mut database, &retention);
                     last_maintenance = Instant::now();
                 }
             }
@@ -81,8 +82,8 @@ fn record_action(database: &Database, record: &ActionRecord) {
     }
 }
 
-fn maintain(database: &mut Database) {
-    if let Err(error) = database.run_maintenance(Utc::now()) {
+fn maintain(database: &mut Database, retention: &Retention) {
+    if let Err(error) = database.run_maintenance(Utc::now(), retention) {
         tracing::error!(%error, "обслуживание базы не выполнено");
     }
 }

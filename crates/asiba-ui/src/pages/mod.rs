@@ -1,5 +1,6 @@
 pub mod alert_rules;
 pub mod alerts;
+pub mod collection_settings;
 pub mod inspector;
 pub mod journal;
 pub mod map;
@@ -9,9 +10,10 @@ pub mod server_form;
 pub mod servers;
 pub mod settings;
 
-use asiba_config::{SummaryLayout, ThemeChoice};
+use asiba_config::{Retention, SummaryLayout, ThemeChoice};
 use asiba_core::{
-    ActionRequest, ActionSpec, AlertRule, Credentials, ModuleId, QueryRequest, ServerId, ServerSpec,
+    ActionRequest, ActionSpec, AlertRule, Credentials, Intervals, ModuleId, QueryRequest, ServerId,
+    ServerSpec,
 };
 use asiba_engine::TestRequest;
 use chrono::{DateTime, Utc};
@@ -68,5 +70,9 @@ pub enum Action {
     SaveAlertSettings {
         rules: Vec<AlertRule>,
         desktop_notifications: bool,
+    },
+    SaveCollection {
+        intervals: Intervals,
+        retention: Retention,
     },
 }

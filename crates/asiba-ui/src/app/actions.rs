@@ -72,6 +72,17 @@ impl AsibaApp {
             Action::CloseInspector => self.inspector = None,
             Action::AcknowledgeAlert(id) => self.engine.send(Command::AcknowledgeAlert(id)),
             Action::MuteAlert { id, until } => self.engine.send(Command::MuteAlert { id, until }),
+            Action::SaveCollection {
+                intervals,
+                retention,
+            } => {
+                self.config.intervals = intervals;
+                self.config.retention = retention;
+                self.engine.send(Command::SetIntervals(intervals));
+                if let Err(error) = self.config.save(&self.paths) {
+                    self.notices.push(Notice::new(error.to_string()));
+                }
+            }
             Action::SaveAlertSettings {
                 rules,
                 desktop_notifications,

@@ -421,6 +421,7 @@ dependencies = [
  "asiba-core",
  "chrono",
  "rusqlite",
+ "serde",
  "thiserror 2.0.20",
  "tracing",
 ]

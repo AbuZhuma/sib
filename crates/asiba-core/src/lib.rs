@@ -13,7 +13,8 @@ pub use action::{ActionOutcome, ActionRecord, ActionRequest, ActionSpec, Danger}
 pub use alert::{Alert, AlertRule, Condition, METRIC_OFFLINE};
 pub use event::{Event, Severity};
 pub use module::{
-    Availability, Module, ModuleError, ModuleId, QueryRequest, QueryResponse, Schedule,
+    Availability, Intervals, Module, ModuleError, ModuleId, QueryRequest, QueryResponse,
+    SETTING_ENABLED, SETTING_INTERVAL, Schedule,
 };
 pub use registry::ModuleRegistry;
 pub use series::{Point, Series};

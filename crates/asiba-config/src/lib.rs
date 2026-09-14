@@ -5,7 +5,7 @@ mod paths;
 mod secrets;
 mod server_store;
 
-pub use app_config::{AppConfig, ThemeChoice};
+pub use app_config::{AppConfig, Retention, ThemeChoice};
 pub use error::ConfigError;
 pub use layout::{LayoutStore, SummaryLayout};
 pub use paths::Paths;

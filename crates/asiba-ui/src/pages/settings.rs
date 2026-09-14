@@ -33,6 +33,13 @@ fn sections(ui: &mut Ui, ctx: &SettingsContext<'_>) -> Option<Action> {
         paths_grid(ui, paths, config)
     });
     ui.add_space(GAP);
+    let collection = panel(ui, text::SETTINGS_SECTION_COLLECTION, |ui| {
+        super::collection_settings::show(ui, config)
+    });
+    if collection.is_some() {
+        action = collection;
+    }
+    ui.add_space(GAP);
     let rules = panel(ui, text::SETTINGS_SECTION_ALERTS, |ui| {
         super::alert_rules::show(ui, config)
     });
@@ -42,6 +49,12 @@ fn sections(ui: &mut Ui, ctx: &SettingsContext<'_>) -> Option<Action> {
     ui.add_space(GAP);
     panel(ui, text::SETTINGS_SECTION_JOURNAL, |ui| {
         super::journal::show(ui, ctx.state)
+    });
+    ui.add_space(GAP);
+    panel(ui, text::SETTINGS_SECTION_ABOUT, |ui| {
+        let p = Palette::current(ui.ctx());
+        ui.label(format!("Asiba {}", env!("CARGO_PKG_VERSION")));
+        ui.label(RichText::new(text::ABOUT_LINE).color(p.text_secondary));
     });
     action
 }

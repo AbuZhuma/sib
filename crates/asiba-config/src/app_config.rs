@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use asiba_core::AlertRule;
+use asiba_core::{AlertRule, Intervals};
 use serde::{Deserialize, Serialize};
 
 use crate::error::ConfigError;
@@ -21,6 +21,26 @@ pub struct AppConfig {
     pub theme: ThemeChoice,
     pub desktop_notifications: bool,
     pub alert_rules: Vec<AlertRule>,
+    pub intervals: Intervals,
+    pub retention: Retention,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct Retention {
+    pub raw_hours: u32,
+    pub minute_days: u32,
+    pub hour_days: u32,
+}
+
+impl Default for Retention {
+    fn default() -> Self {
+        Self {
+            raw_hours: 48,
+            minute_days: 30,
+            hour_days: 365,
+        }
+    }
 }
 
 impl Default for AppConfig {
@@ -30,6 +50,8 @@ impl Default for AppConfig {
             theme: ThemeChoice::default(),
             desktop_notifications: true,
             alert_rules: Vec::new(),
+            intervals: Intervals::default(),
+            retention: Retention::default(),
         }
     }
 }
