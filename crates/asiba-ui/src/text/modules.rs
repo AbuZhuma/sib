@@ -239,3 +239,9 @@ pub const DEP_RUNNER_IDLE: &str = "свободен";
 pub const DEP_FAILED_COUNT: &str = "упавших";
 pub const DEP_SHOW: &str = "подробнее";
 pub const DEP_HIDE: &str = "скрыть";
+
+pub const MODULE_GPU: &str = "GPU";
+pub const TAB_GPU: &str = "GPU";
+pub const GPU_UTIL: &str = "загрузка";
+pub const GPU_MEMORY: &str = "память";
+pub const GPU_PROCESSES: &str = "Процессы на GPU";

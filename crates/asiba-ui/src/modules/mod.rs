@@ -3,6 +3,7 @@ mod cpu;
 mod deploy;
 mod disk;
 mod docker;
+mod gpu;
 mod logs;
 mod memory;
 mod network;
@@ -35,10 +36,11 @@ pub enum Tab {
     Security,
     Anomalies,
     Deploy,
+    Gpu,
 }
 
 impl Tab {
-    pub const ALL: [Tab; 13] = [
+    pub const ALL: [Tab; 14] = [
         Tab::Summary,
         Tab::Processes,
         Tab::Resources,
@@ -52,6 +54,7 @@ impl Tab {
         Tab::Security,
         Tab::Anomalies,
         Tab::Deploy,
+        Tab::Gpu,
     ];
 
     pub fn from_key(key: &str) -> Option<Self> {
@@ -73,6 +76,7 @@ impl Tab {
             Tab::Security => "security",
             Tab::Anomalies => "anomalies",
             Tab::Deploy => "deploy",
+            Tab::Gpu => "gpu",
         }
     }
 
@@ -91,6 +95,7 @@ impl Tab {
             Tab::Security => text::TAB_SECURITY,
             Tab::Anomalies => text::TAB_ANOMALIES,
             Tab::Deploy => text::TAB_DEPLOY,
+            Tab::Gpu => text::TAB_GPU,
         }
     }
 }
@@ -158,6 +163,7 @@ pub fn all() -> Vec<Box<dyn ModuleView>> {
         Box::new(security::SecurityView),
         Box::new(anomalies::AnomaliesView),
         Box::new(deploy::DeployView),
+        Box::new(gpu::GpuView),
     ]
 }
 
