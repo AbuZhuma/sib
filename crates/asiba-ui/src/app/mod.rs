@@ -152,10 +152,7 @@ impl AsibaApp {
                     None => Some(Action::Navigate(Page::Servers)),
                 }
             }
-            Page::Alerts => {
-                pages::alerts::show(ui);
-                None
-            }
+            Page::Alerts => pages::alerts::show(ui, &state),
             Page::Map => {
                 pages::map::show(ui);
                 None

@@ -1,6 +1,8 @@
 use asiba_config::ThemeChoice;
-use asiba_core::{ActionRequest, ActionSpec, Environment, ModuleId, QueryRequest, ServerId};
-use asiba_engine::Command;
+use asiba_core::{
+    ActionRequest, ActionSpec, AlertRule, Environment, ModuleId, QueryRequest, ServerId,
+};
+use asiba_engine::{AlertSettings, Command};
 
 use super::AsibaApp;
 use super::confirm::ConfirmDialog;
@@ -60,6 +62,12 @@ impl AsibaApp {
                 request,
             } => self.ask_perform(server, spec, request),
             Action::CloseInspector => self.inspector = None,
+            Action::AcknowledgeAlert(id) => self.engine.send(Command::AcknowledgeAlert(id)),
+            Action::MuteAlert { id, until } => self.engine.send(Command::MuteAlert { id, until }),
+            Action::SaveAlertSettings {
+                rules,
+                desktop_notifications,
+            } => self.save_alert_settings(rules, desktop_notifications),
         }
     }
 
@@ -107,6 +115,19 @@ impl AsibaApp {
             })
             .unwrap_or(Environment::Production);
         self.confirm_dialog = Some(ConfirmDialog::new(server, spec, request, environment));
+    }
+
+    fn save_alert_settings(&mut self, rules: Vec<AlertRule>, desktop_notifications: bool) {
+        self.config.alert_rules = rules;
+        self.config.desktop_notifications = desktop_notifications;
+        self.engine
+            .send(Command::SetAlertSettings(AlertSettings::from_custom(
+                &self.config.alert_rules,
+                desktop_notifications,
+            )));
+        if let Err(error) = self.config.save(&self.paths) {
+            self.notices.push(Notice::new(error.to_string()));
+        }
     }
 
     fn set_theme(&mut self, ctx: &egui::Context, choice: ThemeChoice) {

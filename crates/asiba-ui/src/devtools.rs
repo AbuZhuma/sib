@@ -15,6 +15,17 @@ const DEFAULT_DELAY: Duration = Duration::from_secs(4);
 
 pub fn start_page() -> Option<(Page, Option<Tab>)> {
     let value = std::env::var(ENV_OPEN).ok()?;
+    let fixed = match value.as_str() {
+        "overview" => Some(Page::Overview),
+        "servers" => Some(Page::Servers),
+        "alerts" => Some(Page::Alerts),
+        "map" => Some(Page::Map),
+        "settings" => Some(Page::Settings),
+        _ => None,
+    };
+    if let Some(page) = fixed {
+        return Some((page, None));
+    }
     let (server, tab) = match value.split_once('/') {
         Some((server, tab)) => (server, Tab::from_key(tab)),
         None => (value.as_str(), None),

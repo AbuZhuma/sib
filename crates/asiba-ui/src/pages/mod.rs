@@ -1,3 +1,4 @@
+pub mod alert_rules;
 pub mod alerts;
 pub mod inspector;
 pub mod journal;
@@ -10,9 +11,10 @@ pub mod settings;
 
 use asiba_config::ThemeChoice;
 use asiba_core::{
-    ActionRequest, ActionSpec, Credentials, ModuleId, QueryRequest, ServerId, ServerSpec,
+    ActionRequest, ActionSpec, AlertRule, Credentials, ModuleId, QueryRequest, ServerId, ServerSpec,
 };
 use asiba_engine::TestRequest;
+use chrono::{DateTime, Utc};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Page {
@@ -52,4 +54,13 @@ pub enum Action {
         request: ActionRequest,
     },
     CloseInspector,
+    AcknowledgeAlert(u64),
+    MuteAlert {
+        id: u64,
+        until: DateTime<Utc>,
+    },
+    SaveAlertSettings {
+        rules: Vec<AlertRule>,
+        desktop_notifications: bool,
+    },
 }

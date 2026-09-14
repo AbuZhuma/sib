@@ -1,5 +1,6 @@
 use std::path::{Path, PathBuf};
 
+use asiba_core::AlertRule;
 use serde::{Deserialize, Serialize};
 
 use crate::error::ConfigError;
@@ -13,11 +14,24 @@ pub enum ThemeChoice {
     Light,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct AppConfig {
     pub servers_dir: Option<PathBuf>,
     pub theme: ThemeChoice,
+    pub desktop_notifications: bool,
+    pub alert_rules: Vec<AlertRule>,
+}
+
+impl Default for AppConfig {
+    fn default() -> Self {
+        Self {
+            servers_dir: None,
+            theme: ThemeChoice::default(),
+            desktop_notifications: true,
+            alert_rules: Vec::new(),
+        }
+    }
 }
 
 impl AppConfig {
@@ -59,6 +73,26 @@ mod tests {
     #[test]
     fn default_config_roundtrips_through_toml() {
         let config = AppConfig::default();
+        let raw = toml::to_string(&config).unwrap_or_default();
+        let parsed: AppConfig = toml::from_str(&raw).unwrap_or_default();
+        assert_eq!(parsed, config);
+    }
+
+    #[test]
+    fn alert_rules_roundtrip_through_toml() {
+        let config = AppConfig {
+            alert_rules: vec![asiba_core::AlertRule {
+                id: "load".to_owned(),
+                name: "Load".to_owned(),
+                metric: "system.load1".to_owned(),
+                condition: asiba_core::Condition::Above,
+                threshold: 8.0,
+                for_secs: 120,
+                severity: asiba_core::Severity::Warning,
+                builtin: false,
+            }],
+            ..AppConfig::default()
+        };
         let raw = toml::to_string(&config).unwrap_or_default();
         let parsed: AppConfig = toml::from_str(&raw).unwrap_or_default();
         assert_eq!(parsed, config);

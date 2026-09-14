@@ -5,6 +5,9 @@ use asiba_core::{
     ServerId, ServerSpec, Snapshot, TransportError,
 };
 use asiba_transport::HostKeyPolicy;
+use chrono::{DateTime, Utc};
+
+use crate::alerts::AlertSettings;
 
 #[derive(Debug)]
 pub enum Command {
@@ -34,6 +37,12 @@ pub enum Command {
         module: ModuleId,
         request: ActionRequest,
     },
+    AcknowledgeAlert(u64),
+    MuteAlert {
+        id: u64,
+        until: DateTime<Utc>,
+    },
+    SetAlertSettings(AlertSettings),
 }
 
 #[derive(Debug, Clone)]

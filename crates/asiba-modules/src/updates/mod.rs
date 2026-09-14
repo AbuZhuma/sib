@@ -13,6 +13,7 @@ use crate::common::sections;
 
 pub const ID: ModuleId = ModuleId("updates");
 pub const KEY_PENDING: &str = "updates.pending";
+pub const KEY_REBOOT_REQUIRED: &str = "updates.reboot_required";
 
 const DETECT: &str = "command -v apt-get || command -v dnf || command -v yum || command -v pacman || command -v zypper || command -v apk";
 const SCRIPT_PARTS: [(&str, &str); 5] = [
@@ -68,7 +69,13 @@ impl Module for UpdatesModule {
     ) -> Result<Snapshot, ModuleError> {
         let output = transport.exec(&sections::script(&SCRIPT_PARTS)).await?;
         let snapshot = parse::updates_snapshot(&output.stdout)?;
-        let samples = vec![Sample::new(KEY_PENDING, snapshot.pending as f64)];
+        let samples = vec![
+            Sample::new(KEY_PENDING, snapshot.pending as f64),
+            Sample::new(
+                KEY_REBOOT_REQUIRED,
+                u8::from(snapshot.reboot_required) as f64,
+            ),
+        ];
         Ok(Snapshot::new(snapshot).with_samples(samples))
     }
 }

@@ -1,9 +1,143 @@
-use egui::Ui;
+use asiba_core::{Alert, AppState};
+use chrono::{Duration, Utc};
+use egui::{Label, RichText, ScrollArea, Ui};
 
-use crate::components::page_title;
+use super::alert_rules::severity_label;
+use super::{Action, Page};
+use crate::components::{Table, badge, page_title, panel, severity_color};
+use crate::format;
 use crate::text;
+use crate::theme::{GAP, Palette};
 
-pub fn show(ui: &mut Ui) {
+const HISTORY_SHOWN: usize = 100;
+
+pub fn show(ui: &mut Ui, state: &AppState) -> Option<Action> {
     page_title(ui, text::ALERTS_TITLE);
-    ui.label(text::ALERTS_PLACEHOLDER);
+    let mut action = None;
+    ScrollArea::vertical().show(ui, |ui| {
+        action = panel(ui, text::ALERTS_ACTIVE, |ui| active_table(ui, state));
+        ui.add_space(GAP);
+        let history = panel(ui, text::ALERTS_HISTORY, |ui| history_table(ui, state));
+        if history.is_some() {
+            action = history;
+        }
+    });
+    action
+}
+
+fn active_table(ui: &mut Ui, state: &AppState) -> Option<Action> {
+    let p = Palette::current(ui.ctx());
+    let now = Utc::now();
+    let mut active: Vec<&Alert> = state.active_alerts().collect();
+    if active.is_empty() {
+        ui.label(RichText::new(text::ALERTS_NONE_ACTIVE).color(p.text_muted));
+        return None;
+    }
+    active.sort_by_key(|a| (std::cmp::Reverse(a.severity), a.started_at));
+    let mut action = None;
+    let columns = [
+        text::COL_SEVERITY,
+        text::COL_SERVER,
+        text::ALERTS_RULE,
+        text::ALERTS_VALUE,
+        text::ALERTS_STARTED,
+        text::ALERTS_DURATION,
+        "",
+    ];
+    Table::new("alerts-active", &columns).show(ui, |ui| {
+        for alert in active {
+            let color = severity_color(&p, alert.severity);
+            badge(ui, severity_label(alert.severity), color);
+            if ui.link(alert.server.as_str()).clicked() {
+                action = Some(Action::Navigate(Page::ServerDetail(alert.server.clone())));
+            }
+            ui.vertical(|ui| {
+                ui.add(Label::new(&alert.rule_name).extend());
+                let message = RichText::new(&alert.message)
+                    .small()
+                    .color(p.text_secondary);
+                ui.add(Label::new(message).extend());
+            });
+            ui.monospace(format!("{:.1}", alert.value));
+            ui.monospace(format::clock(alert.started_at));
+            ui.monospace(format::duration_short(
+                alert.duration(now).num_seconds() as f64
+            ));
+            if let Some(next) = alert_buttons(ui, alert) {
+                action = Some(next);
+            }
+            ui.end_row();
+        }
+    });
+    action
+}
+
+fn alert_buttons(ui: &mut Ui, alert: &Alert) -> Option<Action> {
+    let p = Palette::current(ui.ctx());
+    let now = Utc::now();
+    let mut action = None;
+    ui.horizontal(|ui| {
+        if alert.is_muted(now) {
+            let until = alert.muted_until.map(format::clock).unwrap_or_default();
+            ui.label(RichText::new(format!("{} {until}", text::ALERTS_MUTED)).color(p.text_muted));
+            return;
+        }
+        if alert.acknowledged {
+            ui.label(RichText::new(text::ALERTS_ACKED).color(p.text_muted));
+        } else if ui.small_button(text::ALERTS_ACK).clicked() {
+            action = Some(Action::AcknowledgeAlert(alert.id));
+        }
+        if ui.small_button(text::ALERTS_MUTE_1H).clicked() {
+            action = Some(Action::MuteAlert {
+                id: alert.id,
+                until: now + Duration::hours(1),
+            });
+        }
+        if ui.small_button(text::ALERTS_MUTE_24H).clicked() {
+            action = Some(Action::MuteAlert {
+                id: alert.id,
+                until: now + Duration::hours(24),
+            });
+        }
+    });
+    action
+}
+
+fn history_table(ui: &mut Ui, state: &AppState) -> Option<Action> {
+    let p = Palette::current(ui.ctx());
+    let now = Utc::now();
+    let resolved: Vec<&Alert> = state
+        .alerts
+        .iter()
+        .filter(|a| !a.is_active())
+        .take(HISTORY_SHOWN)
+        .collect();
+    if resolved.is_empty() {
+        ui.label(RichText::new(text::ALERTS_NONE_HISTORY).color(p.text_muted));
+        return None;
+    }
+    let mut action = None;
+    let columns = [
+        text::COL_SEVERITY,
+        text::COL_SERVER,
+        text::ALERTS_RULE,
+        text::ALERTS_STARTED,
+        text::ALERTS_DURATION,
+    ];
+    Table::new("alerts-history", &columns).show(ui, |ui| {
+        for alert in resolved {
+            let color = severity_color(&p, alert.severity);
+            badge(ui, severity_label(alert.severity), color);
+            if ui.link(alert.server.as_str()).clicked() {
+                action = Some(Action::Navigate(Page::ServerDetail(alert.server.clone())));
+            }
+            ui.label(&alert.rule_name);
+            ui.monospace(format::date_time(alert.started_at));
+            ui.monospace(format::duration_short(
+                alert.duration(now).num_seconds() as f64
+            ));
+            ui.end_row();
+        }
+    });
+    action
 }

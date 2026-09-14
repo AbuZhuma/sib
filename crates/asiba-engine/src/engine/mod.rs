@@ -1,20 +1,20 @@
+mod on_demand;
+
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
-use asiba_core::{ActionRequest, ModuleId, QueryRequest};
-
 use asiba_core::{Credentials, ModuleRegistry, ServerId, ServerSpec, ServerState, SharedState};
 use asiba_storage::StorageWriter;
 use asiba_transport::HostKeyPolicy;
-use tokio::sync::mpsc;
+use tokio::sync::{mpsc, watch};
 use tokio::task::JoinHandle;
 
-use crate::actions::{self, Perform};
-use crate::command::{Command, EngineEvent, TestRequest};
+use crate::actions;
+use crate::alerts::{self, AlertLoop, AlertSettings};
+use crate::command::{Command, EngineEvent};
 use crate::history;
 use crate::persistence::Persistence;
-use crate::test_connection;
 use crate::worker::{self, DocWriter, TransportSlot, WorkerContext};
 
 pub type RepaintNotifier = Arc<dyn Fn() + Send + Sync>;
@@ -55,6 +55,7 @@ pub struct EngineDeps {
     pub persistence: Persistence,
     pub storage: Option<StorageWriter>,
     pub history_path: Option<PathBuf>,
+    pub alert_settings: AlertSettings,
 }
 
 struct Engine {
@@ -66,6 +67,7 @@ struct Engine {
     notify: RepaintNotifier,
     events: mpsc::UnboundedSender<EngineEvent>,
     workers: HashMap<ServerId, WorkerEntry>,
+    alert_settings: watch::Sender<AlertSettings>,
 }
 
 pub fn spawn(
@@ -75,6 +77,12 @@ pub fn spawn(
 ) -> EngineHandle {
     let (commands, mut receiver) = mpsc::unbounded_channel();
     let (events, event_receiver) = mpsc::unbounded_channel();
+    let (alert_settings, alert_receiver) = watch::channel(deps.alert_settings);
+    let alert_loop = AlertLoop {
+        state: Arc::clone(&deps.state),
+        settings: alert_receiver,
+        notify: Arc::clone(&notify),
+    };
     let mut engine = Engine {
         registry: deps.registry,
         state: deps.state,
@@ -84,8 +92,10 @@ pub fn spawn(
         notify,
         events,
         workers: HashMap::new(),
+        alert_settings,
     };
     runtime.spawn(async move {
+        alerts::spawn(alert_loop);
         engine.load_action_journal();
         engine.load_saved().await;
         while let Some(command) = receiver.recv().await {
@@ -155,6 +165,17 @@ impl Engine {
                 module,
                 request,
             } => self.perform(&server, module, request),
+            Command::AcknowledgeAlert(id) => {
+                alerts::acknowledge(&self.state, id);
+                (self.notify)();
+            }
+            Command::MuteAlert { id, until } => {
+                alerts::mute(&self.state, id, until);
+                (self.notify)();
+            }
+            Command::SetAlertSettings(settings) => {
+                let _ = self.alert_settings.send(settings);
+            }
         }
     }
 
@@ -232,56 +253,6 @@ impl Engine {
         };
         self.workers.insert(spec.id, entry);
         (self.notify)();
-    }
-
-    fn test(&self, request: TestRequest) {
-        let registry = self.registry.clone();
-        let events = self.events.clone();
-        let notify = Arc::clone(&self.notify);
-        tokio::spawn(async move {
-            let report = test_connection::run(request, registry).await;
-            let _ = events.send(EngineEvent::TestFinished(report));
-            notify();
-        });
-    }
-
-    fn query(&self, token: u64, server: &ServerId, module: ModuleId, request: QueryRequest) {
-        let transport = self.transport_of(server);
-        let module = self.registry.get(module).cloned();
-        let events = self.events.clone();
-        let notify = Arc::clone(&self.notify);
-        tokio::spawn(async move {
-            let result = match (transport, module) {
-                (Some(transport), Some(module)) => module
-                    .query(transport.as_ref(), &request)
-                    .await
-                    .map_err(|e| e.to_string()),
-                (None, _) => Err("сервер не подключён".to_owned()),
-                (_, None) => Err("модуль не найден".to_owned()),
-            };
-            let _ = events.send(EngineEvent::QueryFinished { token, result });
-            notify();
-        });
-    }
-
-    fn perform(&self, server: &ServerId, module: ModuleId, request: ActionRequest) {
-        let transport = self.transport_of(server);
-        actions::perform(Perform {
-            server: server.clone(),
-            module: self.registry.get(module).cloned(),
-            transport,
-            request,
-            state: Arc::clone(&self.state),
-            storage: self.storage.clone(),
-            events: self.events.clone(),
-            notify: Arc::clone(&self.notify),
-        });
-    }
-
-    fn transport_of(&self, server: &ServerId) -> Option<Arc<dyn asiba_core::Transport>> {
-        self.workers
-            .get(server)
-            .and_then(|entry| entry.transport.lock().ok().and_then(|slot| slot.clone()))
     }
 
     fn emit(&self, event: EngineEvent) {

@@ -1,6 +1,6 @@
 use asiba_config::{AppConfig, Paths, ThemeChoice};
 use asiba_core::AppState;
-use egui::{Grid, RichText, Ui};
+use egui::{Grid, RichText, ScrollArea, Ui};
 
 use super::Action;
 use crate::components::{page_title, panel};
@@ -14,8 +14,16 @@ pub struct SettingsContext<'a> {
 }
 
 pub fn show(ui: &mut Ui, ctx: &SettingsContext<'_>) -> Option<Action> {
-    let (paths, config) = (ctx.paths, ctx.config);
     page_title(ui, text::SETTINGS_TITLE);
+    let mut action = None;
+    ScrollArea::vertical().show(ui, |ui| {
+        action = sections(ui, ctx);
+    });
+    action
+}
+
+fn sections(ui: &mut Ui, ctx: &SettingsContext<'_>) -> Option<Action> {
+    let (paths, config) = (ctx.paths, ctx.config);
     let mut action = None;
     panel(ui, text::SETTINGS_SECTION_APPEARANCE, |ui| {
         action = theme_picker(ui, config.theme);
@@ -24,6 +32,13 @@ pub fn show(ui: &mut Ui, ctx: &SettingsContext<'_>) -> Option<Action> {
     panel(ui, text::SETTINGS_SECTION_PATHS, |ui| {
         paths_grid(ui, paths, config)
     });
+    ui.add_space(GAP);
+    let rules = panel(ui, text::SETTINGS_SECTION_ALERTS, |ui| {
+        super::alert_rules::show(ui, config)
+    });
+    if rules.is_some() {
+        action = rules;
+    }
     ui.add_space(GAP);
     panel(ui, text::SETTINGS_SECTION_JOURNAL, |ui| {
         super::journal::show(ui, ctx.state)

@@ -4,6 +4,7 @@ use std::sync::{Arc, RwLock};
 use chrono::{DateTime, Utc};
 
 use crate::action::ActionRecord;
+use crate::alert::Alert;
 use crate::event::Event;
 use crate::module::{Availability, ModuleId};
 use crate::series::{Point, Series};
@@ -12,6 +13,7 @@ use crate::snapshot::{ModuleData, Sample, Snapshot};
 
 const MAX_EVENTS: usize = 500;
 const MAX_ACTIONS: usize = 200;
+const MAX_RESOLVED_ALERTS: usize = 300;
 const MAX_SERVER_EVENTS: usize = 100;
 
 pub type SharedState = Arc<RwLock<AppState>>;
@@ -21,6 +23,7 @@ pub struct AppState {
     pub servers: BTreeMap<ServerId, ServerState>,
     pub events: Vec<Event>,
     pub actions: Vec<ActionRecord>,
+    pub alerts: Vec<Alert>,
 }
 
 impl AppState {
@@ -39,6 +42,29 @@ impl AppState {
     pub fn push_action(&mut self, record: ActionRecord) {
         self.actions.insert(0, record);
         self.actions.truncate(MAX_ACTIONS);
+    }
+
+    pub fn active_alerts(&self) -> impl Iterator<Item = &Alert> {
+        self.alerts.iter().filter(|a| a.is_active())
+    }
+
+    pub fn alert_mut(&mut self, id: u64) -> Option<&mut Alert> {
+        self.alerts.iter_mut().find(|a| a.id == id)
+    }
+
+    pub fn trim_resolved_alerts(&mut self) {
+        let resolved = self.alerts.iter().filter(|a| !a.is_active()).count();
+        if resolved <= MAX_RESOLVED_ALERTS {
+            return;
+        }
+        let mut overflow = resolved - MAX_RESOLVED_ALERTS;
+        self.alerts.retain(|a| {
+            if a.is_active() || overflow == 0 {
+                return true;
+            }
+            overflow -= 1;
+            false
+        });
     }
 
     pub fn online_count(&self) -> usize {

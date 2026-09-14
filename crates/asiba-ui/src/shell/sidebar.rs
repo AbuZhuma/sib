@@ -20,9 +20,15 @@ pub fn sidebar(ui: &mut Ui, page: &Page, state: &AppState) -> Option<Action> {
         (text::NAV_MAP, Page::Map),
         (text::NAV_SETTINGS, Page::Settings),
     ];
+    let active_alerts = state.active_alerts().count();
     for (label, target) in items {
         let selected = is_selected(page, &target);
-        if nav_item(ui, label, selected).clicked() {
+        let label = if target == Page::Alerts && active_alerts > 0 {
+            format!("{label}  {active_alerts}")
+        } else {
+            label.to_owned()
+        };
+        if nav_item(ui, &label, selected).clicked() {
             action = Some(Action::Navigate(target));
         }
     }

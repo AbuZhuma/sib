@@ -3,7 +3,7 @@ use std::sync::Arc;
 use anyhow::Context;
 use asiba_config::{AppConfig, KeyringSecretStore, Paths, ServerStore};
 use asiba_core::AppState;
-use asiba_engine::{EngineDeps, Persistence};
+use asiba_engine::{AlertSettings, EngineDeps, Persistence};
 use asiba_storage::{Database, spawn_writer};
 use asiba_ui::AppDeps;
 use tracing_subscriber::EnvFilter;
@@ -25,12 +25,15 @@ fn main() -> anyhow::Result<()> {
     let engine_state = Arc::clone(&state);
     let storage = open_storage(&paths);
     let history_path = storage.is_some().then(|| paths.history_db());
+    let alert_settings =
+        AlertSettings::from_custom(&config.alert_rules, config.desktop_notifications);
     let engine_deps = EngineDeps {
         registry,
         state: engine_state,
         persistence,
         storage,
         history_path,
+        alert_settings,
     };
     let factory = Box::new(move |notify| asiba_engine::spawn(&handle, engine_deps, notify));
     let deps = AppDeps {
