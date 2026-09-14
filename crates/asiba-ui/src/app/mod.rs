@@ -1,13 +1,18 @@
+mod actions;
+mod dialogs;
+
 use std::sync::Arc;
 use std::time::Duration;
 
-use asiba_config::{AppConfig, Paths, ThemeChoice};
+use asiba_config::{AppConfig, Paths};
 use asiba_core::{ServerId, SharedState};
-use asiba_engine::{Command, EngineEvent, EngineHandle, RepaintNotifier};
+use asiba_engine::{EngineEvent, EngineHandle, RepaintNotifier};
 use egui::{CentralPanel, Frame, Margin, Panel};
 
 use crate::devtools::ScreenshotOnStart;
 use crate::modules::{self, ModuleView};
+use crate::pages::inspector::Inspector;
+use crate::pages::server_detail::DetailContext;
 use crate::pages::{self, Action, Page, server_form::ServerForm};
 use crate::shell::{Notice, sidebar, statusbar};
 use crate::text;
@@ -46,22 +51,19 @@ pub fn run(deps: AppDeps, engine_factory: EngineFactory) -> eframe::Result<()> {
     )
 }
 
-struct DeleteDialog {
-    id: ServerId,
-    typed: String,
-}
-
-struct AsibaApp {
+pub struct AsibaApp {
     engine: EngineHandle,
     state: SharedState,
     paths: Paths,
     config: AppConfig,
     page: Page,
     form: Option<ServerForm>,
-    delete_dialog: Option<DeleteDialog>,
+    delete_dialog: Option<dialogs::DeleteDialog>,
     notices: Vec<Notice>,
     views: Vec<Box<dyn ModuleView>>,
     screenshot: Option<ScreenshotOnStart>,
+    inspector: Option<Inspector>,
+    next_query_token: u64,
 }
 
 impl AsibaApp {
@@ -77,6 +79,8 @@ impl AsibaApp {
             notices: Vec::new(),
             views: modules::all(),
             screenshot: ScreenshotOnStart::from_env(),
+            inspector: None,
+            next_query_token: 1,
         }
     }
 
@@ -88,73 +92,16 @@ impl AsibaApp {
                         form.accept_report(report);
                     }
                 }
+                EngineEvent::QueryFinished { token, result } => {
+                    if let Some(inspector) = &mut self.inspector {
+                        inspector.accept(token, result.map(|r| (r.title, r.text)));
+                    }
+                }
                 EngineEvent::ServerSaved(_) | EngineEvent::ServerRemoved(_) => {}
                 EngineEvent::Warning(message) => self.notices.push(Notice::new(message)),
             }
         }
         self.notices.retain(|n| !n.is_expired());
-    }
-
-    fn apply(&mut self, action: Action, ctx: &egui::Context) {
-        match action {
-            Action::Navigate(page) => self.page = page,
-            Action::OpenForm(id) => self.open_form(id),
-            Action::SaveServer {
-                spec,
-                credentials,
-                is_new,
-            } => {
-                let id = spec.id.clone();
-                let command = if is_new {
-                    Command::AddServer { spec, credentials }
-                } else {
-                    Command::UpdateServer { spec, credentials }
-                };
-                self.engine.send(command);
-                self.form = None;
-                self.page = Page::ServerDetail(id);
-            }
-            Action::TestConnection(request) => self.engine.send(Command::TestConnection(request)),
-            Action::Reconnect(id) => self.engine.send(Command::Reconnect(id)),
-            Action::TrustHostKey {
-                server,
-                fingerprint,
-            } => {
-                self.engine.send(Command::TrustHostKey {
-                    server,
-                    fingerprint,
-                });
-            }
-            Action::AskDelete(id) => {
-                self.delete_dialog = Some(DeleteDialog {
-                    id,
-                    typed: String::new(),
-                })
-            }
-            Action::SetTheme(choice) => self.set_theme(ctx, choice),
-        }
-    }
-
-    fn open_form(&mut self, id: Option<ServerId>) {
-        let spec = id.and_then(|id| {
-            self.state
-                .read()
-                .ok()
-                .and_then(|state| state.servers.get(&id).map(|s| s.spec.clone()))
-        });
-        self.form = Some(match spec {
-            Some(spec) => ServerForm::edit(&spec),
-            None => ServerForm::new(),
-        });
-        self.page = Page::ServerForm;
-    }
-
-    fn set_theme(&mut self, ctx: &egui::Context, choice: ThemeChoice) {
-        self.config.theme = choice;
-        theme::apply(ctx, choice);
-        if let Err(error) = self.config.save(&self.paths) {
-            self.notices.push(Notice::new(error.to_string()));
-        }
     }
 
     fn central(&mut self, ui: &mut egui::Ui) -> Option<Action> {
@@ -165,7 +112,14 @@ impl AsibaApp {
             Page::Overview => pages::overview::show(ui, &state),
             Page::Servers => pages::servers::show(ui, &state),
             Page::ServerDetail(id) => match state.servers.get(&id) {
-                Some(server) => pages::server_detail::show(ui, server, &self.views),
+                Some(server) => {
+                    let detail = DetailContext {
+                        server,
+                        views: &self.views,
+                        inspector: self.inspector.as_ref(),
+                    };
+                    pages::server_detail::show(ui, &detail)
+                }
                 None => Some(Action::Navigate(Page::Servers)),
             },
             Page::ServerForm => {
@@ -184,40 +138,6 @@ impl AsibaApp {
                 None
             }
             Page::Settings => pages::settings::show(ui, &self.paths, &self.config),
-        }
-    }
-
-    fn delete_modal(&mut self, ctx: &egui::Context) {
-        let Some(dialog) = &mut self.delete_dialog else {
-            return;
-        };
-        let mut close = false;
-        let mut confirmed = None;
-        egui::Modal::new(egui::Id::new("delete-server")).show(ctx, |ui| {
-            ui.set_width(360.0);
-            ui.heading(format!("{} {}", text::BTN_DELETE, dialog.id));
-            ui.label(text::DETAIL_DELETE_PROMPT);
-            ui.text_edit_singleline(&mut dialog.typed);
-            ui.horizontal(|ui| {
-                let matches = dialog.typed.trim() == dialog.id.as_str();
-                if ui
-                    .add_enabled(matches, egui::Button::new(text::BTN_CONFIRM_DELETE))
-                    .clicked()
-                {
-                    confirmed = Some(dialog.id.clone());
-                }
-                if ui.button(text::BTN_CANCEL).clicked() {
-                    close = true;
-                }
-            });
-        });
-        if let Some(id) = confirmed {
-            self.engine.send(Command::RemoveServer(id));
-            self.page = Page::Servers;
-            close = true;
-        }
-        if close {
-            self.delete_dialog = None;
         }
     }
 }

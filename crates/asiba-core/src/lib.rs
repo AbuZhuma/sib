@@ -8,7 +8,9 @@ pub mod state;
 pub mod transport;
 
 pub use event::{Event, Severity};
-pub use module::{Availability, Module, ModuleError, ModuleId, Schedule};
+pub use module::{
+    Availability, Module, ModuleError, ModuleId, QueryRequest, QueryResponse, Schedule,
+};
 pub use registry::ModuleRegistry;
 pub use series::{Point, Series};
 pub use server::{

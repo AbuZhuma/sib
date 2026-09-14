@@ -27,6 +27,7 @@ pub async fn run(ctx: LoopContext) {
         ticker.tick().await;
         let context = CollectContext {
             previous: previous.clone(),
+            host: ctx.worker.spec.host.clone(),
         };
         match ctx.module.collect(ctx.transport.as_ref(), &context).await {
             Ok(snapshot) => {
@@ -61,14 +62,17 @@ fn record_snapshot(ctx: &LoopContext, snapshot: &Snapshot) {
             module_state.record_snapshot(snapshot.clone());
         }
         let server_id = worker.spec.id.clone();
-        let events = snapshot
+        let events: Vec<_> = snapshot
             .events
             .iter()
             .cloned()
-            .map(|e| e.for_server(server_id.clone()));
+            .map(|e| e.for_server(server_id.clone()))
+            .collect();
+        server.push_recent_events(events.iter().cloned());
         state.push_events(events);
     }
     persist_samples(ctx, snapshot);
+    worker.docs.maybe_write(worker, ctx.module.id());
     (worker.notify)();
 }
 

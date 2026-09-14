@@ -1,0 +1,14 @@
+###version
+5.6.0
+###ps
+78683fa307c2	neo-exchange-postgres	docker.io/library/postgres:17	running	Up 4 hours	127.0.0.1:55432->5432/tcp
+###stats
+78683fa307c2	neo-exchange-postgres	0.85%	38.87MB / 16.4GB	618B / 1.382kB	467.4MB / 1.04GB	14
+###images
+dbdf92b5ee0e	mcr.microsoft.com/dotnet/sdk	10.0	927 MB	5 days ago
+###inspect
+78683fa307c2398f564420ccccb69186bb59290e14382d56292db5c0b4e50499	neo-exchange-postgres	0		no	0	2026-09-14 11:43:49.074770108 +0600 +06			
+###volumes
+2
+###networks
+podman

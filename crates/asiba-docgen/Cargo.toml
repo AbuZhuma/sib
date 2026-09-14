@@ -1,0 +1,13 @@
+[package]
+name = "asiba-docgen"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+asiba-core.workspace = true
+asiba-modules.workspace = true
+chrono.workspace = true
+
+[lints]
+workspace = true

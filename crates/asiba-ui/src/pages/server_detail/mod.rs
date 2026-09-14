@@ -7,25 +7,42 @@ use egui::{Id, RichText, ScrollArea, Ui};
 
 use super::Action;
 use crate::components::panel;
-use crate::modules::{ModuleView, Tab, has_data};
+use crate::modules::{ModuleView, Tab, ViewAction, has_data};
+use crate::pages::inspector::{self, Inspector};
 use crate::text;
 use crate::theme::{GAP, Palette};
 
 const TAB_KEY: &str = "server-detail-tab";
 
-pub fn show(ui: &mut Ui, server: &ServerState, views: &[Box<dyn ModuleView>]) -> Option<Action> {
+pub struct DetailContext<'a> {
+    pub server: &'a ServerState,
+    pub views: &'a [Box<dyn ModuleView>],
+    pub inspector: Option<&'a Inspector>,
+}
+
+pub fn show(ui: &mut Ui, ctx: &DetailContext<'_>) -> Option<Action> {
+    let (server, views) = (ctx.server, ctx.views);
     let mut action = header::show(ui, server);
     let tabs = visible_tabs(server, views);
     let mut tab = current_tab(ui, &tabs);
     tab_bar(ui, &tabs, &mut tab);
     ui.ctx().data_mut(|d| d.insert_temp(Id::new(TAB_KEY), tab));
-    ScrollArea::vertical().show(ui, |ui| match tab {
-        Tab::Summary => {
-            if let Some(next) = summary(ui, server, views) {
+    if let Some(inspector) = ctx.inspector.filter(|i| i.server == server.spec.id) {
+        panel(ui, text::INSPECTOR_TITLE, |ui| {
+            if let Some(next) = inspector::show(ui, inspector) {
                 action = Some(next);
             }
+        });
+        ui.add_space(GAP);
+    }
+    ScrollArea::vertical().show(ui, |ui| {
+        let next = match tab {
+            Tab::Summary => summary(ui, server, views),
+            other => pages_for(ui, server, views, other),
+        };
+        if next.is_some() {
+            action = next;
         }
-        other => pages_for(ui, server, views, other),
     });
     action
 }
@@ -88,12 +105,27 @@ fn summary(ui: &mut Ui, server: &ServerState, views: &[Box<dyn ModuleView>]) -> 
     action
 }
 
-fn pages_for(ui: &mut Ui, server: &ServerState, views: &[Box<dyn ModuleView>], tab: Tab) {
+fn pages_for(
+    ui: &mut Ui,
+    server: &ServerState,
+    views: &[Box<dyn ModuleView>],
+    tab: Tab,
+) -> Option<Action> {
+    let mut action = None;
     for view in views
         .iter()
         .filter(|v| v.tab() == tab && has_data(server, v.id()))
     {
-        panel(ui, view.title(), |ui| view.page(ui, server));
+        let view_action = panel(ui, view.title(), |ui| view.page(ui, server));
+        if let Some(ViewAction::Query(request)) = view_action {
+            let server = server.spec.id.clone();
+            action = Some(Action::Query {
+                server,
+                module: view.id(),
+                request,
+            });
+        }
         ui.add_space(GAP);
     }
+    action
 }

@@ -1,0 +1,18 @@
+###who
+root     tty1         2026-09-14 09:00
+deploy   pts/0        2026-09-14 11:38 (203.0.113.5)
+###last
+deploy   pts/0        203.0.113.5      Mon Sep 14 11:38:06 2026   still logged in
+reboot   system boot  6.1.0-25-amd64   Mon Sep 14 09:00:00 2026   still running
+root     tty1         local            Sun Sep 13 10:25:31 2026 - Sun Sep 13 11:05:00 2026  (00:40)
+
+wtmp begins Mon Sep  1 00:00:01 2026
+###passwd
+root:x:0:0:root:/root:/bin/bash
+daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+deploy:x:1000:1000:Deploy:/home/deploy:/bin/bash
+###sudoers
+sudo:x:27:deploy
+###keys
+/root 2
+/home/deploy 1

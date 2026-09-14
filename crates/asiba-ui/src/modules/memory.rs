@@ -2,7 +2,7 @@ use asiba_core::{ModuleId, ServerState};
 use asiba_modules::memory::{self, MemorySnapshot};
 use egui::{Grid, RichText, Ui};
 
-use super::{ModuleView, Tab};
+use super::{ModuleView, Tab, ViewAction};
 use crate::components::{TimeSeriesPlot, Unit, meter};
 use crate::format;
 use crate::text;
@@ -43,11 +43,9 @@ impl ModuleView for MemoryView {
         }
     }
 
-    fn page(&self, ui: &mut Ui, server: &ServerState) {
+    fn page(&self, ui: &mut Ui, server: &ServerState) -> Option<ViewAction> {
         let p = Palette::current(ui.ctx());
-        let Some(snapshot) = server.data::<MemorySnapshot>(memory::ID) else {
-            return;
-        };
+        let snapshot = server.data::<MemorySnapshot>(memory::ID)?;
         self.summary(ui, server);
         ui.add_space(GAP);
         let mut plot = TimeSeriesPlot::new("memory-plot", Unit::Bytes).height(180.0);
@@ -64,6 +62,7 @@ impl ModuleView for MemoryView {
         plot.show(ui);
         ui.add_space(GAP);
         details(ui, snapshot);
+        None
     }
 }
 

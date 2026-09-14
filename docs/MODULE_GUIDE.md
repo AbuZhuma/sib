@@ -18,6 +18,9 @@
 - Данные модуля не тянут другие модули напрямую. Если нужна связь (порты ↔ процессы), она делается на уровне модели в `projects` или в UI.
 - Расписание: `Fast` — только для живых метрик (cpu, memory, network, processes, docker stats); `Normal` — списки и состояния; `Slow` — редко меняющееся.
 - Действия (`ActionSpec`) появятся на этапе 4; до этого модули только читают.
+- Запросы по требованию — `Module::query(transport, QueryRequest { kind, target })` → `QueryResponse { title, text }`. UI-представление возвращает `ViewAction::Query`, движок выполняет запрос на живой сессии сервера и отдаёт результат в панель «Просмотр». Так сделаны логи контейнера и журнал юнита.
+- Модулю, которому нужен sudo, `Transport::sudo_mode()` говорит, есть ли он; `exec_root` при `SudoMode::None` возвращает ошибку. В `detect` отвечай `Partial { missing }`, если без sudo часть данных недоступна.
+- Проверки «снаружи» (доступность порта, пинг) делаются из приложения: `CollectContext.host` — адрес, по которому подключились.
 
 ## Скорости и дельты
 
@@ -49,3 +52,24 @@
 
 ### Пинг (не модуль)
 Движок сам раз в 5 с делает TCP-connect на `host:port` SSH с локальной машины и пишет `ping.rtt_ms`. Команд на сервере не выполняет.
+
+### services
+`systemctl list-units --type=service --all --plain --no-legend --no-pager`, `systemctl show '*.service' -p Id -p NRestarts -p MainPID -p ActiveEnterTimestamp -p FragmentPath -p WorkingDirectory -p Result`, `systemctl list-timers --all --no-legend -o json`. Детект: `command -v systemctl`. Запрос `journal`: `journalctl -u <unit> -n 200 --no-pager -o short-iso`.
+
+### docker
+Бинарник: `docker`, иначе `podman`. `version --format`, `ps -a --format <tab-template>`, `stats --no-stream --format`, `images --format`, `inspect --format` по всем контейнерам (RestartCount, Health, RestartPolicy, ExitCode, StartedAt, compose-labels), `volume ls -q | wc -l`, `network ls --format`. Детект: `ps -q` (код ≠ 0 — нет доступа к сокету). Запрос `logs`: `logs --tail 300 -t <container>`.
+
+### ports
+`ss -tulpnH`, `ss -Htan state established`. Через sudo (если настроен): `ufw status`, `firewall-cmd --list-all`, `nft list ruleset`, `iptables -S INPUT`. Доступность снаружи: TCP-connect из приложения на публичные порты (≤64, таймаут 1.5 с), повтор не чаще раза в 5 минут при неизменном наборе.
+
+### logs
+Первый сбор: `journalctl -p warning -o json --no-pager -q --since -1h -n 300`, далее `--after-cursor=<cursor последней записи>`. Детект: `command -v journalctl`, пробный `journalctl -q -n 1 --system`.
+
+### users
+`who`, `last -F -n 30 -w`, `getent passwd`, `getent group sudo wheel admin`, подсчёт строк в `/root/.ssh/authorized_keys` и `/home/*/.ssh/authorized_keys`.
+
+### updates
+Детект: `apt-get`/`dnf`/`yum`/`pacman`/`zypper`/`apk`. `apt-get -s upgrade | grep ^Inst`, `dnf -q check-update`, `yum -q check-update`, `pacman -Qu`, `zypper -q lu`, `apk version -l '<'`; перезагрузка: `/var/run/reboot-required`, `needs-restarting -r`.
+
+### projects
+`find` по `/opt /srv /var/www /home/* /root /app /docker /data` (глубина 3) маркеров `.git`, `compose*.yml`, `package.json`, `Cargo.toml`, `pyproject.toml`, `go.mod`, `Dockerfile`, `ecosystem.config.js`; `git -C <repo> rev-parse --abbrev-ref HEAD`, `git log -1`, `git status --porcelain | wc -l`; `systemctl show '*.service' -p Id -p WorkingDirectory -p MainPID -p ActiveState`; `readlink /proc/[pid]/cwd` + `/proc/[pid]/comm`; `docker inspect --format` (имя, compose-проект, working_dir); `ss -tlnpH`. Выполняется через sudo, если он настроен (cwd чужих процессов).

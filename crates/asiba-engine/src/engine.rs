@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
+use asiba_core::{ModuleId, QueryRequest};
+
 use asiba_core::{Credentials, ModuleRegistry, ServerId, ServerSpec, ServerState, SharedState};
 use asiba_storage::StorageWriter;
 use asiba_transport::HostKeyPolicy;
@@ -10,7 +12,7 @@ use tokio::task::JoinHandle;
 use crate::command::{Command, EngineEvent, TestRequest};
 use crate::persistence::Persistence;
 use crate::test_connection;
-use crate::worker::{self, WorkerContext};
+use crate::worker::{self, DocWriter, TransportSlot, WorkerContext};
 
 pub type RepaintNotifier = Arc<dyn Fn() + Send + Sync>;
 
@@ -41,6 +43,7 @@ struct WorkerEntry {
     task: JoinHandle<()>,
     spec: ServerSpec,
     credentials: Credentials,
+    transport: TransportSlot,
 }
 
 pub struct EngineDeps {
@@ -124,6 +127,14 @@ impl Engine {
                 self.restart(&server, HostKeyPolicy::TrustFingerprint(fingerprint));
             }
             Command::TestConnection(request) => self.test(request),
+            Command::Query {
+                token,
+                server,
+                module,
+                request,
+            } => {
+                self.query(token, &server, module, request);
+            }
         }
     }
 
@@ -173,6 +184,7 @@ impl Engine {
                 .servers
                 .insert(spec.id.clone(), ServerState::new(spec.clone()));
         }
+        let transport: TransportSlot = Arc::new(Mutex::new(None));
         let ctx = WorkerContext {
             spec: spec.clone(),
             credentials: credentials.clone(),
@@ -181,16 +193,17 @@ impl Engine {
             state: Arc::clone(&self.state),
             notify: Arc::clone(&self.notify),
             storage: self.storage.clone(),
+            transport: Arc::clone(&transport),
+            docs: DocWriter::new(self.persistence.doc_path(&spec.id)),
         };
         let task = tokio::spawn(worker::run(ctx));
-        self.workers.insert(
-            spec.id.clone(),
-            WorkerEntry {
-                task,
-                spec,
-                credentials,
-            },
-        );
+        let entry = WorkerEntry {
+            task,
+            spec: spec.clone(),
+            credentials,
+            transport,
+        };
+        self.workers.insert(spec.id, entry);
         (self.notify)();
     }
 
@@ -201,6 +214,28 @@ impl Engine {
         tokio::spawn(async move {
             let report = test_connection::run(request, registry).await;
             let _ = events.send(EngineEvent::TestFinished(report));
+            notify();
+        });
+    }
+
+    fn query(&self, token: u64, server: &ServerId, module: ModuleId, request: QueryRequest) {
+        let transport = self
+            .workers
+            .get(server)
+            .and_then(|entry| entry.transport.lock().ok().and_then(|slot| slot.clone()));
+        let module = self.registry.get(module).cloned();
+        let events = self.events.clone();
+        let notify = Arc::clone(&self.notify);
+        tokio::spawn(async move {
+            let result = match (transport, module) {
+                (Some(transport), Some(module)) => module
+                    .query(transport.as_ref(), &request)
+                    .await
+                    .map_err(|e| e.to_string()),
+                (None, _) => Err("сервер не подключён".to_owned()),
+                (_, None) => Err("модуль не найден".to_owned()),
+            };
+            let _ = events.send(EngineEvent::QueryFinished { token, result });
             notify();
         });
     }

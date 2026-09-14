@@ -1,0 +1,28 @@
+###markers
+/opt/shop/.git
+/opt/shop/docker-compose.yml
+/opt/shop/package.json
+/opt/tools/Cargo.toml
+###git
+/opt/shop	main	a1b2c3d 2026-09-13 10:00:00 +0000 Fix checkout	2
+###units
+Id=shop-worker.service
+WorkingDirectory=/opt/shop
+MainPID=2001
+ActiveState=active
+
+Id=sshd.service
+WorkingDirectory=
+MainPID=812
+ActiveState=active
+###cwd
+1	/	systemd
+812	/	sshd
+2001	/opt/shop	node
+3005	/home/deploy/scripts	python3
+###containers
+/shop-web-1	shop	/opt/shop	running
+/shop-db-1	shop		exited
+###listen
+LISTEN 0      511          0.0.0.0:3000       0.0.0.0:*    users:(("node",pid=2001,fd=20))
+LISTEN 0      128          0.0.0.0:22         0.0.0.0:*    users:(("sshd",pid=812,fd=3))

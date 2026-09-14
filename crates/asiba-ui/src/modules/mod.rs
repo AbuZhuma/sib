@@ -1,11 +1,18 @@
 mod cpu;
 mod disk;
+mod docker;
+mod logs;
 mod memory;
 mod network;
+mod ports;
 mod processes;
+mod projects;
+mod services;
 mod system;
+mod updates;
+mod users;
 
-use asiba_core::{ModuleId, ServerState, Snapshot};
+use asiba_core::{ModuleId, QueryRequest, ServerState, Snapshot};
 use egui::Ui;
 
 use crate::text;
@@ -13,22 +20,49 @@ use crate::text;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Tab {
     Summary,
+    Processes,
     Resources,
     Network,
-    Processes,
+    Ports,
+    Docker,
+    Services,
+    Projects,
+    Logs,
+    Users,
 }
 
 impl Tab {
-    pub const ALL: [Tab; 4] = [Tab::Summary, Tab::Resources, Tab::Network, Tab::Processes];
+    pub const ALL: [Tab; 10] = [
+        Tab::Summary,
+        Tab::Processes,
+        Tab::Resources,
+        Tab::Network,
+        Tab::Ports,
+        Tab::Docker,
+        Tab::Services,
+        Tab::Projects,
+        Tab::Logs,
+        Tab::Users,
+    ];
 
     pub fn label(self) -> &'static str {
         match self {
             Tab::Summary => text::TAB_SUMMARY,
+            Tab::Processes => text::TAB_PROCESSES,
             Tab::Resources => text::TAB_RESOURCES,
             Tab::Network => text::TAB_NETWORK,
-            Tab::Processes => text::TAB_PROCESSES,
+            Tab::Ports => text::TAB_PORTS,
+            Tab::Docker => text::TAB_DOCKER,
+            Tab::Services => text::TAB_SERVICES,
+            Tab::Projects => text::TAB_PROJECTS,
+            Tab::Logs => text::TAB_LOGS,
+            Tab::Users => text::TAB_USERS,
         }
     }
+}
+
+pub enum ViewAction {
+    Query(QueryRequest),
 }
 
 pub trait ModuleView: Send + Sync {
@@ -40,8 +74,9 @@ pub trait ModuleView: Send + Sync {
 
     fn summary(&self, ui: &mut Ui, server: &ServerState);
 
-    fn page(&self, ui: &mut Ui, server: &ServerState) {
+    fn page(&self, ui: &mut Ui, server: &ServerState) -> Option<ViewAction> {
         self.summary(ui, server);
+        None
     }
 
     fn preview(&self, _ui: &mut Ui, _snapshot: &Snapshot) {}
@@ -55,6 +90,13 @@ pub fn all() -> Vec<Box<dyn ModuleView>> {
         Box::new(disk::DiskView),
         Box::new(network::NetworkView),
         Box::new(processes::ProcessesView),
+        Box::new(ports::PortsView),
+        Box::new(docker::DockerView),
+        Box::new(services::ServicesView),
+        Box::new(projects::ProjectsView),
+        Box::new(logs::LogsView),
+        Box::new(users::UsersView),
+        Box::new(updates::UpdatesView),
     ]
 }
 

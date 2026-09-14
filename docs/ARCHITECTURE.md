@@ -19,6 +19,7 @@ asiba-core ◄── asiba-transport ◄──┐
 | `asiba-config` | пути XDG, `config.toml`, `servers/<name>.toml`, keyring | сеть, UI |
 | `asiba-modules` | сборщики данных и их парсеры | как и когда их вызывают |
 | `asiba-storage` | SQLite: история метрик, даунсэмплинг, поток записи | модули, UI |
+| `asiba-docgen` | рендер `servers/<name>.md` из состояния сервера | движок, UI |
 | `asiba-engine` | воркеры серверов, задачи сбора по модулям, пинг, переподключение, команды от UI | egui |
 | `asiba-ui` | тема, страницы, виджеты модулей | сеть напрямую |
 | `asiba-app` | точка входа, tokio runtime, сборка зависимостей | — |
@@ -47,6 +48,14 @@ Command::AddServer ─► Persistence::save ─► start_worker
 - Задача модуля останавливается после 3 подряд ошибок сбора до следующего `detect`.
 - Модуль с `Unavailable` не планируется и не показывается в UI.
 - Параллельно с соединением живёт задача пинга: TCP-connect на SSH-порт раз в 5 с, результат в `ServerState.ping` и серии `ping.rtt_ms`.
+
+## Запросы по требованию
+
+UI (`ModuleView::page`) → `ViewAction::Query` → `Action::Query` → `Command::Query { token, server, module, request }` → движок берёт транспорт сервера из слота воркера → `Module::query` → `EngineEvent::QueryFinished` → панель «Просмотр» на странице сервера.
+
+## Файл сервера
+
+`asiba-docgen::render(&ServerState)` собирает markdown; `DocWriter` в воркере пишет `servers/<name>.md` после снимков system/projects/services/docker/ports, не чаще раза в минуту, если тело изменилось, сохраняя блок `<!-- notes:start -->…<!-- notes:end -->`.
 
 ## Данные для графиков
 

@@ -1,0 +1,8 @@
+###manager
+/usr/bin/dnf
+###apt
+###dnf
+kernel.x86_64                 6.14.0-64.fc42          updates
+vim-enhanced.x86_64           2:9.1.1000-1.fc42       updates
+###other
+###reboot

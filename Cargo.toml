@@ -15,6 +15,7 @@ asiba-config = { path = "crates/asiba-config" }
 asiba-modules = { path = "crates/asiba-modules" }
 asiba-engine = { path = "crates/asiba-engine" }
 asiba-storage = { path = "crates/asiba-storage" }
+asiba-docgen = { path = "crates/asiba-docgen" }
 asiba-ui = { path = "crates/asiba-ui" }
 
 tokio = { version = "1.53", features = ["rt-multi-thread", "macros", "sync", "time", "process", "fs", "io-util", "net"] }

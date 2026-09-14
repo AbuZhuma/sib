@@ -67,6 +67,7 @@ impl Snapshot {
 #[derive(Debug, Clone, Default)]
 pub struct CollectContext {
     pub previous: Option<Snapshot>,
+    pub host: String,
 }
 
 impl CollectContext {
@@ -99,6 +100,7 @@ mod tests {
         snapshot.taken_at -= chrono::Duration::seconds(2);
         let context = CollectContext {
             previous: Some(snapshot),
+            host: String::new(),
         };
         let (value, elapsed) = context.previous::<u32>().expect("previous");
         assert_eq!(*value, 42);

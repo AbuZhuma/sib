@@ -1,8 +1,9 @@
 mod collect;
+mod docs;
 mod ping;
 mod status;
 
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use asiba_core::{
@@ -20,9 +21,12 @@ use crate::backoff::Backoff;
 use crate::engine::RepaintNotifier;
 use crate::test_connection::detect_all;
 
+pub use docs::DocWriter;
 pub use ping::SERIES_KEY as PING_SERIES_KEY;
 
 const REDETECT_INTERVAL: Duration = Duration::from_secs(600);
+
+pub type TransportSlot = Arc<Mutex<Option<Arc<dyn Transport>>>>;
 
 pub struct WorkerContext {
     pub spec: ServerSpec,
@@ -32,6 +36,14 @@ pub struct WorkerContext {
     pub state: SharedState,
     pub notify: RepaintNotifier,
     pub storage: Option<StorageWriter>,
+    pub transport: TransportSlot,
+    pub docs: docs::DocWriter,
+}
+
+fn share_transport(ctx: &WorkerContext, transport: Option<Arc<dyn Transport>>) {
+    if let Ok(mut slot) = ctx.transport.lock() {
+        *slot = transport;
+    }
 }
 
 pub async fn run(ctx: WorkerContext) {
@@ -45,8 +57,11 @@ pub async fn run(ctx: WorkerContext) {
         let reason = match outcome {
             Ok(transport) => {
                 backoff.reset();
+                share_transport(&ctx, Some(Arc::clone(&transport)));
                 status::set(&ctx, ConnectionStatus::Online { since: Utc::now() });
-                serve(&ctx, transport).await
+                let reason = serve(&ctx, transport).await;
+                share_transport(&ctx, None);
+                reason
             }
             Err(TransportError::UnknownHostKey { fingerprint }) => {
                 status::set(

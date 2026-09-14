@@ -2,7 +2,7 @@ use asiba_core::{ModuleId, ServerState};
 use asiba_modules::disk::{self, DiskSnapshot};
 use egui::{RichText, Ui};
 
-use super::{ModuleView, Tab};
+use super::{ModuleView, Tab, ViewAction};
 use crate::components::{Table, TimeSeriesPlot, Unit, meter};
 use crate::format;
 use crate::text;
@@ -40,11 +40,9 @@ impl ModuleView for DiskView {
         io_line(ui, server);
     }
 
-    fn page(&self, ui: &mut Ui, server: &ServerState) {
+    fn page(&self, ui: &mut Ui, server: &ServerState) -> Option<ViewAction> {
         let p = Palette::current(ui.ctx());
-        let Some(snapshot) = server.data::<DiskSnapshot>(disk::ID) else {
-            return;
-        };
+        let snapshot = server.data::<DiskSnapshot>(disk::ID)?;
         filesystems_table(ui, snapshot);
         ui.add_space(GAP);
         let mut plot = TimeSeriesPlot::new("disk-io-plot", Unit::BytesPerSecond).height(160.0);
@@ -57,6 +55,7 @@ impl ModuleView for DiskView {
         plot.show(ui);
         ui.add_space(GAP);
         devices_table(ui, snapshot);
+        None
     }
 }
 

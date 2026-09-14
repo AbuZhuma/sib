@@ -11,6 +11,7 @@ async fn all_modules_collect_on_localhost() {
         tokio::time::sleep(std::time::Duration::from_millis(300)).await;
         let context = CollectContext {
             previous: first.ok(),
+            host: "localhost".to_owned(),
         };
         let second = module.collect(&transport, &context).await;
         assert!(

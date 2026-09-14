@@ -38,6 +38,10 @@ impl Persistence {
         self.secrets.save_credentials(&spec.id, credentials)
     }
 
+    pub fn doc_path(&self, id: &ServerId) -> std::path::PathBuf {
+        self.servers.doc_path(id)
+    }
+
     pub fn remove(&self, id: &ServerId) -> Result<(), ConfigError> {
         self.servers.delete(id)?;
         self.secrets.delete_all(id)

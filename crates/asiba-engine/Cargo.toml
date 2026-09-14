@@ -9,6 +9,7 @@ asiba-core.workspace = true
 asiba-transport.workspace = true
 asiba-config.workspace = true
 asiba-storage.workspace = true
+asiba-docgen.workspace = true
 chrono.workspace = true
 thiserror.workspace = true
 tokio.workspace = true

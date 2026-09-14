@@ -1,0 +1,18 @@
+###version
+27.3.1
+###ps
+1a2b3c4d5e6f	shop-web-1	nginx:1.27	running	Up 3 days (healthy)	0.0.0.0:80->80/tcp
+9f8e7d6c5b4a	shop-db-1	postgres:16	exited	Exited (137) 2 hours ago	
+###stats
+1a2b3c4d5e6f	shop-web-1	1.25%	52.43MB / 7.7GiB	1.2MB / 800kB	0B / 4.1kB	9
+###images
+abc123	nginx	1.27	188MB	3 weeks ago
+def456	<none>	<none>	72.5MB	2 months ago
+###inspect
+1a2b3c4d5e6f7890	/shop-web-1	2	healthy	unless-stopped	0	2026-09-11T08:00:00.000000000Z	shop	web	/opt/shop
+9f8e7d6c5b4a3210	/shop-db-1	0		always	137	2026-09-14T06:00:00.000000000Z	shop	db	/opt/shop
+###volumes
+3
+###networks
+bridge
+shop_default

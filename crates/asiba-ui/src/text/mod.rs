@@ -1,3 +1,7 @@
+mod modules;
+
+pub use modules::*;
+
 pub const APP_NAME: &str = "ASIBA";
 
 pub const NAV_OVERVIEW: &str = "Главная";
@@ -38,6 +42,9 @@ pub const BTN_TEST: &str = "Проверить подключение";
 pub const BTN_TRUST_KEY: &str = "Доверять ключу и повторить";
 pub const BTN_TRUST_KEY_SERVER: &str = "Доверять ключу";
 pub const BTN_CONFIRM_DELETE: &str = "Удалить навсегда";
+pub const BTN_CLOSE: &str = "Закрыть";
+pub const INSPECTOR_TITLE: &str = "Просмотр";
+pub const INSPECTOR_LOADING: &str = "Загрузка…";
 
 pub const FORM_TITLE_ADD: &str = "Новый сервер";
 pub const FORM_TITLE_EDIT: &str = "Редактирование сервера";
@@ -109,83 +116,6 @@ pub const COL_UPTIME: &str = "Uptime";
 pub const COL_TIME: &str = "Время";
 pub const COL_SERVER: &str = "Сервер";
 pub const COL_MESSAGE: &str = "Сообщение";
-
-pub const MODULE_SYSTEM: &str = "Система";
-pub const MODULE_CPU: &str = "CPU";
-pub const MODULE_MEMORY: &str = "Память";
-pub const MODULE_DISK: &str = "Диски";
-pub const MODULE_NETWORK: &str = "Сеть";
-pub const MODULE_PROCESSES: &str = "Процессы";
-
-pub const TAB_SUMMARY: &str = "Сводка";
-pub const TAB_RESOURCES: &str = "Ресурсы";
-pub const TAB_NETWORK: &str = "Сеть";
-pub const TAB_PROCESSES: &str = "Процессы";
-
-pub const CPU_CORES: &str = "ядер";
-pub const CPU_TOTAL: &str = "всего";
-pub const CPU_USER: &str = "user";
-pub const CPU_SYSTEM: &str = "system";
-pub const CPU_IOWAIT: &str = "iowait";
-pub const CPU_STEAL: &str = "steal";
-pub const CPU_FREQUENCY: &str = "частота";
-pub const CPU_TEMPERATURE: &str = "температура";
-pub const CPU_PRESSURE: &str = "PSI 10с / 60с / 300с";
-
-pub const MEM_USED: &str = "занято";
-pub const MEM_SWAP: &str = "swap";
-pub const MEM_TOTAL: &str = "всего";
-pub const MEM_AVAILABLE: &str = "доступно";
-pub const MEM_FREE: &str = "свободно";
-pub const MEM_CACHED: &str = "кеш";
-pub const MEM_BUFFERS: &str = "буферы";
-pub const MEM_SHMEM: &str = "shmem";
-pub const MEM_DIRTY: &str = "dirty";
-pub const MEM_SWAP_IO: &str = "swap in / out";
-pub const MEM_PRESSURE: &str = "PSI 10с / 60с / 300с";
-pub const MEM_OOM: &str = "OOM kill всего";
-
-pub const DISK_MOUNT: &str = "Точка";
-pub const DISK_DEVICE: &str = "Устройство";
-pub const DISK_USED: &str = "Занято";
-pub const DISK_TOTAL: &str = "Всего";
-pub const DISK_AVAILABLE: &str = "Доступно";
-pub const DISK_INODES: &str = "Inodes";
-pub const DISK_READ: &str = "чтение";
-pub const DISK_WRITE: &str = "запись";
-pub const DISK_IOPS: &str = "IOPS r/w";
-pub const DISK_UTIL: &str = "загрузка";
-
-pub const NET_INTERFACE: &str = "Интерфейс";
-pub const NET_ADDRESSES: &str = "Адреса";
-pub const NET_SPEED: &str = "Линк";
-pub const NET_ERRORS: &str = "Err+drop";
-pub const NET_CONNECTIONS: &str = "Соединения";
-pub const NET_ESTABLISHED: &str = "соединений";
-pub const NET_GATEWAY: &str = "шлюз";
-pub const NET_PING: &str = "пинг";
-pub const NET_PING_LOST: &str = "нет ответа";
-
-pub const PROC_TOTAL: &str = "процессов";
-pub const PROC_RUNNING: &str = "работают";
-pub const PROC_ZOMBIES: &str = "зомби";
-pub const PROC_FILTER: &str = "фильтр по имени или пользователю";
-pub const PROC_SORT: &str = "сортировка:";
-pub const PROC_USER: &str = "Пользователь";
-pub const PROC_STATE: &str = "S";
-pub const PROC_UPTIME: &str = "Время";
-pub const PROC_COMMAND: &str = "Команда";
-pub const SYS_HOSTNAME: &str = "hostname";
-pub const SYS_OS: &str = "ОС";
-pub const SYS_KERNEL: &str = "ядро";
-pub const SYS_UPTIME: &str = "uptime";
-pub const SYS_LOAD: &str = "load average";
-pub const SYS_CPU: &str = "CPU";
-pub const SYS_MEMORY: &str = "RAM";
-pub const SYS_SWAP: &str = "swap";
-pub const SYS_VIRT: &str = "виртуализация";
-pub const SYS_TIMEZONE: &str = "часовой пояс";
-pub const SYS_CLOCK: &str = "расхождение часов";
 
 pub const ALERTS_TITLE: &str = "Алерты";
 pub const ALERTS_PLACEHOLDER: &str = "Правила и уведомления появятся на этапе 4.";

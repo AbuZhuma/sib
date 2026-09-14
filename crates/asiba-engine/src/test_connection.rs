@@ -21,9 +21,13 @@ async fn probe(
 ) -> Result<TestSuccess, TransportError> {
     let transport = connect(&request.spec, &request.credentials, request.policy.clone()).await?;
     let modules = detect_all(transport.as_ref(), registry).await;
+    let context = CollectContext {
+        previous: None,
+        host: request.spec.host.clone(),
+    };
     let probe = match registry.get(request.probe_module) {
         Some(module) => module
-            .collect(transport.as_ref(), &CollectContext::default())
+            .collect(transport.as_ref(), &context)
             .await
             .ok()
             .map(|s| (module.id(), s)),

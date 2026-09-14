@@ -57,6 +57,29 @@ pub enum ModuleError {
     Parse(String),
     #[error("команда завершилась с ошибкой: {0}")]
     CommandFailed(String),
+    #[error("модуль не поддерживает запрос {0}")]
+    UnsupportedQuery(String),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct QueryRequest {
+    pub kind: String,
+    pub target: String,
+}
+
+impl QueryRequest {
+    pub fn new(kind: impl Into<String>, target: impl Into<String>) -> Self {
+        Self {
+            kind: kind.into(),
+            target: target.into(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct QueryResponse {
+    pub title: String,
+    pub text: String,
 }
 
 #[async_trait]
@@ -74,4 +97,12 @@ pub trait Module: Send + Sync {
         transport: &dyn Transport,
         context: &CollectContext,
     ) -> Result<Snapshot, ModuleError>;
+
+    async fn query(
+        &self,
+        _transport: &dyn Transport,
+        request: &QueryRequest,
+    ) -> Result<QueryResponse, ModuleError> {
+        Err(ModuleError::UnsupportedQuery(request.kind.clone()))
+    }
 }

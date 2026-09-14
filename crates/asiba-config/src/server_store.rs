@@ -6,6 +6,7 @@ use crate::error::ConfigError;
 use crate::paths::Paths;
 
 const SPEC_EXTENSION: &str = "toml";
+const DOC_EXTENSION: &str = "md";
 
 #[derive(Debug, Clone)]
 pub struct ServerStore {
@@ -23,6 +24,10 @@ impl ServerStore {
 
     pub fn spec_path(&self, id: &ServerId) -> PathBuf {
         self.dir.join(format!("{id}.{SPEC_EXTENSION}"))
+    }
+
+    pub fn doc_path(&self, id: &ServerId) -> PathBuf {
+        self.dir.join(format!("{id}.{DOC_EXTENSION}"))
     }
 
     pub fn load_all(&self) -> Result<Vec<ServerSpec>, ConfigError> {
@@ -56,11 +61,15 @@ impl ServerStore {
     }
 
     pub fn delete(&self, id: &ServerId) -> Result<(), ConfigError> {
-        let path = self.spec_path(id);
-        if !path.exists() {
-            return Ok(());
+        for path in [self.spec_path(id), self.doc_path(id)] {
+            if path.exists() {
+                std::fs::remove_file(&path).map_err(|source| ConfigError::Write {
+                    path: path.clone(),
+                    source,
+                })?;
+            }
         }
-        std::fs::remove_file(&path).map_err(|source| ConfigError::Write { path, source })
+        Ok(())
     }
 }
 

@@ -10,6 +10,7 @@ use crate::server::{ServerId, ServerSpec};
 use crate::snapshot::{ModuleData, Sample, Snapshot};
 
 const MAX_EVENTS: usize = 500;
+const MAX_SERVER_EVENTS: usize = 100;
 
 pub type SharedState = Arc<RwLock<AppState>>;
 
@@ -47,6 +48,7 @@ pub struct ServerState {
     pub modules: BTreeMap<ModuleId, ModuleState>,
     pub series: BTreeMap<String, Series>,
     pub ping: Option<PingStatus>,
+    pub recent_events: Vec<Event>,
 }
 
 impl ServerState {
@@ -57,6 +59,7 @@ impl ServerState {
             modules: BTreeMap::new(),
             series: BTreeMap::new(),
             ping: None,
+            recent_events: Vec::new(),
         }
     }
 
@@ -75,6 +78,14 @@ impl ServerState {
                 at,
                 value: sample.value,
             });
+        }
+    }
+
+    pub fn push_recent_events(&mut self, events: impl IntoIterator<Item = Event>) {
+        self.recent_events.extend(events);
+        if self.recent_events.len() > MAX_SERVER_EVENTS {
+            let overflow = self.recent_events.len() - MAX_SERVER_EVENTS;
+            self.recent_events.drain(..overflow);
         }
     }
 

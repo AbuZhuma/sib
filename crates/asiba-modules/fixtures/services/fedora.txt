@@ -1,0 +1,31 @@
+###units
+abrtd.service                                                                             loaded    active   running ABRT Daemon
+cups.service                                                                              loaded    active   running CUPS Scheduler
+● myapp.service                                                                           loaded    failed   failed  My Application
+sshd.service                                                                              loaded    inactive dead    OpenSSH server daemon
+###show
+Id=cups.service
+FragmentPath=/usr/lib/systemd/system/cups.service
+ActiveEnterTimestamp=Mon 2026-09-14 11:06:53 +06
+MainPID=1002
+Result=success
+NRestarts=0
+WorkingDirectory=
+
+Id=myapp.service
+FragmentPath=/etc/systemd/system/myapp.service
+ActiveEnterTimestamp=
+MainPID=0
+Result=exit-code
+NRestarts=5
+WorkingDirectory=/opt/myapp
+
+Id=sshd.service
+FragmentPath=/usr/lib/systemd/system/sshd.service
+ActiveEnterTimestamp=
+MainPID=0
+Result=success
+NRestarts=0
+WorkingDirectory=
+###timers
+[{"next":1789383795193327,"left":1789383795193327,"last":1789366760994801,"passed":3407769678,"unit":"dnf-makecache.timer","activates":"dnf-makecache.service"},{"next":1789408800000000,"left":1789408800000000,"last":0,"passed":0,"unit":"unbound-anchor.timer","activates":"unbound-anchor.service"}]

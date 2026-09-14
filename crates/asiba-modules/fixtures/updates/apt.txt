@@ -1,0 +1,10 @@
+###manager
+/usr/bin/apt-get
+###apt
+Inst openssl [3.0.11-1~deb12u2] (3.0.15-1~deb12u1 Debian-Security:12/stable-security [amd64])
+Inst curl [7.88.1-10+deb12u7] (7.88.1-10+deb12u8 Debian:12.7/stable [amd64])
+Inst libcurl4 [7.88.1-10+deb12u7] (7.88.1-10+deb12u8 Debian:12.7/stable [amd64])
+###dnf
+###other
+###reboot
+yes

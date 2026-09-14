@@ -1,7 +1,8 @@
 use std::time::Duration;
 
 use asiba_core::{
-    Availability, Credentials, ModuleId, ServerId, ServerSpec, Snapshot, TransportError,
+    Availability, Credentials, ModuleId, QueryRequest, QueryResponse, ServerId, ServerSpec,
+    Snapshot, TransportError,
 };
 use asiba_transport::HostKeyPolicy;
 
@@ -22,6 +23,12 @@ pub enum Command {
         fingerprint: String,
     },
     TestConnection(TestRequest),
+    Query {
+        token: u64,
+        server: ServerId,
+        module: ModuleId,
+        request: QueryRequest,
+    },
 }
 
 #[derive(Debug, Clone)]
@@ -56,6 +63,10 @@ pub struct TestSuccess {
 #[derive(Debug, Clone)]
 pub enum EngineEvent {
     TestFinished(TestReport),
+    QueryFinished {
+        token: u64,
+        result: Result<QueryResponse, String>,
+    },
     ServerSaved(ServerId),
     ServerRemoved(ServerId),
     Warning(String),

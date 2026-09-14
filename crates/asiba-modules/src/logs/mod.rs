@@ -1,0 +1,111 @@
+mod model;
+mod parse;
+
+use asiba_core::transport::shell_quote;
+use asiba_core::{
+    Availability, CollectContext, Event, Module, ModuleError, ModuleId, Sample, Schedule, Severity,
+    Snapshot, Transport,
+};
+use async_trait::async_trait;
+
+pub use model::{LogEntry, LogGroup, LogsSnapshot};
+
+pub const ID: ModuleId = ModuleId("logs");
+pub const KEY_WARNINGS_PER_MIN: &str = "logs.warnings_per_min";
+pub const KEY_ERRORS_PER_MIN: &str = "logs.errors_per_min";
+
+const INITIAL_LINES: u32 = 300;
+const INITIAL_SINCE: &str = "-1h";
+const BURST_THRESHOLD: usize = 30;
+const CRITICAL_PRIORITY: u8 = 2;
+
+pub struct LogsModule;
+
+fn initial_command() -> String {
+    format!(
+        "journalctl -p warning -o json --no-pager -q --since {INITIAL_SINCE} -n {INITIAL_LINES}"
+    )
+}
+
+fn after_cursor_command(cursor: &str) -> String {
+    format!(
+        "journalctl -p warning -o json --no-pager -q --after-cursor={}",
+        shell_quote(cursor)
+    )
+}
+
+#[async_trait]
+impl Module for LogsModule {
+    fn id(&self) -> ModuleId {
+        ID
+    }
+
+    fn title(&self) -> &'static str {
+        "Логи"
+    }
+
+    fn schedule(&self) -> Schedule {
+        Schedule::Normal
+    }
+
+    async fn detect(&self, transport: &dyn Transport) -> Result<Availability, ModuleError> {
+        let output = transport.exec("command -v journalctl").await?;
+        if !output.is_success() {
+            return Ok(Availability::Unavailable {
+                reason: "нет journalctl".to_owned(),
+            });
+        }
+        let probe = transport
+            .exec("journalctl -q -n 1 -o cat --system 2>&1 | head -c 200")
+            .await?;
+        if probe.stdout.contains("No journal files") || probe.stdout.contains("permission") {
+            return Ok(Availability::Partial {
+                missing: vec!["системный журнал (нужна группа systemd-journal)".to_owned()],
+            });
+        }
+        Ok(Availability::Available)
+    }
+
+    async fn collect(
+        &self,
+        transport: &dyn Transport,
+        context: &CollectContext,
+    ) -> Result<Snapshot, ModuleError> {
+        let previous = context.previous::<LogsSnapshot>().map(|(p, _)| p);
+        let command = match previous.and_then(|p| p.cursor.as_deref()) {
+            Some(cursor) => after_cursor_command(cursor),
+            None => initial_command(),
+        };
+        let output = transport.exec(&command).await?;
+        let fresh = parse::entries(&output.stdout);
+        let snapshot = model::merge(previous, fresh);
+        let events = events_for(&snapshot, previous.is_some());
+        let samples = vec![
+            Sample::new(KEY_WARNINGS_PER_MIN, snapshot.rate_per_minute(4)),
+            Sample::new(KEY_ERRORS_PER_MIN, snapshot.rate_per_minute(3)),
+        ];
+        Ok(Snapshot::new(snapshot)
+            .with_samples(samples)
+            .with_events(events))
+    }
+}
+
+fn events_for(snapshot: &LogsSnapshot, has_previous: bool) -> Vec<Event> {
+    if !has_previous {
+        return Vec::new();
+    }
+    let mut events = Vec::new();
+    for entry in snapshot
+        .fresh
+        .iter()
+        .filter(|e| e.priority <= CRITICAL_PRIORITY)
+    {
+        let message = format!("[{}] {}", entry.source(), entry.message_short());
+        events.push(Event::new(ID, Severity::Critical, message));
+    }
+    if snapshot.fresh.len() >= BURST_THRESHOLD {
+        let message = format!("всплеск ошибок в журнале: {} за цикл", snapshot.fresh.len());
+        events.push(Event::new(ID, Severity::Warning, message));
+    }
+    events
+}
