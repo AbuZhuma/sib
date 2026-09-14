@@ -10,5 +10,9 @@ async-trait.workspace = true
 chrono.workspace = true
 thiserror.workspace = true
 
+[dev-dependencies]
+asiba-transport.workspace = true
+tokio.workspace = true
+
 [lints]
 workspace = true

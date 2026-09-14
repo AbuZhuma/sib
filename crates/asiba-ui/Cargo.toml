@@ -13,6 +13,8 @@ asiba-transport.workspace = true
 chrono.workspace = true
 eframe.workspace = true
 egui.workspace = true
+egui_plot.workspace = true
+egui_extras.workspace = true
 image = { version = "0.25", default-features = false, features = ["png"] }
 tracing.workspace = true
 

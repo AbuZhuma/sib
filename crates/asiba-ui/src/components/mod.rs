@@ -1,15 +1,21 @@
 mod badge;
 mod fields;
+mod meter;
 mod nav;
 mod panel;
+mod plot;
+mod sparkline;
 pub mod status;
 mod table;
 mod tile;
 
 pub use badge::{badge, severity_color};
 pub use fields::{field, password_field, section_label};
+pub use meter::meter;
 pub use nav::nav_item;
 pub use panel::{page_title, panel};
+pub use plot::{TimeSeriesPlot, Unit};
+pub use sparkline::sparkline;
 pub use status::{status_dot, status_label};
 pub use table::Table;
 pub use tile::tile;

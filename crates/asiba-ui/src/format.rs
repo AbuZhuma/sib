@@ -15,6 +15,24 @@ pub fn bytes(value: u64) -> String {
     format!("{size:.1} {}", UNITS[unit])
 }
 
+pub fn bytes_per_second(value: f64) -> String {
+    format!("{}/s", bytes(value.max(0.0) as u64))
+}
+
+pub fn duration_short(seconds: f64) -> String {
+    let secs = seconds.max(0.0) as u64;
+    if secs >= 86_400 {
+        return format!("{}д {}ч", secs / 86_400, (secs % 86_400) / 3_600);
+    }
+    if secs >= 3_600 {
+        return format!("{}ч {}м", secs / 3_600, (secs % 3_600) / 60);
+    }
+    if secs >= 60 {
+        return format!("{}м {}с", secs / 60, secs % 60);
+    }
+    format!("{secs}с")
+}
+
 pub fn clock(at: DateTime<Utc>) -> String {
     at.with_timezone(&Local).format("%H:%M:%S").to_string()
 }

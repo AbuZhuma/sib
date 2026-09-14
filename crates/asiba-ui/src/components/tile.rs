@@ -19,9 +19,14 @@ pub fn tile(ui: &mut Ui, label: &str, value: &str, color: Option<Color32>) {
                         .small()
                         .color(p.text_secondary),
                 );
+                let size = if value.chars().count() > 8 {
+                    15.0
+                } else {
+                    24.0
+                };
                 ui.label(
                     RichText::new(value)
-                        .size(24.0)
+                        .size(size)
                         .monospace()
                         .color(color.unwrap_or(p.text)),
                 );

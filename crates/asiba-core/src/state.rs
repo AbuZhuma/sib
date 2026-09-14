@@ -5,8 +5,9 @@ use chrono::{DateTime, Utc};
 
 use crate::event::Event;
 use crate::module::{Availability, ModuleId};
+use crate::series::{Point, Series};
 use crate::server::{ServerId, ServerSpec};
-use crate::snapshot::Snapshot;
+use crate::snapshot::{ModuleData, Sample, Snapshot};
 
 const MAX_EVENTS: usize = 500;
 
@@ -44,6 +45,8 @@ pub struct ServerState {
     pub spec: ServerSpec,
     pub connection: ConnectionStatus,
     pub modules: BTreeMap<ModuleId, ModuleState>,
+    pub series: BTreeMap<String, Series>,
+    pub ping: Option<PingStatus>,
 }
 
 impl ServerState {
@@ -52,11 +55,31 @@ impl ServerState {
             spec,
             connection: ConnectionStatus::Connecting,
             modules: BTreeMap::new(),
+            series: BTreeMap::new(),
+            ping: None,
         }
     }
 
     pub fn snapshot(&self, module: ModuleId) -> Option<&Snapshot> {
         self.modules.get(&module)?.last_snapshot.as_ref()
+    }
+
+    pub fn data<T: ModuleData>(&self, module: ModuleId) -> Option<&T> {
+        self.snapshot(module)?.downcast::<T>()
+    }
+
+    pub fn push_samples(&mut self, at: DateTime<Utc>, samples: &[Sample]) {
+        for sample in samples {
+            let series = self.series.entry(sample.key.clone()).or_default();
+            series.push(Point {
+                at,
+                value: sample.value,
+            });
+        }
+    }
+
+    pub fn latest_value(&self, key: &str) -> Option<f64> {
+        self.series.get(key)?.latest().map(|p| p.value)
     }
 
     pub fn available_modules(&self) -> impl Iterator<Item = ModuleId> + '_ {
@@ -65,6 +88,13 @@ impl ServerState {
             .filter(|(_, state)| state.availability.is_usable())
             .map(|(id, _)| *id)
     }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct PingStatus {
+    pub rtt_ms: Option<f64>,
+    pub at: DateTime<Utc>,
+    pub lost_in_row: u32,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

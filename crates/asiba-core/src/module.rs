@@ -4,7 +4,7 @@ use std::time::Duration;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
-use crate::snapshot::Snapshot;
+use crate::snapshot::{CollectContext, Snapshot};
 use crate::transport::{Transport, TransportError};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
@@ -69,5 +69,9 @@ pub trait Module: Send + Sync {
 
     async fn detect(&self, transport: &dyn Transport) -> Result<Availability, ModuleError>;
 
-    async fn collect(&self, transport: &dyn Transport) -> Result<Snapshot, ModuleError>;
+    async fn collect(
+        &self,
+        transport: &dyn Transport,
+        context: &CollectContext,
+    ) -> Result<Snapshot, ModuleError>;
 }

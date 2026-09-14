@@ -13,32 +13,36 @@ const DEFAULT_KEY_NAMES: [&str; 3] = ["id_ed25519", "id_ecdsa", "id_rsa"];
 
 type Session = Handle<ClientHandler>;
 
+pub struct AuthPlan<'a> {
+    pub user: &'a str,
+    pub method: &'a AuthMethod,
+    pub credentials: &'a Credentials,
+    pub extra_keys: &'a [PathBuf],
+}
+
 pub async fn authenticate(
     session: &mut Session,
-    user: &str,
-    method: &AuthMethod,
-    credentials: &Credentials,
+    plan: &AuthPlan<'_>,
 ) -> Result<(), TransportError> {
-    match method {
+    let (user, credentials) = (plan.user, plan.credentials);
+    match plan.method {
         AuthMethod::KeyFile { path, .. } => {
             with_key_file(session, user, path, credentials.passphrase.as_deref()).await
         }
         AuthMethod::Password => with_password(session, user, credentials).await,
-        AuthMethod::Auto => auto(session, user, credentials).await,
+        AuthMethod::Auto => auto(session, plan).await,
     }
 }
 
-async fn auto(
-    session: &mut Session,
-    user: &str,
-    credentials: &Credentials,
-) -> Result<(), TransportError> {
+async fn auto(session: &mut Session, plan: &AuthPlan<'_>) -> Result<(), TransportError> {
+    let (user, credentials) = (plan.user, plan.credentials);
     let mut reasons = Vec::new();
     match with_agent(session, user).await {
         Ok(()) => return Ok(()),
         Err(error) => reasons.push(format!("agent: {error}")),
     }
-    for path in default_key_paths() {
+    let candidates = plan.extra_keys.iter().cloned().chain(default_key_paths());
+    for path in candidates {
         match with_key_file(session, user, &path, credentials.passphrase.as_deref()).await {
             Ok(()) => return Ok(()),
             Err(error) => reasons.push(format!("{}: {error}", path.display())),

@@ -1,0 +1,25 @@
+###stat
+cpu  1891826 11606 545748 10878926 13303 88956 40541 0 156596 0
+cpu0 144446 1940 46694 901080 1914 7532 12484 0 9760 0
+cpu1 187828 1877 38675 887397 764 4681 5111 0 16406 0
+intr 254789461 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ctxt 693123456
+btime 1757800000
+processes 121416
+procs_running 2
+procs_blocked 0
+###pressure
+some avg10=0.23 avg60=0.28 avg300=0.29 total=348251088
+full avg10=0.00 avg60=0.00 avg300=0.00 total=0
+###freq
+1849
+###thermal
+acpitz 50000
+INT3400 Thermal 20000
+SEN1 42050
+###hwmon
+AC 
+acpi_fan 
+coretemp 48000
+nvme 42850
+###

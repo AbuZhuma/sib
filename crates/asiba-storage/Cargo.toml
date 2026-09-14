@@ -1,0 +1,15 @@
+[package]
+name = "asiba-storage"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+asiba-core.workspace = true
+chrono.workspace = true
+rusqlite.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+
+[lints]
+workspace = true

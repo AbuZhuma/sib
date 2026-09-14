@@ -1,0 +1,16 @@
+###meminfo
+MemTotal:        4030000 kB
+MemFree:         1200000 kB
+MemAvailable:    2900000 kB
+Buffers:          100000 kB
+Cached:          1500000 kB
+SwapTotal:             0 kB
+SwapFree:              0 kB
+Dirty:                40 kB
+Shmem:              8000 kB
+SReclaimable:      90000 kB
+###pressure
+###vmstat
+pswpin 0
+pswpout 0
+oom_kill 0

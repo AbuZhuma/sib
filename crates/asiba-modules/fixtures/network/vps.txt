@@ -1,0 +1,24 @@
+###dev
+Inter-|   Receive                                                |  Transmit
+ face |bytes    packets errs drop fifo frame compressed multicast|bytes    packets errs drop fifo colls carrier compressed
+    lo: 1234567    12345    0    0    0     0          0         0  1234567    12345    0    0    0     0       0          0
+  eth0: 987654321 8765432    0   12    0     0          0         0 123456789 2345678    0    0    0     0       0          0
+docker0: 55555   555    0    0    0     0          0         0 66666   666    0    0    0     0       0          0
+###addr
+1: lo    inet 127.0.0.1/8 scope host lo\       valid_lft forever preferred_lft forever
+2: eth0    inet 203.0.113.10/24 brd 203.0.113.255 scope global eth0\       valid_lft forever preferred_lft forever
+2: eth0    inet6 2001:db8::10/64 scope global \       valid_lft forever preferred_lft forever
+3: docker0    inet 172.17.0.1/16 brd 172.17.255.255 scope global docker0\       valid_lft forever preferred_lft forever
+###link
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN mode DEFAULT group default qlen 1000\    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP mode DEFAULT group default qlen 1000\    link/ether 52:54:00:12:34:56 brd ff:ff:ff:ff:ff:ff
+3: docker0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state DOWN mode DEFAULT group default \    link/ether 02:42:aa:bb:cc:dd brd ff:ff:ff:ff:ff:ff
+###sys
+docker0 down -1
+eth0 up 1000
+lo unknown 
+###conn
+     20 ESTAB
+      3 LISTEN
+###route
+default via 203.0.113.1 dev eth0 proto static 

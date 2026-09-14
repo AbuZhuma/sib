@@ -3,7 +3,8 @@ use std::sync::Arc;
 use anyhow::Context;
 use asiba_config::{AppConfig, KeyringSecretStore, Paths, ServerStore};
 use asiba_core::AppState;
-use asiba_engine::Persistence;
+use asiba_engine::{EngineDeps, Persistence};
+use asiba_storage::{Database, spawn_writer};
 use asiba_ui::AppDeps;
 use tracing_subscriber::EnvFilter;
 
@@ -22,9 +23,14 @@ fn main() -> anyhow::Result<()> {
         .context("tokio runtime")?;
     let handle = runtime.handle().clone();
     let engine_state = Arc::clone(&state);
-    let factory = Box::new(move |notify| {
-        asiba_engine::spawn(&handle, registry, engine_state, persistence, notify)
-    });
+    let storage = open_storage(&paths);
+    let engine_deps = EngineDeps {
+        registry,
+        state: engine_state,
+        persistence,
+        storage,
+    };
+    let factory = Box::new(move |notify| asiba_engine::spawn(&handle, engine_deps, notify));
     let deps = AppDeps {
         state,
         paths,
@@ -33,6 +39,16 @@ fn main() -> anyhow::Result<()> {
     asiba_ui::run(deps, factory).map_err(|e| anyhow::anyhow!("{e}"))?;
     runtime.shutdown_background();
     Ok(())
+}
+
+fn open_storage(paths: &Paths) -> Option<asiba_storage::StorageWriter> {
+    match Database::open(&paths.history_db()) {
+        Ok(database) => Some(spawn_writer(database)),
+        Err(error) => {
+            tracing::error!(%error, "история метрик отключена");
+            None
+        }
+    }
 }
 
 fn init_tracing() {

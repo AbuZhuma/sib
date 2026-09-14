@@ -1,7 +1,9 @@
 mod model;
 mod parse;
 
-use asiba_core::{Availability, Module, ModuleError, ModuleId, Schedule, Snapshot, Transport};
+use asiba_core::{
+    Availability, CollectContext, Module, ModuleError, ModuleId, Schedule, Snapshot, Transport,
+};
 use async_trait::async_trait;
 
 pub use model::{LoadAverage, SystemInfo};
@@ -50,7 +52,11 @@ impl Module for SystemModule {
         Ok(Availability::Available)
     }
 
-    async fn collect(&self, transport: &dyn Transport) -> Result<Snapshot, ModuleError> {
+    async fn collect(
+        &self,
+        transport: &dyn Transport,
+        _context: &CollectContext,
+    ) -> Result<Snapshot, ModuleError> {
         let output = transport.exec(&sections::script(&SCRIPT_PARTS)).await?;
         let info = parse::system_info(&output.stdout)?;
         Ok(Snapshot::new(info))

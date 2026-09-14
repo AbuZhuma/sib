@@ -1,8 +1,8 @@
-use asiba_core::{ModuleId, Snapshot};
+use asiba_core::{ModuleId, ServerState, Snapshot};
 use asiba_modules::system::{self, SystemInfo};
 use egui::{Grid, RichText, Ui};
 
-use super::ModuleView;
+use super::{ModuleView, Tab};
 use crate::format;
 use crate::text;
 use crate::theme::Palette;
@@ -18,22 +18,35 @@ impl ModuleView for SystemView {
         text::MODULE_SYSTEM
     }
 
-    fn summary(&self, ui: &mut Ui, snapshot: &Snapshot) {
-        let Some(info) = snapshot.downcast::<SystemInfo>() else {
-            return;
-        };
-        let p = Palette::current(ui.ctx());
-        Grid::new("system-summary")
-            .num_columns(2)
-            .spacing([16.0, 4.0])
-            .show(ui, |ui| {
-                for (key, value) in rows(info) {
-                    ui.label(RichText::new(key).color(p.text_secondary));
-                    ui.monospace(value);
-                    ui.end_row();
-                }
-            });
+    fn tab(&self) -> Tab {
+        Tab::Summary
     }
+
+    fn summary(&self, ui: &mut Ui, server: &ServerState) {
+        if let Some(info) = server.data::<SystemInfo>(system::ID) {
+            grid(ui, "system-summary", info);
+        }
+    }
+
+    fn preview(&self, ui: &mut Ui, snapshot: &Snapshot) {
+        if let Some(info) = snapshot.downcast::<SystemInfo>() {
+            grid(ui, "system-preview", info);
+        }
+    }
+}
+
+fn grid(ui: &mut Ui, id: &str, info: &SystemInfo) {
+    let p = Palette::current(ui.ctx());
+    Grid::new(id)
+        .num_columns(2)
+        .spacing([16.0, 4.0])
+        .show(ui, |ui| {
+            for (key, value) in rows(info) {
+                ui.label(RichText::new(key).color(p.text_secondary));
+                ui.monospace(value);
+                ui.end_row();
+            }
+        });
 }
 
 fn rows(info: &SystemInfo) -> Vec<(&'static str, String)> {

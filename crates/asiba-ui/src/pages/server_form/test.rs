@@ -114,7 +114,7 @@ fn success_view(ui: &mut Ui, success: &TestSuccess, views: &[Box<dyn ModuleView>
     if let Some((id, snapshot)) = &success.probe
         && let Some(view) = views.iter().find(|v| v.id() == *id)
     {
-        view.summary(ui, snapshot);
+        view.preview(ui, snapshot);
     }
     ui.add_space(4.0);
     ui.label(

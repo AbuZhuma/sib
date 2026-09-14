@@ -1,0 +1,21 @@
+###meminfo
+MemTotal:       16020068 kB
+MemFree:          463436 kB
+MemAvailable:    2876004 kB
+Buffers:             560 kB
+Cached:          3678852 kB
+SwapCached:       204364 kB
+Active:          8811108 kB
+Inactive:        4712864 kB
+SwapTotal:       8388604 kB
+SwapFree:        2255772 kB
+Dirty:             29392 kB
+Shmem:           1255568 kB
+SReclaimable:     224596 kB
+###pressure
+some avg10=0.35 avg60=0.30 avg300=0.23 total=65389393
+full avg10=0.35 avg60=0.30 avg300=0.22 total=45994103
+###vmstat
+pswpin 1234567
+pswpout 2345678
+oom_kill 3

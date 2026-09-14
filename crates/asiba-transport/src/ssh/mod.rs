@@ -2,6 +2,7 @@ mod auth;
 mod command;
 mod handler;
 mod session;
+mod ssh_config;
 
 use asiba_core::{CommandOutput, Credentials, ServerSpec, SudoMode, Transport, TransportError};
 use async_trait::async_trait;

@@ -1,5 +1,6 @@
-use asiba_core::{AppState, ConnectionStatus};
+use asiba_core::{AppState, ConnectionStatus, ServerState};
 use asiba_modules::system::{self, SystemInfo};
+use asiba_modules::{cpu, disk, memory, network};
 use egui::{RichText, ScrollArea, Ui};
 
 use super::{Action, Page};
@@ -32,7 +33,12 @@ fn tiles(ui: &mut Ui, state: &AppState) {
         .values()
         .filter(|s| matches!(s.connection, ConnectionStatus::Offline { .. }))
         .count();
-    ui.horizontal(|ui| {
+    let percent = |value: Option<f64>| {
+        value
+            .map(|v| format!("{v:.0}%"))
+            .unwrap_or_else(|| "—".to_owned())
+    };
+    ui.horizontal_wrapped(|ui| {
         tile(ui, text::TILE_SERVERS, &total.to_string(), None);
         tile(
             ui,
@@ -46,8 +52,58 @@ fn tiles(ui: &mut Ui, state: &AppState) {
             &offline.to_string(),
             (offline > 0).then_some(p.critical),
         );
+        tile(
+            ui,
+            text::TILE_CPU,
+            &percent(average(state, cpu::KEY_TOTAL)),
+            None,
+        );
+        tile(
+            ui,
+            text::TILE_MEMORY,
+            &percent(average(state, memory::KEY_USED_PCT)),
+            None,
+        );
+        tile(
+            ui,
+            text::TILE_DISK,
+            &percent(average(state, disk::KEY_ROOT_USED_PCT)),
+            None,
+        );
+        let traffic = sum(state, network::KEY_RX_BPS).zip(sum(state, network::KEY_TX_BPS));
+        let traffic_text = traffic
+            .map(|(rx, tx)| {
+                format!(
+                    "{} / {}",
+                    format::bytes_per_second(rx),
+                    format::bytes_per_second(tx)
+                )
+            })
+            .unwrap_or_else(|| "—".to_owned());
+        tile(ui, text::TILE_TRAFFIC, &traffic_text, None);
         tile(ui, text::TILE_EVENTS, &state.events.len().to_string(), None);
     });
+}
+
+fn average(state: &AppState, key: &str) -> Option<f64> {
+    let values: Vec<f64> = state
+        .servers
+        .values()
+        .filter_map(|s| s.latest_value(key))
+        .collect();
+    if values.is_empty() {
+        return None;
+    }
+    Some(values.iter().sum::<f64>() / values.len() as f64)
+}
+
+fn sum(state: &AppState, key: &str) -> Option<f64> {
+    let values: Vec<f64> = state
+        .servers
+        .values()
+        .filter_map(|s| s.latest_value(key))
+        .collect();
+    (!values.is_empty()).then(|| values.iter().sum())
 }
 
 fn servers_table(ui: &mut Ui, state: &AppState) -> Option<Action> {
@@ -61,14 +117,14 @@ fn servers_table(ui: &mut Ui, state: &AppState) -> Option<Action> {
         text::COL_STATUS,
         text::COL_HOST,
         text::COL_OS,
+        "CPU",
+        "RAM",
+        "DISK",
+        "RX / TX",
         text::COL_UPTIME,
-        text::COL_LOAD,
     ];
     Table::new("overview-servers", &columns).show(ui, |ui| {
         for server in state.servers.values() {
-            let info = server
-                .snapshot(system::ID)
-                .and_then(|s| s.downcast::<SystemInfo>());
             if ui
                 .link(RichText::new(server.spec.id.as_str()).strong())
                 .clicked()
@@ -77,19 +133,40 @@ fn servers_table(ui: &mut Ui, state: &AppState) -> Option<Action> {
             }
             status_label(ui, &server.connection);
             ui.monospace(&server.spec.host);
-            ui.label(info.map(|i| i.os_name.as_str()).unwrap_or("—"));
-            ui.monospace(
-                info.map(|i| i.uptime_human())
-                    .unwrap_or_else(|| "—".to_owned()),
-            );
-            ui.monospace(
-                info.map(|i| format!("{:.2}", i.load.one))
-                    .unwrap_or_else(|| "—".to_owned()),
-            );
+            server_metrics(ui, server);
             ui.end_row();
         }
     });
     action
+}
+
+fn server_metrics(ui: &mut Ui, server: &ServerState) {
+    let info = server.data::<SystemInfo>(system::ID);
+    let percent = |key: &str| {
+        server
+            .latest_value(key)
+            .map(|v| format!("{v:.0}%"))
+            .unwrap_or_else(|| "—".to_owned())
+    };
+    ui.label(info.map(|i| i.os_name.as_str()).unwrap_or("—"));
+    ui.monospace(percent(cpu::KEY_TOTAL));
+    ui.monospace(percent(memory::KEY_USED_PCT));
+    ui.monospace(percent(disk::KEY_ROOT_USED_PCT));
+    let rx = server
+        .latest_value(network::KEY_RX_BPS)
+        .map(format::bytes_per_second);
+    let tx = server
+        .latest_value(network::KEY_TX_BPS)
+        .map(format::bytes_per_second);
+    ui.monospace(
+        rx.zip(tx)
+            .map(|(rx, tx)| format!("{rx} / {tx}"))
+            .unwrap_or_else(|| "—".to_owned()),
+    );
+    ui.monospace(
+        info.map(|i| i.uptime_human())
+            .unwrap_or_else(|| "—".to_owned()),
+    );
 }
 
 fn events(ui: &mut Ui, state: &AppState) {

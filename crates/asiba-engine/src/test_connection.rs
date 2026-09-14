@@ -1,6 +1,6 @@
 use std::time::Instant;
 
-use asiba_core::{Availability, ModuleRegistry, Transport, TransportError};
+use asiba_core::{Availability, CollectContext, ModuleRegistry, Transport, TransportError};
 use asiba_transport::connect;
 
 use crate::command::{ModuleDetection, TestReport, TestRequest, TestSuccess};
@@ -23,7 +23,7 @@ async fn probe(
     let modules = detect_all(transport.as_ref(), registry).await;
     let probe = match registry.get(request.probe_module) {
         Some(module) => module
-            .collect(transport.as_ref())
+            .collect(transport.as_ref(), &CollectContext::default())
             .await
             .ok()
             .map(|s| (module.id(), s)),

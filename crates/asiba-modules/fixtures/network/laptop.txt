@@ -1,0 +1,24 @@
+###dev
+Inter-|   Receive                                                |  Transmit
+ face |bytes    packets errs drop fifo frame compressed multicast|bytes    packets errs drop fifo colls carrier compressed
+    lo: 645940743  796190    0    0    0     0          0         0 645940743  796190    0    0    0     0       0          0
+wlp0s20f3: 420976751  563225    0  859    0     0          0         0 101393659  186328    0   19    0     0       0          0
+###addr
+1: lo    inet 127.0.0.1/8 scope host lo\       valid_lft forever preferred_lft forever
+1: lo    inet6 ::1/128 scope host noprefixroute \       valid_lft forever preferred_lft forever
+2: wlp0s20f3    inet 192.168.0.196/24 brd 192.168.0.255 scope global dynamic noprefixroute wlp0s20f3\       valid_lft 577sec preferred_lft 577sec
+2: wlp0s20f3    inet6 fe80::9eb8:7859:b9e7:70d6/64 scope link noprefixroute \       valid_lft forever preferred_lft forever
+###link
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN mode DEFAULT group default qlen 1000\    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+2: wlp0s20f3: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP mode DORMANT group default qlen 1000\    link/ether c6:9f:ca:cb:fc:a9 brd ff:ff:ff:ff:ff:ff permaddr 8c:f8:c5:ce:f1:a8
+###sys
+lo unknown 
+wlp0s20f3 up 
+###conn
+      3 CLOSE-WAIT
+     64 ESTAB
+      1 FIN-WAIT-2
+     32 LISTEN
+     32 TIME-WAIT
+###route
+default via 192.168.0.1 dev wlp0s20f3 proto dhcp src 192.168.0.196 metric 600 

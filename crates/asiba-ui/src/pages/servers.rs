@@ -1,13 +1,16 @@
 use asiba_core::{AppState, Environment, ServerState};
 use asiba_modules::system::{self, SystemInfo};
+use asiba_modules::{cpu, disk, memory, network};
 use egui::{Frame, Margin, RichText, ScrollArea, Sense, Stroke, Ui, Vec2};
 
 use super::{Action, Page};
-use crate::components::{badge, page_title, status_label};
+use crate::components::{badge, page_title, sparkline, status_label};
+use crate::format;
 use crate::text;
 use crate::theme::{CARD_WIDTH, GAP, Palette};
 
-const CARD_HEIGHT: f32 = 120.0;
+const CARD_HEIGHT: f32 = 150.0;
+const SPARKLINE_SIZE: Vec2 = Vec2::new(110.0, 30.0);
 
 pub fn show(ui: &mut Ui, state: &AppState) -> Option<Action> {
     let mut action = None;
@@ -47,9 +50,6 @@ pub fn environment_label(environment: Environment) -> &'static str {
 
 fn card(ui: &mut Ui, server: &ServerState) -> egui::Response {
     let p = Palette::current(ui.ctx());
-    let info = server
-        .snapshot(system::ID)
-        .and_then(|s| s.downcast::<SystemInfo>());
     let response = Frame::new()
         .fill(p.bg_panel)
         .stroke(Stroke::new(1.0, p.border))
@@ -58,15 +58,13 @@ fn card(ui: &mut Ui, server: &ServerState) -> egui::Response {
             ui.set_min_size(Vec2::new(CARD_WIDTH, CARD_HEIGHT));
             ui.set_max_width(CARD_WIDTH);
             header(ui, server);
-            ui.monospace(
-                RichText::new(format!(
-                    "{}@{}:{}",
-                    server.spec.user, server.spec.host, server.spec.port
-                ))
-                .color(p.text_secondary),
+            let address = format!(
+                "{}@{}:{}",
+                server.spec.user, server.spec.host, server.spec.port
             );
+            ui.monospace(RichText::new(address).color(p.text_secondary));
             ui.add_space(GAP);
-            body(ui, server, info);
+            body(ui, server);
         })
         .response;
     let hover = response.interact(Sense::click());
@@ -96,31 +94,88 @@ fn header(ui: &mut Ui, server: &ServerState) {
     });
 }
 
-fn body(ui: &mut Ui, server: &ServerState, info: Option<&SystemInfo>) {
+fn body(ui: &mut Ui, server: &ServerState) {
     let p = Palette::current(ui.ctx());
-    match info {
-        Some(info) => {
-            ui.label(&info.os_name);
-            ui.horizontal(|ui| {
-                ui.monospace(format!("up {}", info.uptime_human()));
-                ui.monospace(format!("load {:.2}", info.load.one));
-                ui.monospace(format!("{} cpu", info.cpu_cores));
-            });
-        }
-        None => {
-            let project = &server.spec.description.project;
-            let line = if project.is_empty() {
-                text::DETAIL_NO_DATA
-            } else {
-                project.as_str()
-            };
-            ui.label(RichText::new(line).color(p.text_muted));
-        }
-    }
-    let modules = server.available_modules().count();
-    ui.label(
-        RichText::new(format!("{modules} модулей"))
+    let info = server.data::<SystemInfo>(system::ID);
+    let Some(info) = info else {
+        let project = &server.spec.description.project;
+        let line = if project.is_empty() {
+            text::DETAIL_NO_DATA
+        } else {
+            project.as_str()
+        };
+        ui.label(RichText::new(line).color(p.text_muted));
+        return;
+    };
+    ui.label(&info.os_name);
+    ui.horizontal(|ui| {
+        ui.vertical(|ui| {
+            metric_line(
+                ui,
+                "CPU",
+                server
+                    .latest_value(cpu::KEY_TOTAL)
+                    .map(|v| format!("{v:.0}%")),
+            );
+            metric_line(
+                ui,
+                "RAM",
+                server
+                    .latest_value(memory::KEY_USED_PCT)
+                    .map(|v| format!("{v:.0}%")),
+            );
+            metric_line(
+                ui,
+                "Disk",
+                server
+                    .latest_value(disk::KEY_ROOT_USED_PCT)
+                    .map(|v| format!("{v:.0}%")),
+            );
+        });
+        ui.vertical(|ui| {
+            sparkline(
+                ui,
+                server.series.get(cpu::KEY_TOTAL),
+                SPARKLINE_SIZE,
+                p.chart[0],
+                Some(100.0),
+            );
+            let rx = server
+                .latest_value(network::KEY_RX_BPS)
+                .map(format::bytes_per_second);
+            let tx = server
+                .latest_value(network::KEY_TX_BPS)
+                .map(format::bytes_per_second);
+            if let (Some(rx), Some(tx)) = (rx, tx) {
+                ui.monospace(
+                    RichText::new(format!("↓{rx} ↑{tx}"))
+                        .small()
+                        .color(p.text_secondary),
+                );
+            }
+        });
+    });
+    let ping = server
+        .ping
+        .as_ref()
+        .and_then(|p| p.rtt_ms)
+        .map(|v| format!("{v:.0} ms"))
+        .unwrap_or_else(|| "—".to_owned());
+    ui.monospace(
+        RichText::new(format!("up {}  ping {ping}", info.uptime_human()))
             .small()
             .color(p.text_muted),
     );
+}
+
+fn metric_line(ui: &mut Ui, label: &str, value: Option<String>) {
+    let p = Palette::current(ui.ctx());
+    ui.horizontal(|ui| {
+        ui.label(
+            RichText::new(format!("{label:<5}"))
+                .monospace()
+                .color(p.text_secondary),
+        );
+        ui.monospace(value.unwrap_or_else(|| "—".to_owned()));
+    });
 }

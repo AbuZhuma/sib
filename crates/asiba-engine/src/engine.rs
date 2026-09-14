@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 use asiba_core::{Credentials, ModuleRegistry, ServerId, ServerSpec, ServerState, SharedState};
+use asiba_storage::StorageWriter;
 use asiba_transport::HostKeyPolicy;
 use tokio::sync::mpsc;
 use tokio::task::JoinHandle;
@@ -42,10 +43,18 @@ struct WorkerEntry {
     credentials: Credentials,
 }
 
+pub struct EngineDeps {
+    pub registry: ModuleRegistry,
+    pub state: SharedState,
+    pub persistence: Persistence,
+    pub storage: Option<StorageWriter>,
+}
+
 struct Engine {
     registry: ModuleRegistry,
     state: SharedState,
     persistence: Persistence,
+    storage: Option<StorageWriter>,
     notify: RepaintNotifier,
     events: mpsc::UnboundedSender<EngineEvent>,
     workers: HashMap<ServerId, WorkerEntry>,
@@ -53,17 +62,16 @@ struct Engine {
 
 pub fn spawn(
     runtime: &tokio::runtime::Handle,
-    registry: ModuleRegistry,
-    state: SharedState,
-    persistence: Persistence,
+    deps: EngineDeps,
     notify: RepaintNotifier,
 ) -> EngineHandle {
     let (commands, mut receiver) = mpsc::unbounded_channel();
     let (events, event_receiver) = mpsc::unbounded_channel();
     let mut engine = Engine {
-        registry,
-        state,
-        persistence,
+        registry: deps.registry,
+        state: deps.state,
+        persistence: deps.persistence,
+        storage: deps.storage,
         notify,
         events,
         workers: HashMap::new(),
@@ -172,6 +180,7 @@ impl Engine {
             registry: self.registry.clone(),
             state: Arc::clone(&self.state),
             notify: Arc::clone(&self.notify),
+            storage: self.storage.clone(),
         };
         let task = tokio::spawn(worker::run(ctx));
         self.workers.insert(

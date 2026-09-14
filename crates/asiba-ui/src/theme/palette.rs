@@ -22,6 +22,7 @@ pub struct Palette {
     pub critical: Color32,
     pub info: Color32,
     pub offline: Color32,
+    pub chart: [Color32; 6],
 }
 
 impl Palette {
@@ -51,6 +52,14 @@ impl Palette {
             critical: Color32::from_rgb(0xc9, 0x4f, 0x4f),
             info: Color32::from_rgb(0x5a, 0x8f, 0xd0),
             offline: Color32::from_rgb(0x6b, 0x70, 0x76),
+            chart: [
+                Color32::from_rgb(0x6f, 0xa3, 0xd8),
+                Color32::from_rgb(0x8f, 0xb8, 0x9a),
+                Color32::from_rgb(0xd4, 0xb2, 0x6a),
+                Color32::from_rgb(0xc9, 0x8a, 0x8a),
+                Color32::from_rgb(0xa8, 0x9c, 0xd4),
+                Color32::from_rgb(0x9a, 0xa4, 0xae),
+            ],
         }
     }
 
@@ -73,6 +82,14 @@ impl Palette {
             critical: Color32::from_rgb(0xb8, 0x3e, 0x3e),
             info: Color32::from_rgb(0x3d, 0x78, 0xb8),
             offline: Color32::from_rgb(0x8a, 0x90, 0x99),
+            chart: [
+                Color32::from_rgb(0x3b, 0x78, 0xb4),
+                Color32::from_rgb(0x4d, 0x8c, 0x62),
+                Color32::from_rgb(0xa8, 0x82, 0x2c),
+                Color32::from_rgb(0xb0, 0x4e, 0x4e),
+                Color32::from_rgb(0x6f, 0x5f, 0xb0),
+                Color32::from_rgb(0x6b, 0x74, 0x7e),
+            ],
         }
     }
 

@@ -7,6 +7,7 @@ use crate::error::ConfigError;
 const APP_NAME: &str = "asiba";
 const SERVERS_DIR: &str = "servers";
 const CONFIG_FILE: &str = "config.toml";
+const HISTORY_DB: &str = "history.db";
 
 #[derive(Debug, Clone)]
 pub struct Paths {
@@ -33,6 +34,10 @@ impl Paths {
 
     pub fn config_file(&self) -> PathBuf {
         self.config_dir.join(CONFIG_FILE)
+    }
+
+    pub fn history_db(&self) -> PathBuf {
+        self.data_dir.join(HISTORY_DB)
     }
 
     pub fn default_servers_dir(&self) -> PathBuf {

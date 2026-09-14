@@ -21,7 +21,11 @@ impl ScreenshotOnStart {
             .and_then(|v| v.parse::<u64>().ok())
             .map(Duration::from_secs)
             .unwrap_or(DEFAULT_DELAY);
-        Some(Self { target, due: Instant::now() + delay, requested: false })
+        Some(Self {
+            target,
+            due: Instant::now() + delay,
+            requested: false,
+        })
     }
 
     pub fn tick(&mut self, ctx: &Context) {
