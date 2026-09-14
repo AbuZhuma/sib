@@ -1,0 +1,47 @@
+[workspace]
+resolver = "3"
+members = ["crates/*"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+rust-version = "1.85"
+
+[workspace.dependencies]
+asiba-core = { path = "crates/asiba-core" }
+asiba-transport = { path = "crates/asiba-transport" }
+asiba-config = { path = "crates/asiba-config" }
+asiba-modules = { path = "crates/asiba-modules" }
+asiba-engine = { path = "crates/asiba-engine" }
+asiba-ui = { path = "crates/asiba-ui" }
+
+tokio = { version = "1.53", features = ["rt-multi-thread", "macros", "sync", "time", "process", "fs", "io-util", "net"] }
+async-trait = "0.1"
+russh = "0.63"
+serde = { version = "1.0", features = ["derive"] }
+toml = "1.1"
+thiserror = "2.0"
+anyhow = "1.0"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+directories = "6.0"
+keyring = "4.2"
+chrono = { version = "0.4", features = ["serde"] }
+eframe = "0.36"
+egui = "0.36"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+todo = "deny"
+unimplemented = "deny"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = true

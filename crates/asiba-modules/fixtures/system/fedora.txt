@@ -1,0 +1,29 @@
+###hostname
+neo
+###os
+NAME="Fedora Linux"
+VERSION="42 (Server Edition)"
+ID=fedora
+VERSION_ID=42
+PRETTY_NAME="Fedora Linux 42 (Server Edition)"
+ANSI_COLOR="0;38;2;60;110;180"
+###kernel
+6.14.0-63.fc42.x86_64
+###arch
+x86_64
+###uptime
+1234567.89 4567890.12
+###loadavg
+0.42 0.31 0.25 2/512 12345
+###cpuinfo
+model name	: AMD EPYC 7B13
+4
+###meminfo
+MemTotal:        8143268 kB
+SwapTotal:       8143264 kB
+###virt
+kvm
+###tz
+Etc/UTC
+###date
+1757858400

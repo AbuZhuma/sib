@@ -1,0 +1,27 @@
+###hostname
+web-1
+###os
+PRETTY_NAME="Debian GNU/Linux 12 (bookworm)"
+NAME="Debian GNU/Linux"
+VERSION_ID="12"
+ID=debian
+###kernel
+6.1.0-25-amd64
+###arch
+x86_64
+###uptime
+54321.00 100000.00
+###loadavg
+1.05 0.90 0.70 1/300 999
+###cpuinfo
+model name	: Intel(R) Xeon(R) CPU E5-2680 v4 @ 2.40GHz
+2
+###meminfo
+MemTotal:        4030000 kB
+SwapTotal:             0 kB
+###virt
+none
+###tz
+Europe/Berlin
+###date
+1757858400

@@ -1,0 +1,20 @@
+[package]
+name = "asiba-ui"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+asiba-core.workspace = true
+asiba-engine.workspace = true
+asiba-modules.workspace = true
+asiba-config.workspace = true
+asiba-transport.workspace = true
+chrono.workspace = true
+eframe.workspace = true
+egui.workspace = true
+image = { version = "0.25", default-features = false, features = ["png"] }
+tracing.workspace = true
+
+[lints]
+workspace = true
