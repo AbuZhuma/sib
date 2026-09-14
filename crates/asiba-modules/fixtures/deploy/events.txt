@@ -1,0 +1,8 @@
+1757899000	image	pull	nginx:1.27	shop			
+1757899005	container	create	shop-web-1	shop	web	nginx:1.27	
+1757899006	container	start	shop-web-1	shop	web	nginx:1.27	
+1757899020	container	health_status: healthy	shop-web-1	shop	web	nginx:1.27	
+1757899100	container	exec	shop-web-1	shop	web	nginx:1.27	
+1757899500	container	create	api-app-1	api	app	api:latest	
+1757899501	container	start	api-app-1	api	app	api:latest	
+1757899503	container	die	api-app-1	api	app	api:latest	1

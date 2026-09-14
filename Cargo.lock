@@ -395,6 +395,7 @@ dependencies = [
  "asiba-transport",
  "async-trait",
  "chrono",
+ "regex",
  "serde",
  "serde_json",
  "thiserror 2.0.20",

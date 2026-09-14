@@ -1,6 +1,7 @@
 pub mod anomalies;
 mod common;
 pub mod cpu;
+pub mod deploy;
 pub mod disk;
 pub mod docker;
 pub mod logs;
@@ -34,4 +35,5 @@ pub fn default_registry() -> ModuleRegistry {
         .register(projects::ProjectsModule)
         .register(security::SecurityModule)
         .register(anomalies::AnomaliesModule)
+        .register(deploy::DeployModule)
 }

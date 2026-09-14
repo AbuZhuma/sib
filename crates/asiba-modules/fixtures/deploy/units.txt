@@ -1,0 +1,15 @@
+Id=deploy-api.service
+ActiveState=failed
+SubState=failed
+Result=exit-code
+ExecMainStartTimestamp=Mon 2026-09-14 10:00:00 UTC
+ExecMainExitTimestamp=Mon 2026-09-14 10:02:10 UTC
+ExecMainStatus=1
+
+Id=deploy-shop.service
+ActiveState=inactive
+SubState=dead
+Result=success
+ExecMainStartTimestamp=Mon 2026-09-14 09:00:00 UTC
+ExecMainExitTimestamp=Mon 2026-09-14 09:01:30 UTC
+ExecMainStatus=0

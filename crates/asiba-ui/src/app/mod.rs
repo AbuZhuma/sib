@@ -11,7 +11,7 @@ use asiba_engine::{EngineEvent, EngineHandle, RepaintNotifier};
 use egui::{CentralPanel, Frame, Margin, Panel};
 
 use crate::devtools::{self, ScreenshotOnStart};
-use crate::modules::{self, ModuleView};
+use crate::modules::{self, ModuleView, Tab};
 use crate::pages::inspector::Inspector;
 use crate::pages::server_detail::{self, DetailContext};
 use crate::pages::settings::SettingsContext;
@@ -49,12 +49,7 @@ pub fn run(deps: AppDeps, engine_factory: EngineFactory) -> eframe::Result<()> {
             let notifier: RepaintNotifier = Arc::new(move || ctx.request_repaint());
             let engine = engine_factory(notifier);
             let mut app = AsibaApp::new(deps, engine);
-            if let Some((page, tab)) = devtools::start_page() {
-                app.page = page;
-                if let Some(tab) = tab {
-                    server_detail::select_tab(&cc.egui_ctx, tab);
-                }
-            }
+            app.start_page = devtools::start_page();
             Ok(Box::new(app))
         }),
     )
@@ -72,6 +67,7 @@ pub struct AsibaApp {
     notices: Vec<Notice>,
     views: Vec<Box<dyn ModuleView>>,
     screenshot: Option<ScreenshotOnStart>,
+    start_page: Option<(Page, Option<Tab>)>,
     inspector: Option<Inspector>,
     next_query_token: u64,
 }
@@ -90,9 +86,31 @@ impl AsibaApp {
             notices: Vec::new(),
             views: modules::all(),
             screenshot: ScreenshotOnStart::from_env(),
+            start_page: None,
             inspector: None,
             next_query_token: 1,
         }
+    }
+
+    fn apply_start_page(&mut self, ctx: &egui::Context) {
+        let Some((page, tab)) = self.start_page.clone() else {
+            return;
+        };
+        let is_ready = match &page {
+            Page::ServerDetail(id) => self
+                .state
+                .read()
+                .is_ok_and(|state| state.servers.contains_key(id)),
+            _ => true,
+        };
+        if !is_ready {
+            return;
+        }
+        self.page = page;
+        if let Some(tab) = tab {
+            server_detail::select_tab(ctx, tab);
+        }
+        self.start_page = None;
     }
 
     fn drain_engine_events(&mut self) {
@@ -176,6 +194,7 @@ impl eframe::App for AsibaApp {
         if let Some(screenshot) = &mut self.screenshot {
             screenshot.tick(&ctx);
         }
+        self.apply_start_page(&ctx);
         self.drain_engine_events();
         let palette = theme::Palette::current(&ctx);
         let mut action = None;

@@ -77,6 +77,9 @@ pub const FORM_TAGS: &str = "Теги (через запятую)";
 pub const FORM_OWNER: &str = "Ответственный";
 pub const FORM_LINKS: &str = "Ссылки (по одной в строке)";
 pub const FORM_NOTES: &str = "Заметки";
+pub const FORM_LOCATION: &str = "Координаты";
+pub const FORM_LOCATION_HINT: &str = "пусто — по IP; иначе 52.52, 13.40";
+pub const FORM_LOCATION_LABEL: &str = "Место";
 pub const FORM_SECRETS_KEPT: &str = "пусто — оставить сохранённый";
 
 pub const ENV_PRODUCTION: &str = "production";
@@ -166,6 +169,7 @@ pub const ERR_HOST_EMPTY: &str = "укажите хост";
 pub const ERR_USER_EMPTY: &str = "укажите пользователя";
 pub const ERR_PORT: &str = "порт должен быть числом от 1 до 65535";
 pub const ERR_KEY_PATH: &str = "укажите путь к ключу";
+pub const ERR_LOCATION: &str = "координаты — широта и долгота через запятую";
 pub const ERR_JUMP: &str = "у jump host должны быть хост и пользователь";
 
 pub const CONFIRM_SERVER: &str = "Сервер";

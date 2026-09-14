@@ -1,0 +1,60 @@
+###git
+/srv/shop	main	0	abcdef1234567	Anna	1757851200	fix checkout
+###events
+1757899000	image	pull	nginx:1.27	shop			
+1757899005	container	create	shop-web-1	shop	web	nginx:1.27	
+1757899006	container	start	shop-web-1	shop	web	nginx:1.27	
+1757899020	container	health_status: healthy	shop-web-1	shop	web	nginx:1.27	
+1757899100	container	exec	shop-web-1	shop	web	nginx:1.27	
+1757899500	container	create	api-app-1	api	app	api:latest	
+1757899501	container	start	api-app-1	api	app	api:latest	
+1757899503	container	die	api-app-1	api	app	api:latest	1
+###units
+Id=deploy-api.service
+ActiveState=failed
+SubState=failed
+Result=exit-code
+ExecMainStartTimestamp=Mon 2026-09-14 10:00:00 UTC
+ExecMainExitTimestamp=Mon 2026-09-14 10:02:10 UTC
+ExecMainStatus=1
+
+Id=deploy-shop.service
+ActiveState=inactive
+SubState=dead
+Result=success
+ExecMainStartTimestamp=Mon 2026-09-14 09:00:00 UTC
+ExecMainExitTimestamp=Mon 2026-09-14 09:01:30 UTC
+ExecMainStatus=0
+###unitlogs
+@@ deploy-api.service
+2026-09-14T10:00:00+0000 vps deploy.sh[100]: pulling image
+2026-09-14T10:01:00+0000 vps deploy.sh[100]: running migrations
+2026-09-14T10:02:09+0000 vps deploy.sh[100]: ERROR: migration 042 failed: relation exists
+2026-09-14T10:02:10+0000 vps systemd[1]: deploy-api.service: Main process exited, code=exited, status=1/FAILURE
+@@ deploy-shop.service
+2026-09-14T09:00:00+0000 vps deploy.sh[90]: pulling image
+2026-09-14T09:01:30+0000 vps deploy.sh[90]: done
+###logs
+@@ /var/log/shop-deploy.log 1757899000
+$ git pull
+Updating 1a2b3c4..5d6e7f8
+Fast-forward
+ app/main.py | 4 ++--
+$ docker compose up -d --build
+ web Pulling
+ web Pulled
+#1 [internal] load build definition
+#5 Building 12.3s
+ Container shop-db-1  Creating
+ Container shop-db-1  Created
+ Container shop-web-1  Recreate
+ Container shop-db-1  Starting
+ Container shop-db-1  Started
+ Container shop-web-1  Starting
+Error response from daemon: driver failed programming external connectivity
+service "web" exited with code 1
+###runner
+4242	/opt/actions-runner	/opt/actions-runner/bin/Runner.Listener run
+###runnerbusy
+0
+###runnerlog

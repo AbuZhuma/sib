@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::fmt;
 use std::path::PathBuf;
 
@@ -51,7 +52,7 @@ impl fmt::Display for ServerId {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ServerSpec {
     pub id: ServerId,
     pub host: String,
@@ -61,9 +62,27 @@ pub struct ServerSpec {
     pub jump: Option<JumpHost>,
     pub sudo: SudoMode,
     pub description: ServerDescription,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<ManualLocation>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub modules: BTreeMap<String, ModuleSettings>,
+}
+
+pub type ModuleSettings = BTreeMap<String, String>;
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ManualLocation {
+    pub lat: f64,
+    pub lon: f64,
+    #[serde(default)]
+    pub label: String,
 }
 
 impl ServerSpec {
+    pub fn module_settings(&self, module: &str) -> ModuleSettings {
+        self.modules.get(module).cloned().unwrap_or_default()
+    }
+
     pub fn is_local(&self) -> bool {
         matches!(self.host.as_str(), "localhost" | "127.0.0.1" | "::1")
     }

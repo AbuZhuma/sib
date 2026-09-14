@@ -100,6 +100,8 @@ mod tests {
             jump: None,
             sudo: SudoMode::None,
             description: ServerDescription::default(),
+            location: None,
+            modules: Default::default(),
         }
     }
 

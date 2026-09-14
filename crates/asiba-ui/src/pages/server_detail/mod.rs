@@ -72,7 +72,7 @@ fn current_tab(ui: &Ui, tabs: &[Tab]) -> Tab {
 fn tab_bar(ui: &mut Ui, tabs: &[Tab], current: &mut Tab) -> bool {
     let p = Palette::current(ui.ctx());
     let mut changed = false;
-    ui.horizontal(|ui| {
+    ui.horizontal_wrapped(|ui| {
         for tab in tabs {
             let selected = tab == current;
             let color = if selected { p.text } else { p.text_secondary };

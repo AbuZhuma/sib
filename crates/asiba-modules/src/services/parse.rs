@@ -6,9 +6,9 @@ use serde::Deserialize;
 
 use super::model::{ServicesSnapshot, Timer, Unit};
 use crate::common::sections::Sections;
+use crate::common::systemd_time::systemd_time;
 
 const MICROS: i64 = 1_000_000;
-const SYSTEMD_TIME_FORMAT: &str = "%a %Y-%m-%d %H:%M:%S %z";
 
 pub fn services_snapshot(raw: &str) -> Result<ServicesSnapshot, ModuleError> {
     let sections = Sections::parse(raw);
@@ -74,27 +74,6 @@ fn apply_details(unit: &mut Unit, block: &HashMap<&str, &str>) {
     unit.fragment_path = field("FragmentPath").to_owned();
     unit.working_directory = field("WorkingDirectory").to_owned();
     unit.result = field("Result").to_owned();
-}
-
-fn systemd_time(raw: &str) -> Option<DateTime<Utc>> {
-    let fields: Vec<&str> = raw.split_whitespace().collect();
-    if fields.len() < 4 {
-        return None;
-    }
-    let zone = normalize_zone(fields[3]);
-    let text = format!("{} {} {} {zone}", fields[0], fields[1], fields[2]);
-    DateTime::parse_from_str(&text, SYSTEMD_TIME_FORMAT)
-        .ok()
-        .map(|t| t.with_timezone(&Utc))
-}
-
-fn normalize_zone(zone: &str) -> String {
-    let is_numeric = zone.starts_with(['+', '-']) && zone[1..].chars().all(|c| c.is_ascii_digit());
-    match (is_numeric, zone.len()) {
-        (true, 3) => format!("{zone}00"),
-        (true, _) => zone.to_owned(),
-        (false, _) => "+0000".to_owned(),
-    }
 }
 
 #[derive(Deserialize)]

@@ -16,6 +16,7 @@ async fn main() {
     let context = CollectContext {
         previous: None,
         host: "localhost".to_owned(),
+        settings: Default::default(),
     };
     match module.collect(&transport, &context).await {
         Ok(snapshot) => println!("{:#?}", snapshot.data),

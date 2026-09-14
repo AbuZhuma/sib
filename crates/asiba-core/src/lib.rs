@@ -18,8 +18,8 @@ pub use module::{
 pub use registry::ModuleRegistry;
 pub use series::{Point, Series};
 pub use server::{
-    AuthMethod, Credentials, Environment, JumpHost, ServerDescription, ServerId, ServerSpec,
-    SudoMode,
+    AuthMethod, Credentials, Environment, JumpHost, ManualLocation, ModuleSettings,
+    ServerDescription, ServerId, ServerSpec, SudoMode,
 };
 pub use snapshot::{CollectContext, ModuleData, Sample, Snapshot};
 pub use state::{AppState, ConnectionStatus, ModuleState, PingStatus, ServerState, SharedState};

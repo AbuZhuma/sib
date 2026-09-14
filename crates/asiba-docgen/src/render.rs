@@ -46,6 +46,8 @@ mod tests {
                 project: "Shop".into(),
                 ..Default::default()
             },
+            location: None,
+            modules: Default::default(),
         })
     }
 

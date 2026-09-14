@@ -24,6 +24,7 @@ async fn probe(
     let context = CollectContext {
         previous: None,
         host: request.spec.host.clone(),
+        settings: request.spec.module_settings(request.probe_module.0),
     };
     let probe = match registry.get(request.probe_module) {
         Some(module) => module

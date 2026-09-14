@@ -5,6 +5,7 @@ use std::sync::Arc;
 use chrono::{DateTime, Utc};
 
 use crate::event::Event;
+use crate::server::ModuleSettings;
 
 pub trait ModuleData: Any + Debug + Send + Sync {
     fn as_any(&self) -> &dyn Any;
@@ -68,6 +69,7 @@ impl Snapshot {
 pub struct CollectContext {
     pub previous: Option<Snapshot>,
     pub host: String,
+    pub settings: ModuleSettings,
 }
 
 impl CollectContext {
@@ -108,6 +110,7 @@ mod tests {
         let context = CollectContext {
             previous: Some(snapshot),
             host: String::new(),
+            settings: ModuleSettings::default(),
         };
         let (value, elapsed) = context.previous::<u32>().expect("previous");
         assert_eq!(*value, 42);

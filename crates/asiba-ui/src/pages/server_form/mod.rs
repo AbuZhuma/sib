@@ -190,6 +190,13 @@ impl ServerForm {
                         .desired_rows(3),
                 );
                 ui.end_row();
+                field(
+                    ui,
+                    text::FORM_LOCATION,
+                    &mut f.location,
+                    text::FORM_LOCATION_HINT,
+                );
+                field(ui, text::FORM_LOCATION_LABEL, &mut f.location_label, "");
             });
     }
 

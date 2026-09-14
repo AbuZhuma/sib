@@ -28,6 +28,7 @@ pub async fn run(ctx: LoopContext) {
         let context = CollectContext {
             previous: previous.clone(),
             host: ctx.worker.spec.host.clone(),
+            settings: ctx.worker.spec.module_settings(ctx.module.id().0),
         };
         match ctx.module.collect(ctx.transport.as_ref(), &context).await {
             Ok(snapshot) => {

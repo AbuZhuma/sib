@@ -1,6 +1,8 @@
+use std::collections::BTreeMap;
+
 use asiba_core::{
-    AuthMethod, Credentials, Environment, JumpHost, ServerDescription, ServerId, ServerSpec,
-    SudoMode,
+    AuthMethod, Credentials, Environment, JumpHost, ManualLocation, ModuleSettings,
+    ServerDescription, ServerId, ServerSpec, SudoMode,
 };
 
 use crate::text;
@@ -36,6 +38,9 @@ pub struct FormFields {
     pub owner: String,
     pub links: String,
     pub notes: String,
+    pub location: String,
+    pub location_label: String,
+    pub modules: BTreeMap<String, ModuleSettings>,
 }
 
 impl FormFields {
@@ -78,6 +83,17 @@ impl FormFields {
             owner: d.owner.clone(),
             links: d.links.join("\n"),
             notes: d.notes.clone(),
+            location: spec
+                .location
+                .as_ref()
+                .map(|l| format!("{}, {}", l.lat, l.lon))
+                .unwrap_or_default(),
+            location_label: spec
+                .location
+                .as_ref()
+                .map(|l| l.label.clone())
+                .unwrap_or_default(),
+            modules: spec.modules.clone(),
             ..Self::default()
         }
     }
@@ -100,8 +116,27 @@ impl FormFields {
             jump: self.jump()?,
             sudo: self.sudo,
             description: self.description(),
+            location: self.location()?,
+            modules: self.modules.clone(),
         };
         Ok((spec, self.credentials()))
+    }
+
+    fn location(&self) -> Result<Option<ManualLocation>, String> {
+        let raw = self.location.trim();
+        if raw.is_empty() {
+            return Ok(None);
+        }
+        let (lat, lon) = raw
+            .split_once([',', ' '])
+            .and_then(|(lat, lon)| Some((lat.trim().parse().ok()?, lon.trim().parse().ok()?)))
+            .filter(|(lat, lon): &(f64, f64)| lat.abs() <= 90.0 && lon.abs() <= 180.0)
+            .ok_or_else(|| text::ERR_LOCATION.to_owned())?;
+        Ok(Some(ManualLocation {
+            lat,
+            lon,
+            label: self.location_label.trim().to_owned(),
+        }))
     }
 
     fn auth_method(&self) -> Result<AuthMethod, String> {

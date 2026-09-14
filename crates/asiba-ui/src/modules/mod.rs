@@ -1,5 +1,6 @@
 mod anomalies;
 mod cpu;
+mod deploy;
 mod disk;
 mod docker;
 mod logs;
@@ -33,10 +34,11 @@ pub enum Tab {
     Users,
     Security,
     Anomalies,
+    Deploy,
 }
 
 impl Tab {
-    pub const ALL: [Tab; 12] = [
+    pub const ALL: [Tab; 13] = [
         Tab::Summary,
         Tab::Processes,
         Tab::Resources,
@@ -49,6 +51,7 @@ impl Tab {
         Tab::Users,
         Tab::Security,
         Tab::Anomalies,
+        Tab::Deploy,
     ];
 
     pub fn from_key(key: &str) -> Option<Self> {
@@ -69,6 +72,7 @@ impl Tab {
             Tab::Users => "users",
             Tab::Security => "security",
             Tab::Anomalies => "anomalies",
+            Tab::Deploy => "deploy",
         }
     }
 
@@ -86,6 +90,7 @@ impl Tab {
             Tab::Users => text::TAB_USERS,
             Tab::Security => text::TAB_SECURITY,
             Tab::Anomalies => text::TAB_ANOMALIES,
+            Tab::Deploy => text::TAB_DEPLOY,
         }
     }
 }
@@ -152,6 +157,7 @@ pub fn all() -> Vec<Box<dyn ModuleView>> {
         Box::new(updates::UpdatesView),
         Box::new(security::SecurityView),
         Box::new(anomalies::AnomaliesView),
+        Box::new(deploy::DeployView),
     ]
 }
 

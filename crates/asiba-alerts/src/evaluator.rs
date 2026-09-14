@@ -210,6 +210,8 @@ mod tests {
             jump: None,
             sudo: SudoMode::None,
             description: Default::default(),
+            location: None,
+            modules: Default::default(),
         }
     }
 

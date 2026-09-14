@@ -12,6 +12,7 @@ async fn all_modules_collect_on_localhost() {
         let context = CollectContext {
             previous: first.ok(),
             host: "localhost".to_owned(),
+            settings: Default::default(),
         };
         let second = module.collect(&transport, &context).await;
         assert!(
