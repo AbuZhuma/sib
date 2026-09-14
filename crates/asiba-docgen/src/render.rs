@@ -13,6 +13,7 @@ pub fn render(server: &ServerState) -> String {
     sections::services(&mut out, server);
     sections::docker(&mut out, server);
     sections::ports(&mut out, server);
+    crate::deploy_section::deploy(&mut out, server);
     sections::problems(&mut out, server);
     out.push_str(&format!(
         "_Обновлено: {}_\n",
