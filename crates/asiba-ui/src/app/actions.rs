@@ -87,6 +87,19 @@ impl AsibaApp {
                 rules,
                 desktop_notifications,
             } => self.save_alert_settings(rules, desktop_notifications),
+            Action::SaveLlmConfig(config) => {
+                self.config.llm = config.clone();
+                self.engine.send(Command::SetLlmConfig(config));
+                if let Err(error) = self.config.save(&self.paths) {
+                    self.notices.push(Notice::new(error.to_string()));
+                }
+            }
+            Action::UnloadModel => self.engine.send(Command::UnloadModel),
+            Action::Audit { server, scope } => self.engine.send(Command::Audit {
+                server,
+                scope,
+                is_auto: false,
+            }),
         }
     }
 

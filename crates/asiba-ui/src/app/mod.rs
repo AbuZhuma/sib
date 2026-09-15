@@ -7,7 +7,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use asiba_config::{AppConfig, LayoutStore, Paths};
-use asiba_core::{AppState, ServerId, SharedState};
+use asiba_core::{AppState, AuditStatus, ServerId, SharedState};
 use asiba_engine::{EngineEvent, EngineHandle, RepaintNotifier};
 use egui::{CentralPanel, Frame, Margin, Panel};
 
@@ -161,6 +161,20 @@ impl AsibaApp {
                         )));
                     }
                 }
+                EngineEvent::AuditFinished(report) => {
+                    let message = match &report.status {
+                        AuditStatus::Failed(error) => {
+                            format!("{} {}: {error}", text::AUDIT_NOTICE_FAILED, report.server)
+                        }
+                        _ => format!(
+                            "{} {}: {}",
+                            text::AUDIT_NOTICE_DONE,
+                            report.server,
+                            report.scope.key()
+                        ),
+                    };
+                    self.notices.push(Notice::new(message));
+                }
                 EngineEvent::ServerSaved(_) | EngineEvent::ServerRemoved(_) => {}
                 EngineEvent::Warning(message) => self.notices.push(Notice::new(message)),
             }
@@ -185,7 +199,9 @@ impl AsibaApp {
         };
         let state: &AppState = frozen.as_deref().unwrap_or(&guard);
         match self.page.clone() {
-            Page::Overview => pages::overview::show(ui, state, &mut self.map),
+            Page::Overview => {
+                pages::overview::show(ui, state, &mut self.map, self.config.llm.is_ready())
+            }
             Page::Servers => pages::servers::show(ui, state),
             Page::ServerDetail(id) => match state.servers.get(&id) {
                 Some(server) => {
@@ -193,6 +209,7 @@ impl AsibaApp {
                     let detail = DetailContext {
                         server,
                         state,
+                        llm: &self.config.llm,
                         views: &self.views,
                         inspector: self.inspector.as_ref(),
                         layout: &layout,

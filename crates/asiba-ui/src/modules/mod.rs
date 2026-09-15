@@ -39,10 +39,11 @@ pub enum Tab {
     Anomalies,
     Deploy,
     Gpu,
+    Audit,
 }
 
 impl Tab {
-    pub const ALL: [Tab; 14] = [
+    pub const ALL: [Tab; 15] = [
         Tab::Summary,
         Tab::Processes,
         Tab::Resources,
@@ -57,6 +58,7 @@ impl Tab {
         Tab::Anomalies,
         Tab::Deploy,
         Tab::Gpu,
+        Tab::Audit,
     ];
 
     pub fn from_key(key: &str) -> Option<Self> {
@@ -79,6 +81,7 @@ impl Tab {
             Tab::Anomalies => "anomalies",
             Tab::Deploy => "deploy",
             Tab::Gpu => "gpu",
+            Tab::Audit => "audit",
         }
     }
 
@@ -98,6 +101,7 @@ impl Tab {
             Tab::Anomalies => text::TAB_ANOMALIES,
             Tab::Deploy => text::TAB_DEPLOY,
             Tab::Gpu => text::TAB_GPU,
+            Tab::Audit => text::AUDIT_TITLE,
         }
     }
 }

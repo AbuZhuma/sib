@@ -3,6 +3,7 @@ pub mod alerts;
 pub mod collection_settings;
 pub mod inspector;
 pub mod journal;
+pub mod llm_settings;
 pub mod map;
 pub mod overview;
 pub mod server_detail;
@@ -10,10 +11,10 @@ pub mod server_form;
 pub mod servers;
 pub mod settings;
 
-use asiba_config::{Retention, SummaryLayout, ThemeChoice};
+use asiba_config::{LlmConfig, Retention, SummaryLayout, ThemeChoice};
 use asiba_core::{
-    ActionRequest, ActionSpec, AlertRule, Credentials, Intervals, ModuleId, QueryRequest, ServerId,
-    ServerSpec,
+    ActionRequest, ActionSpec, AlertRule, AuditScope, Credentials, Intervals, ModuleId,
+    QueryRequest, ServerId, ServerSpec,
 };
 use asiba_engine::TestRequest;
 use chrono::{DateTime, Utc};
@@ -74,5 +75,11 @@ pub enum Action {
     SaveCollection {
         intervals: Intervals,
         retention: Retention,
+    },
+    SaveLlmConfig(LlmConfig),
+    UnloadModel,
+    Audit {
+        server: ServerId,
+        scope: AuditScope,
     },
 }

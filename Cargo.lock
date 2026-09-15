@@ -390,6 +390,7 @@ dependencies = [
  "asiba-core",
  "asiba-docgen",
  "asiba-incidents",
+ "asiba-llm",
  "asiba-modules",
  "asiba-storage",
  "asiba-transport",

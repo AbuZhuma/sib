@@ -6,6 +6,7 @@ mod engine;
 mod geo;
 mod history;
 mod incidents;
+mod llm;
 mod peers;
 mod persistence;
 mod test_connection;

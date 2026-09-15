@@ -20,6 +20,7 @@ asiba-core ◄── asiba-transport ◄──┐
 | `asiba-modules` | сборщики данных и их парсеры | как и когда их вызывают |
 | `asiba-storage` | SQLite: история метрик, даунсэмплинг, поток записи | модули, UI |
 | `asiba-incidents` | детекторы инцидентов (`Detector`) и сверка с состоянием (`reconcile`) | docgen, движок |
+| `asiba-llm` | бэкенд `Backend` (`LlamaServer` на localhost), сборка контекста с бюджетом токенов, плейбуки инцидентов, промпт | движок |
 | `asiba-docgen` | секции данных сервера; рендер `servers/<name>.md` (человек) и `servers/<name>.llm.md` (модель) | движок, UI |
 | `asiba-alerts` | встроенные правила, оценка правил и базовой линии над `AppState`, уведомления на рабочий стол | транспорт, UI |
 | `asiba-engine` | воркеры серверов, задачи сбора по модулям, пинг, переподключение, геолокация, алерты, действия, команды от UI | egui |
@@ -97,3 +98,9 @@ system, cpu, memory, disk, network, processes, services, docker, ports, logs, us
 ## Инциденты
 
 `asiba-incidents` — единый источник «негатива»: каждый детектор (`detectors/<name>.rs`, трейт `Detector`) по состоянию сервера возвращает `IncidentDraft { kind, severity, subject, summary, evidence }`. Детекторы: алерты, признаки DDoS, брутфорс SSH, проверки безопасности, упавшие юниты, контейнеры (остановлен при политике перезапуска, unhealthy, рестарт-петля), упавшие деплои, диски, память (OOM, swap), обновления безопасности, ошибки модулей, расхождение часов. `reconcile(&mut AppState, now)` сравнивает черновики (уровень ≥ warning) с активными `AppState.incidents` по `kind + subject`: новые открывает, исчезнувшие закрывает, совпавшие обновляет. Цикл алертов в движке вызывает `reconcile` каждые 5 с, пишет события, шлёт уведомления на рабочий стол и `EngineEvent::IncidentsOpened`. UI показывает активные инциденты на главной и в сводке сервера. Инциденты — точка запуска ЛЛМ-аудита (см. `docs/LLM-PLAN.md`): новый детектор автоматически становится новым триггером.
+
+## Аудит локальной моделью
+
+`asiba-llm`: `Backend` (реализация `LlamaServer` запускает `llama-server -m <gguf> --host 127.0.0.1 --port <свободный>` и ходит в `/v1/chat/completions`), `ContextBuilder` (части с приоритетом, бюджет токенов, обрезание по строкам), `playbook(kind)` — какие секции и какая задача для вида инцидента, `queries(incident)` — что дополнительно спросить у сервера (логи контейнера, journal юнита), `SYSTEM_PROMPT` и `build_user`.
+
+Движок (`engine/src/llm/`): один воркер `AuditWorker` с очередью `WorkerMessage::{Job, Unload}`. `Command::Audit { server, scope, is_auto }` приходит от UI (кнопка «Полный аудит», «разобрать») или из цикла алертов при открытии инцидента (если модель включена и `auto_audit`). Воркер проверяет готовность модели, для автозаданий — минимальный уровень и кулдаун по `server:kind:subject`, кладёт `AuditReport { status: Running }` в `AppState.audits`, собирает контекст (`context::prepare`: запросы к серверу через `Module::query`, затем секции по плейбуку через `render_llm_section`), при необходимости поднимает `llama-server` (`spawn_blocking`), выполняет запрос, пишет отчёт в `audits_dir/<сервер>/<время>_<scope>.md`, шлёт `EngineEvent::AuditFinished`. Модель выгружается по `UnloadModel` или после простоя (`idle_unload_secs`). Настройки — `AppConfig.llm` (`LlmConfig`), меняются на лету через `Command::SetLlmConfig`.

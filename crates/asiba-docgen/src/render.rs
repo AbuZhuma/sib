@@ -39,6 +39,16 @@ pub fn render_llm_sections(ctx: &DocContext<'_>, ids: &[SectionId]) -> String {
     out
 }
 
+pub fn render_llm_section(ctx: &DocContext<'_>, id: SectionId) -> Option<String> {
+    let section = sections::by_id(id)?;
+    if !section.is_available(ctx) {
+        return None;
+    }
+    let mut out = String::new();
+    section.llm(&mut out, ctx);
+    Some(out)
+}
+
 fn llm_header(ctx: &DocContext<'_>, ids: &[SectionId]) -> String {
     let keys: Vec<&str> = available(ctx, ids).iter().map(|s| s.id().key()).collect();
     format!(

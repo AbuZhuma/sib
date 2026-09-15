@@ -4,6 +4,7 @@ use asiba_core::{AlertRule, Intervals};
 use serde::{Deserialize, Serialize};
 
 use crate::error::ConfigError;
+use crate::llm_config::LlmConfig;
 use crate::paths::Paths;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
@@ -23,6 +24,7 @@ pub struct AppConfig {
     pub alert_rules: Vec<AlertRule>,
     pub intervals: Intervals,
     pub retention: Retention,
+    pub llm: LlmConfig,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -52,6 +54,7 @@ impl Default for AppConfig {
             alert_rules: Vec::new(),
             intervals: Intervals::default(),
             retention: Retention::default(),
+            llm: LlmConfig::default(),
         }
     }
 }

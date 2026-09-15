@@ -16,7 +16,7 @@ mod tile;
 pub use badge::{badge, severity_color};
 pub use chip::{chip, chip_value};
 pub use fields::{field, password_field, section_label};
-pub use incidents::incident_line;
+pub use incidents::{IncidentLine, has_report, incident_line, incident_scope};
 pub use map::MapState;
 pub use meter::meter;
 pub use nav::nav_item;

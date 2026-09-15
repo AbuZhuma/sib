@@ -1,10 +1,11 @@
+mod audit;
 mod connection;
 mod events;
 mod header;
 mod modules_table;
 mod summary;
 
-use asiba_config::SummaryLayout;
+use asiba_config::{LlmConfig, SummaryLayout};
 use asiba_core::{AppState, ModuleId, ServerState};
 use egui::{Id, RichText, Ui};
 
@@ -20,6 +21,7 @@ const TAB_KEY: &str = "server-detail-tab";
 pub struct DetailContext<'a> {
     pub server: &'a ServerState,
     pub state: &'a AppState,
+    pub llm: &'a LlmConfig,
     pub views: &'a [Box<dyn ModuleView>],
     pub inspector: Option<&'a Inspector>,
     pub layout: &'a SummaryLayout,
@@ -53,10 +55,12 @@ pub fn show(ui: &mut Ui, ctx: &DetailContext<'_>) -> Option<Action> {
                 &summary::SummaryContext {
                     server,
                     state: ctx.state,
+                    can_audit: ctx.llm.is_ready(),
                     views,
                     layout: ctx.layout,
                 },
             ),
+            Tab::Audit => audit::show(ui, ctx),
             other => pages_for(ui, ctx, other),
         };
         if next.is_some() {
@@ -71,7 +75,7 @@ fn visible_tabs(server: &ServerState, views: &[Box<dyn ModuleView>]) -> Vec<Tab>
     Tab::ALL
         .into_iter()
         .filter(|tab| {
-            *tab == Tab::Summary
+            matches!(tab, Tab::Summary | Tab::Audit)
                 || views
                     .iter()
                     .any(|v| v.tab() == *tab && has_data(server, v.id()))

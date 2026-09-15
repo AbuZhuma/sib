@@ -40,6 +40,13 @@ fn sections(ui: &mut Ui, ctx: &SettingsContext<'_>) -> Option<Action> {
         action = collection;
     }
     ui.add_space(GAP);
+    let llm = panel(ui, text::SETTINGS_SECTION_LLM, |ui| {
+        super::llm_settings::show(ui, config, ctx.state)
+    });
+    if llm.is_some() {
+        action = llm;
+    }
+    ui.add_space(GAP);
     let rules = panel(ui, text::SETTINGS_SECTION_ALERTS, |ui| {
         super::alert_rules::show(ui, config)
     });

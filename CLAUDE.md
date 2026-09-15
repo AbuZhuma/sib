@@ -22,7 +22,7 @@
 - `unsafe` запрещён без записи в `DECISIONS.md`.
 
 ### Архитектура
-- Направление зависимостей: `core ← transport, storage, config ← modules ← incidents ← docgen, alerts ← engine ← ui ← app`. Обратные зависимости запрещены.
+- Направление зависимостей: `core ← transport, storage, config ← modules ← incidents ← docgen, alerts ← llm ← engine ← ui ← app`. Обратные зависимости запрещены.
 - `asiba-core` не зависит ни от SSH, ни от egui, ни от SQLite.
 - Новый источник данных — всегда новый модуль по `docs/MODULE_GUIDE.md`, никогда не дописывание существующего.
 - Модуль обязан корректно отвечать `Unavailable`, если данных на сервере нет. UI никогда не показывает недоступный модуль.

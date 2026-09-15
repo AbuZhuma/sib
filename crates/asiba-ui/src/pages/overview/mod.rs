@@ -18,7 +18,7 @@ use crate::theme::{GAP, MINI_MAP_HEIGHT, Palette};
 const EVENTS_SHOWN: usize = 40;
 const EVENT_FILTER_KEY: &str = "overview-event-filter";
 
-pub fn show(ui: &mut Ui, state: &AppState, map: &mut MapState) -> Option<Action> {
+pub fn show(ui: &mut Ui, state: &AppState, map: &mut MapState, can_audit: bool) -> Option<Action> {
     page_title(ui, text::OVERVIEW_TITLE);
     tiles::show(ui, state);
     ui.add_space(GAP);
@@ -29,7 +29,7 @@ pub fn show(ui: &mut Ui, state: &AppState, map: &mut MapState) -> Option<Action>
                 action = next;
             }
         };
-        set(blocks::active_incidents(ui, state));
+        set(blocks::active_incidents(ui, state, can_audit));
         set(blocks::active_deploys(ui, state));
         set(blocks::active_anomalies(ui, state));
         set(panel(ui, text::SECTION_SERVERS, |ui| {

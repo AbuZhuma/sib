@@ -3,7 +3,9 @@ use asiba_core::{AppState, ServerState};
 use egui::{Id, RichText, Ui};
 
 use super::{connection, header, modules_table, select_tab};
-use crate::components::{incident_line, panel, panel_with_controls};
+use crate::components::{
+    IncidentLine, has_report, incident_line, incident_scope, panel, panel_with_controls,
+};
 use crate::modules::{ModuleView, Tab, has_data};
 use crate::pages::Action;
 use crate::text;
@@ -14,6 +16,7 @@ const EDIT_KEY: &str = "summary-layout-editing";
 pub struct SummaryContext<'a> {
     pub server: &'a ServerState,
     pub state: &'a AppState,
+    pub can_audit: bool,
     pub views: &'a [Box<dyn ModuleView>],
     pub layout: &'a SummaryLayout,
 }
@@ -24,7 +27,9 @@ pub fn show(ui: &mut Ui, ctx: &SummaryContext<'_>) -> Option<Action> {
         connection::show(ui, server)
     });
     ui.add_space(GAP);
-    incidents(ui, ctx);
+    if let Some(next) = incidents(ui, ctx) {
+        action = Some(next);
+    }
     let editing = edit_toggle(ui);
     let available: Vec<&dyn ModuleView> = ctx
         .views
@@ -86,22 +91,38 @@ pub fn show(ui: &mut Ui, ctx: &SummaryContext<'_>) -> Option<Action> {
     action
 }
 
-fn incidents(ui: &mut Ui, ctx: &SummaryContext<'_>) {
+fn incidents(ui: &mut Ui, ctx: &SummaryContext<'_>) -> Option<Action> {
     let mut incidents: Vec<&asiba_core::Incident> = ctx
         .state
         .active_incidents()
         .filter(|i| i.server == ctx.server.spec.id)
         .collect();
     if incidents.is_empty() {
-        return;
+        return None;
     }
     incidents.sort_by_key(|i| std::cmp::Reverse((i.severity, i.started_at)));
+    let mut action = None;
     panel(ui, text::SECTION_INCIDENTS, |ui| {
         for incident in incidents {
-            incident_line(ui, incident, false);
+            let line = IncidentLine {
+                incident,
+                show_server: false,
+                can_audit: ctx.can_audit,
+                has_report: has_report(ctx.state, incident),
+            };
+            let click = incident_line(ui, &line);
+            if click.audit {
+                action = Some(Action::Audit {
+                    server: incident.server.clone(),
+                    scope: incident_scope(incident),
+                });
+            } else if click.open_report {
+                select_tab(ui.ctx(), Tab::Audit);
+            }
         }
     });
     ui.add_space(GAP);
+    action
 }
 
 fn shorter_column(columns: &[Ui]) -> usize {

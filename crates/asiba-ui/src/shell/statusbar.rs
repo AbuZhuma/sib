@@ -59,6 +59,9 @@ pub fn statusbar(ui: &mut Ui, ctx: StatusContext<'_>) {
         if is_under_attack(state) {
             badge(ui, text::STATUS_ATTACK, p.critical);
         }
+        if state.audits.iter().any(|a| a.is_running()) {
+            badge(ui, text::STATUS_LLM_BUSY, p.accent);
+        }
         for notice in ctx.notices.iter().rev().take(2) {
             ui.separator();
             ui.label(RichText::new(&notice.message).color(p.warning));

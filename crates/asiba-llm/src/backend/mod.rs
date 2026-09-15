@@ -1,6 +1,6 @@
 mod llama_server;
 
-pub use llama_server::{LlamaConfig, LlamaServer};
+pub use llama_server::{LlamaConfig, LlamaServer, model_name};
 
 use crate::error::LlmError;
 

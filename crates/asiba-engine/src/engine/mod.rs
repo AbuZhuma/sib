@@ -5,7 +5,10 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
-use asiba_core::{Credentials, Intervals, ModuleRegistry, ServerId, ServerSpec, SharedState};
+use asiba_config::LlmConfig;
+use asiba_core::{
+    AuditScope, Credentials, Intervals, ModuleRegistry, ServerId, ServerSpec, SharedState,
+};
 use asiba_storage::StorageWriter;
 use asiba_transport::HostKeyPolicy;
 use tokio::sync::{mpsc, watch};
@@ -15,6 +18,7 @@ use crate::actions;
 use crate::alerts::{self, AlertLoop, AlertSettings};
 use crate::command::{Command, EngineEvent};
 use crate::geo;
+use crate::llm::{self, AuditJob, AuditWorker, WorkerMessage};
 use crate::peers;
 use crate::persistence::Persistence;
 use crate::worker::TransportSlot;
@@ -60,6 +64,8 @@ pub struct EngineDeps {
     pub geo_cache: Option<PathBuf>,
     pub alert_settings: AlertSettings,
     pub intervals: Intervals,
+    pub llm: LlmConfig,
+    pub audits_dir: PathBuf,
 }
 
 struct Engine {
@@ -74,6 +80,8 @@ struct Engine {
     events: mpsc::UnboundedSender<EngineEvent>,
     workers: HashMap<ServerId, WorkerEntry>,
     alert_settings: watch::Sender<AlertSettings>,
+    llm_config: watch::Sender<LlmConfig>,
+    audits: mpsc::UnboundedSender<WorkerMessage>,
 }
 
 pub fn spawn(
@@ -84,11 +92,22 @@ pub fn spawn(
     let (commands, mut receiver) = mpsc::unbounded_channel();
     let (events, event_receiver) = mpsc::unbounded_channel();
     let (alert_settings, alert_receiver) = watch::channel(deps.alert_settings);
+    let (llm_config, llm_receiver) = watch::channel(deps.llm);
     let alert_loop = AlertLoop {
         state: Arc::clone(&deps.state),
         settings: alert_receiver,
+        llm: llm_receiver.clone(),
         notify: Arc::clone(&notify),
         events: events.clone(),
+        commands: commands.clone(),
+    };
+    let audit_worker = AuditWorker {
+        state: Arc::clone(&deps.state),
+        registry: deps.registry.clone(),
+        config: llm_receiver,
+        audits_dir: deps.audits_dir,
+        events: events.clone(),
+        notify: Arc::clone(&notify),
     };
     let mut engine = Engine {
         registry: deps.registry,
@@ -102,8 +121,11 @@ pub fn spawn(
         events,
         workers: HashMap::new(),
         alert_settings,
+        llm_config,
+        audits: llm::spawn_detached(),
     };
     runtime.spawn(async move {
+        engine.audits = llm::spawn(audit_worker);
         alerts::spawn(alert_loop);
         geo::resolve_self(engine.geo_request());
         peers::spawn(peers::PeerLookup {
@@ -124,6 +146,25 @@ pub fn spawn(
 }
 
 impl Engine {
+    fn audit(&self, server: ServerId, scope: AuditScope, is_auto: bool) {
+        let incident = match &scope {
+            AuditScope::Incident { incident_id, .. } => self
+                .state
+                .read()
+                .ok()
+                .and_then(|s| s.incidents.iter().find(|i| i.id == *incident_id).cloned()),
+            AuditScope::Full => None,
+        };
+        let job = AuditJob {
+            transport: self.transport_of(&server),
+            server,
+            scope,
+            incident,
+            is_auto,
+        };
+        let _ = self.audits.send(WorkerMessage::Job(Box::new(job)));
+    }
+
     fn set_intervals(&mut self, intervals: Intervals) {
         let clamped = intervals.clamped();
         if clamped == self.intervals {
@@ -212,6 +253,17 @@ impl Engine {
                 let _ = self.alert_settings.send(settings);
             }
             Command::SetIntervals(intervals) => self.set_intervals(intervals),
+            Command::Audit {
+                server,
+                scope,
+                is_auto,
+            } => self.audit(server, scope, is_auto),
+            Command::SetLlmConfig(config) => {
+                let _ = self.llm_config.send(config);
+            }
+            Command::UnloadModel => {
+                let _ = self.audits.send(WorkerMessage::Unload);
+            }
         }
     }
 

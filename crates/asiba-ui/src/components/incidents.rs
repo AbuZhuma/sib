@@ -1,4 +1,4 @@
-use asiba_core::{Incident, IncidentKind};
+use asiba_core::{AppState, AuditScope, Incident, IncidentKind};
 use chrono::Utc;
 use egui::{RichText, Ui};
 
@@ -24,22 +24,58 @@ fn kind_label(kind: IncidentKind) -> &'static str {
     }
 }
 
-pub fn incident_line(ui: &mut Ui, incident: &Incident, show_server: bool) -> bool {
+pub struct IncidentLine<'a> {
+    pub incident: &'a Incident,
+    pub show_server: bool,
+    pub can_audit: bool,
+    pub has_report: bool,
+}
+
+#[derive(Default)]
+pub struct IncidentClick {
+    pub open_server: bool,
+    pub audit: bool,
+    pub open_report: bool,
+}
+
+pub fn incident_line(ui: &mut Ui, line: &IncidentLine<'_>) -> IncidentClick {
     let p = Palette::current(ui.ctx());
-    let mut clicked = false;
+    let incident = line.incident;
+    let mut click = IncidentClick::default();
     ui.horizontal_wrapped(|ui| {
         badge(
             ui,
             kind_label(incident.kind),
             severity_color(&p, incident.severity),
         );
-        if show_server && ui.link(incident.server.as_str()).clicked() {
-            clicked = true;
+        if line.show_server && ui.link(incident.server.as_str()).clicked() {
+            click.open_server = true;
         }
         ui.label(&incident.summary);
         let age =
             format::duration_short((Utc::now() - incident.started_at).num_seconds().max(0) as f64);
         ui.label(RichText::new(age).small().color(p.text_muted));
+        if line.has_report && ui.small_button(text::AUDIT_REPORT).clicked() {
+            click.open_report = true;
+        }
+        if line.can_audit && ui.small_button(text::AUDIT_INCIDENT).clicked() {
+            click.audit = true;
+        }
     });
-    clicked
+    click
+}
+
+pub fn has_report(state: &AppState, incident: &Incident) -> bool {
+    state.audits.iter().any(|a| {
+        a.server == incident.server
+            && matches!(&a.scope, AuditScope::Incident { incident_id, .. } if *incident_id == incident.id)
+    })
+}
+
+pub fn incident_scope(incident: &Incident) -> AuditScope {
+    AuditScope::Incident {
+        incident_id: incident.id,
+        kind: incident.kind,
+        subject: incident.subject.clone(),
+    }
 }

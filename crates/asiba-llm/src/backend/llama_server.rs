@@ -180,7 +180,7 @@ fn spawn(config: &LlamaConfig, port: u16) -> Result<Child, LlmError> {
     })
 }
 
-fn model_name(path: &Path) -> String {
+pub fn model_name(path: &Path) -> String {
     path.file_stem()
         .map(|s| s.to_string_lossy().into_owned())
         .unwrap_or_else(|| "model".to_owned())

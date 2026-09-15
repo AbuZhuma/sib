@@ -1,12 +1,13 @@
 use std::time::Duration;
 
 use asiba_alerts::Evaluator;
-use asiba_core::{AlertRule, SharedState};
+use asiba_config::LlmConfig;
+use asiba_core::{AlertRule, AuditScope, SharedState};
 use chrono::{DateTime, Utc};
 use tokio::sync::{mpsc, watch};
 use tokio::time::{MissedTickBehavior, interval};
 
-use crate::command::EngineEvent;
+use crate::command::{Command, EngineEvent};
 use crate::engine::RepaintNotifier;
 use crate::incidents;
 
@@ -30,8 +31,10 @@ impl AlertSettings {
 pub struct AlertLoop {
     pub state: SharedState,
     pub settings: watch::Receiver<AlertSettings>,
+    pub llm: watch::Receiver<LlmConfig>,
     pub notify: RepaintNotifier,
     pub events: mpsc::UnboundedSender<EngineEvent>,
+    pub commands: mpsc::UnboundedSender<Command>,
 }
 
 pub fn spawn(context: AlertLoop) {
@@ -68,8 +71,27 @@ async fn run(mut context: AlertLoop) {
             }
         }
         incidents::announce(&opened, notify_desktop);
+        request_audits(&context, &opened);
         let _ = context.events.send(EngineEvent::IncidentsOpened(opened));
         (context.notify)();
+    }
+}
+
+fn request_audits(context: &AlertLoop, opened: &[asiba_core::Incident]) {
+    let config = context.llm.borrow();
+    if !config.enabled || !config.auto_audit {
+        return;
+    }
+    for incident in opened {
+        let _ = context.commands.send(Command::Audit {
+            server: incident.server.clone(),
+            scope: AuditScope::Incident {
+                incident_id: incident.id,
+                kind: incident.kind,
+                subject: incident.subject.clone(),
+            },
+            is_auto: true,
+        });
     }
 }
 

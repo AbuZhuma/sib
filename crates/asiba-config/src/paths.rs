@@ -50,6 +50,10 @@ impl Paths {
         self.cache_dir.join(TILES_DIR)
     }
 
+    pub fn audits_dir(&self) -> PathBuf {
+        self.state_dir.join("audits")
+    }
+
     pub fn default_servers_dir(&self) -> PathBuf {
         self.config_dir.join(SERVERS_DIR)
     }

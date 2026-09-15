@@ -5,7 +5,9 @@ use asiba_modules::{cpu, disk, memory, network};
 use egui::{RichText, Ui};
 
 use super::{Action, Page};
-use crate::components::{Table, badge, incident_line, panel, severity_color};
+use crate::components::{
+    IncidentLine, Table, badge, has_report, incident_line, incident_scope, panel, severity_color,
+};
 use crate::format;
 use crate::modules::deploy_timeline;
 use crate::text;
@@ -41,7 +43,7 @@ pub fn active_deploys(ui: &mut Ui, state: &AppState) -> Option<Action> {
     action
 }
 
-pub fn active_incidents(ui: &mut Ui, state: &AppState) -> Option<Action> {
+pub fn active_incidents(ui: &mut Ui, state: &AppState, can_audit: bool) -> Option<Action> {
     let mut incidents: Vec<&asiba_core::Incident> = state.active_incidents().collect();
     if incidents.is_empty() {
         return None;
@@ -50,7 +52,19 @@ pub fn active_incidents(ui: &mut Ui, state: &AppState) -> Option<Action> {
     let mut action = None;
     panel(ui, text::SECTION_INCIDENTS, |ui| {
         for incident in incidents {
-            if incident_line(ui, incident, true) {
+            let line = IncidentLine {
+                incident,
+                show_server: true,
+                can_audit,
+                has_report: has_report(state, incident),
+            };
+            let click = incident_line(ui, &line);
+            if click.audit {
+                action = Some(Action::Audit {
+                    server: incident.server.clone(),
+                    scope: incident_scope(incident),
+                });
+            } else if click.open_server || click.open_report {
                 action = Some(Action::Navigate(Page::ServerDetail(
                     incident.server.clone(),
                 )));

@@ -41,6 +41,8 @@ fn main() -> anyhow::Result<()> {
         geo_cache: Some(paths.geo_cache()),
         alert_settings,
         intervals: config.intervals,
+        llm: config.llm.clone(),
+        audits_dir: paths.audits_dir(),
     };
     let factory = Box::new(move |notify| asiba_engine::spawn(&handle, engine_deps, notify));
     let deps = AppDeps {
