@@ -22,6 +22,7 @@ pub fn show(ui: &mut Ui, server: &ServerState) {
         scroll::vertical()
             .id_salt(("server-events", server.spec.id.as_str()))
             .max_height(EVENTS_HEIGHT)
+            .auto_shrink([false, false])
             .show(ui, |ui| events_table(ui, server, &p));
     });
 }
