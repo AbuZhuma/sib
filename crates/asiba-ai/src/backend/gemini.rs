@@ -65,6 +65,8 @@ struct CandidateContent {
 struct ResponsePart {
     #[serde(default)]
     text: String,
+    #[serde(default)]
+    thought: bool,
 }
 
 #[derive(Deserialize)]
@@ -139,6 +141,7 @@ fn extract_text(parsed: GenerateResponse) -> Result<String, AiError> {
         .map(|c| {
             c.parts
                 .into_iter()
+                .filter(|p| !p.thought)
                 .map(|p| p.text)
                 .collect::<Vec<_>>()
                 .join("")

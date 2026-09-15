@@ -69,7 +69,12 @@ impl AppConfig {
             path: path.clone(),
             source,
         })?;
-        toml::from_str(&raw).map_err(|source| ConfigError::Parse { path, source })
+        let config: Self =
+            toml::from_str(&raw).map_err(|source| ConfigError::Parse { path, source })?;
+        Ok(Self {
+            ai: config.ai.with_supported_model(),
+            ..config
+        })
     }
 
     pub fn save(&self, paths: &Paths) -> Result<(), ConfigError> {

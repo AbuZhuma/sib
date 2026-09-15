@@ -12,7 +12,7 @@ pub use openai::OpenAi;
 
 use crate::error::AiError;
 
-pub const GEMINI_DEFAULT_MODEL: &str = "gemini-2.5-flash";
+pub const GEMINI_DEFAULT_MODEL: &str = "gemini-3.6-flash";
 pub const OPENAI_DEFAULT_MODEL: &str = "gpt-5-mini";
 pub const ANTHROPIC_DEFAULT_MODEL: &str = "claude-sonnet-5";
 pub const OPENAI_DEFAULT_BASE_URL: &str = "https://api.openai.com/v1";

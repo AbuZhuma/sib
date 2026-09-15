@@ -17,7 +17,7 @@
 
 ## Провайдеры
 
-`asiba-ai::Backend` с реализациями `Gemini` (`generateContent`, `x-goog-api-key`), `OpenAi` (`/chat/completions`, `Authorization: Bearer`; тот же класс с другим `base_url` — любой совместимый API) и `Anthropic` (`/v1/messages`). Модели по умолчанию: `gemini-2.5-flash`, `gpt-5-mini`, `claude-sonnet-5`; меняются в настройках. Лимит контекста задаётся в настройках (по умолчанию 60 000 токенов); части контекста режутся по приоритету, если не влезают.
+`asiba-ai::Backend` с реализациями `Gemini` (`generateContent`, `x-goog-api-key`), `OpenAi` (`/chat/completions`, `Authorization: Bearer`; тот же класс с другим `base_url` — любой совместимый API) и `Anthropic` (`/v1/messages`). Модели по умолчанию: `gemini-3.6-flash`, `gpt-5-mini`, `claude-sonnet-5`; меняются в настройках. Лимит контекста задаётся в настройках (по умолчанию 60 000 токенов); части контекста режутся по приоритету, если не влезают.
 
 ## Виды анализа и промпты
 

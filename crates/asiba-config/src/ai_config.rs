@@ -3,11 +3,14 @@ use serde::{Deserialize, Serialize};
 
 pub const DEFAULT_CONTEXT_TOKENS: usize = 60_000;
 pub const DEFAULT_COOLDOWN_SECS: u64 = 1800;
-const GEMINI_MODELS: [&str; 4] = [
-    "gemini-2.5-flash",
-    "gemini-2.5-pro",
-    "gemini-2.5-flash-lite",
-    "gemini-2.0-flash",
+const GEMINI_MODELS: [&str; 7] = [
+    "gemini-3.6-flash",
+    "gemini-3.7-flash",
+    "gemini-3.8-flash",
+    "gemini-3.5-flash-lite",
+    "gemini-3.1-pro-preview",
+    "gemini-flash-latest",
+    "gemini-pro-latest",
 ];
 const OPENAI_MODELS: [&str; 6] = [
     "gpt-5-mini",
@@ -99,6 +102,14 @@ impl Default for AiConfig {
 }
 
 impl AiConfig {
+    pub fn with_supported_model(mut self) -> Self {
+        let is_known = self.provider.models().contains(&self.model.trim());
+        if !is_known && !self.provider.needs_base_url() {
+            self.model = self.provider.default_model().to_owned();
+        }
+        self
+    }
+
     pub fn is_ready(&self) -> bool {
         self.consent
             && !self.api_key.trim().is_empty()
@@ -116,6 +127,19 @@ mod tests {
         assert!(parsed.is_ready());
         assert_eq!(parsed.provider, AiProvider::Gemini);
         assert_eq!(parsed.model, GEMINI_MODELS[0]);
+    }
+
+    #[test]
+    fn retired_model_is_replaced_by_the_provider_default() {
+        let parsed: AiConfig = toml::from_str("model = \"gemini-2.5-flash\"").expect("parse");
+        assert_eq!(parsed.with_supported_model().model, GEMINI_MODELS[0]);
+    }
+
+    #[test]
+    fn custom_model_of_compatible_provider_is_kept() {
+        let parsed: AiConfig =
+            toml::from_str("provider = \"open_ai_compatible\"\nmodel = \"llama\"").expect("parse");
+        assert_eq!(parsed.with_supported_model().model, "llama");
     }
 
     #[test]
