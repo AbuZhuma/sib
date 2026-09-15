@@ -476,6 +476,7 @@ dependencies = [
  "asiba-config",
  "asiba-core",
  "asiba-engine",
+ "asiba-incidents",
  "asiba-modules",
  "asiba-transport",
  "chrono",

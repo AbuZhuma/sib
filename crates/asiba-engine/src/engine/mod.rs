@@ -199,11 +199,9 @@ impl Engine {
 
     fn cancel_audit(&self, id: u64) {
         if let Ok(mut state) = self.state.write()
-            && let Some(report) = state.audit_mut(id)
-            && report.is_running()
+            && state.audits.iter().any(|a| a.id == id && a.is_running())
         {
-            report.status = AuditStatus::Cancelled;
-            report.finished_at = Some(Utc::now());
+            state.audits.retain(|a| a.id != id);
             self.cancellations.cancel(id);
         }
         (self.notify)();

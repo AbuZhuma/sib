@@ -4,6 +4,7 @@ mod events;
 mod header;
 mod modules_table;
 mod summary;
+mod system_audit;
 
 use asiba_config::{AiConfig, SummaryLayout};
 use asiba_core::{AppState, AuditScope, AuditTarget, ModuleId, ServerState};
@@ -60,7 +61,10 @@ pub fn show(ui: &mut Ui, ctx: &DetailContext<'_>) -> Option<Action> {
                     layout: ctx.layout,
                 },
             ),
-            Tab::Audit => audit::show(ui, ctx),
+            Tab::Audit => {
+                system_audit::show(ui, ctx);
+                audit::show(ui, ctx)
+            }
             other => {
                 let analysis_action = section_analysis(ui, ctx, other);
                 pages_for(ui, ctx, other).or(analysis_action)
