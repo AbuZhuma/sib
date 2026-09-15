@@ -27,7 +27,7 @@ fn status_label(status: DeployStatus, english: bool) -> &'static str {
 fn row(deploy: &Deploy, english: bool) -> Vec<String> {
     let stages: Vec<&str> = deploy.stages.iter().map(|s| s.name.as_str()).collect();
     let detail = match &deploy.error {
-        Some(error) => format!("{} — {}", deploy.detail, error.line),
+        Some(error) => format!("{} - {}", deploy.detail, error.line),
         None => deploy.detail.clone(),
     };
     vec![

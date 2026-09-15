@@ -96,7 +96,7 @@ fn firewall_cell(ui: &mut Ui, port: &ListeningPort, p: &Palette) {
         Some(true) => badge(ui, text::PORT_ALLOWED, p.ok),
         Some(false) => badge(ui, text::PORT_BLOCKED, p.text_muted),
         None => {
-            ui.label(RichText::new("—").color(p.text_muted));
+            ui.label(RichText::new("-").color(p.text_muted));
         }
     }
 }
@@ -109,7 +109,7 @@ fn reachable_cell(ui: &mut Ui, port: &ListeningPort, p: &Palette) {
         Some(true) => badge(ui, text::PORT_OPEN, p.ok),
         Some(false) => badge(ui, text::PORT_CLOSED, p.text_muted),
         None => {
-            ui.label(RichText::new("—").color(p.text_muted));
+            ui.label(RichText::new("-").color(p.text_muted));
         }
     }
 }

@@ -23,7 +23,7 @@ impl Detector for SecurityChecksDetector {
                     IncidentKind::SecurityCheck,
                     severity,
                     check.label,
-                    format!("{} — {}", check.label, check.detail),
+                    format!("{} - {}", check.label, check.detail),
                 ))
             })
             .collect()

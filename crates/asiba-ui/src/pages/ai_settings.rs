@@ -1,6 +1,6 @@
 use asiba_config::{AiConfig, AiProvider, AppConfig};
 use asiba_core::{AppState, Severity};
-use egui::{Grid, Id, RichText, TextEdit, Ui};
+use egui::{ComboBox, Grid, Id, RichText, TextEdit, Ui};
 
 use super::Action;
 use crate::components::chip_value;
@@ -105,6 +105,17 @@ pub fn show(ui: &mut Ui, config: &AppConfig, state: &AppState) -> Option<Action>
     action
 }
 
+fn model_selector(ui: &mut Ui, draft: &mut Draft) {
+    ComboBox::from_id_salt("ai-model")
+        .width(MODEL_FIELD)
+        .selected_text(draft.model.clone())
+        .show_ui(ui, |ui| {
+            for model in draft.provider.models() {
+                ui.selectable_value(&mut draft.model, (*model).to_owned(), *model);
+            }
+        });
+}
+
 fn provider_picker(ui: &mut Ui, draft: &mut Draft, p: &Palette) {
     ui.horizontal_wrapped(|ui| {
         ui.label(RichText::new(text::AI_PROVIDER).color(p.text_secondary));
@@ -112,9 +123,12 @@ fn provider_picker(ui: &mut Ui, draft: &mut Draft, p: &Palette) {
         for provider in AiProvider::ALL {
             chip_value(ui, &mut draft.provider, provider, provider.label());
         }
-        let was_default = draft.model.trim() == previous.default_model();
-        if draft.provider != previous && (was_default || draft.model.trim().is_empty()) {
-            draft.model = draft.provider.default_model().to_owned();
+        let known = draft.provider.models().contains(&draft.model.trim());
+        if draft.provider != previous && (!known || !draft.provider.needs_base_url()) {
+            let keep = previous.needs_base_url() && !draft.model.trim().is_empty();
+            if !known || !keep {
+                draft.model = draft.provider.default_model().to_owned();
+            }
         }
     });
 }
@@ -128,17 +142,33 @@ fn fields(ui: &mut Ui, draft: &mut Draft) {
             .desired_width(KEY_FIELD),
     );
     ui.end_row();
-    let mut text_row = |label: &str, value: &mut String, width: f32| {
-        ui.label(RichText::new(label).color(p.text_secondary));
-        ui.add(TextEdit::singleline(value).desired_width(width));
-        ui.end_row();
-    };
-    text_row(text::AI_MODEL, &mut draft.model, MODEL_FIELD);
     if draft.provider.needs_base_url() {
-        text_row(text::AI_BASE_URL, &mut draft.base_url, KEY_FIELD);
+        text_row(ui, text::AI_BASE_URL, &mut draft.base_url, KEY_FIELD);
+        text_row(ui, text::AI_MODEL, &mut draft.model, MODEL_FIELD);
+    } else {
+        ui.label(RichText::new(text::AI_MODEL).color(p.text_secondary));
+        model_selector(ui, draft);
+        ui.end_row();
     }
-    text_row(text::AI_CONTEXT, &mut draft.context_tokens, NUMBER_FIELD);
-    text_row(text::AI_COOLDOWN, &mut draft.cooldown_minutes, NUMBER_FIELD);
+    text_row(
+        ui,
+        text::AI_CONTEXT,
+        &mut draft.context_tokens,
+        NUMBER_FIELD,
+    );
+    text_row(
+        ui,
+        text::AI_COOLDOWN,
+        &mut draft.cooldown_minutes,
+        NUMBER_FIELD,
+    );
+}
+
+fn text_row(ui: &mut Ui, label: &str, value: &mut String, width: f32) {
+    let p = Palette::current(ui.ctx());
+    ui.label(RichText::new(label).color(p.text_secondary));
+    ui.add(TextEdit::singleline(value).desired_width(width));
+    ui.end_row();
 }
 
 fn status_line(ui: &mut Ui, config: &AiConfig, state: &AppState) {

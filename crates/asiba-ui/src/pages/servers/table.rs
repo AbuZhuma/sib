@@ -55,14 +55,14 @@ pub fn show(ui: &mut Ui, servers: &[&ServerState], state: &AppState) -> Option<S
                     server
                         .latest_value(key)
                         .map(|v| format!("{v:.0}%"))
-                        .unwrap_or_else(|| "—".to_owned()),
+                        .unwrap_or_else(|| "-".to_owned()),
                 );
             }
             ui.monospace(
                 server
                     .data::<SystemInfo>(system::ID)
                     .map(|i| i.uptime_human())
-                    .unwrap_or_else(|| "—".to_owned()),
+                    .unwrap_or_else(|| "-".to_owned()),
             );
             alert_counts(ui, state, server);
             ui.end_row();

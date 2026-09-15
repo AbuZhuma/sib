@@ -35,7 +35,7 @@ impl ModuleView for CpuView {
         ui.horizontal(|ui| {
             let value = busy
                 .map(|v| format!("{v:.0}%"))
-                .unwrap_or_else(|| "—".to_owned());
+                .unwrap_or_else(|| "-".to_owned());
             ui.allocate_ui(
                 Vec2::new(BIG_NUMBER_WIDTH, SUMMARY_SPARKLINE_HEIGHT),
                 |ui| {

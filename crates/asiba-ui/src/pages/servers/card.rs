@@ -197,7 +197,7 @@ fn body(ui: &mut Ui, server: &ServerState) {
         .as_ref()
         .and_then(|p| p.rtt_ms)
         .map(|v| format!("{v:.0} ms"))
-        .unwrap_or_else(|| "—".to_owned());
+        .unwrap_or_else(|| "-".to_owned());
     ui.monospace(
         RichText::new(format!("up {}  ping {ping}", info.uptime_human()))
             .small()
@@ -213,6 +213,6 @@ fn metric_line(ui: &mut Ui, label: &str, value: Option<String>) {
                 .monospace()
                 .color(p.text_secondary),
         );
-        ui.monospace(value.unwrap_or_else(|| "—".to_owned()));
+        ui.monospace(value.unwrap_or_else(|| "-".to_owned()));
     });
 }

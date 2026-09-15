@@ -25,7 +25,7 @@ pub fn show(ui: &mut Ui, server: &ServerState) {
             let updated = state
                 .last_collected
                 .map(format::clock)
-                .unwrap_or_else(|| "—".to_owned());
+                .unwrap_or_else(|| "-".to_owned());
             ui.monospace(updated);
             match state.last_error.as_deref() {
                 Some(error) => ui.label(RichText::new(error).color(p.critical)),

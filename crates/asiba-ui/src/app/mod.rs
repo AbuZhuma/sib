@@ -146,7 +146,7 @@ impl AsibaApp {
                         text::ACTION_FAILED
                     };
                     let message = format!(
-                        "{} {}: {outcome} — {}",
+                        "{} {}: {outcome} - {}",
                         record.kind, record.target, record.message
                     );
                     self.notices.push(Notice::new(message));

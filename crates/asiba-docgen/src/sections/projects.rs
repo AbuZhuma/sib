@@ -16,7 +16,7 @@ fn git_label(project: &Project) -> Option<String> {
     } else {
         String::new()
     };
-    Some(format!("{} — {}{dirty}", git.branch, git.last_commit))
+    Some(format!("{} - {}{dirty}", git.branch, git.last_commit))
 }
 
 fn ports_label(project: &Project) -> String {

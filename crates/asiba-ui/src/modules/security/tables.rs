@@ -81,7 +81,7 @@ pub fn bans(ui: &mut Ui, snapshot: &SecuritySnapshot) -> Option<ViewAction> {
         for ban in &snapshot.bans {
             ui.monospace(&ban.ip);
             ui.label(RichText::new(&ban.source).color(p.text_secondary));
-            ui.monospace(ban.expires.as_deref().unwrap_or("—"));
+            ui.monospace(ban.expires.as_deref().unwrap_or("-"));
             if ui.small_button(text::ACT_UNBAN).clicked() {
                 action = Some(ViewAction::Act {
                     spec: security::SPEC_UNBAN,

@@ -124,7 +124,7 @@ fn counters(ui: &mut Ui, snapshot: &AnomaliesSnapshot) {
     let rate = |value: Option<f64>| {
         value
             .map(|v| format!("{v:.0}"))
-            .unwrap_or_else(|| "—".to_owned())
+            .unwrap_or_else(|| "-".to_owned())
     };
     let rates = snapshot.rates;
     let mut rows = vec![

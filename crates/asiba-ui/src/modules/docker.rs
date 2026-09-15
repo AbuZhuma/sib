@@ -53,7 +53,7 @@ impl ModuleView for DockerView {
             .take(5)
         {
             ui.label(
-                RichText::new(format!("{} — {}", container.name, container.status))
+                RichText::new(format!("{} - {}", container.name, container.status))
                     .color(p.warning),
             );
         }
@@ -114,7 +114,7 @@ fn running_table(ui: &mut Ui, snapshot: &DockerSnapshot, p: &Palette) {
                 .stats
                 .as_ref()
                 .map(|s| (format!("{:.1}%", s.cpu_pct), format::bytes(s.mem_usage)))
-                .unwrap_or_else(|| ("—".to_owned(), "—".to_owned()));
+                .unwrap_or_else(|| ("-".to_owned(), "-".to_owned()));
             ui.monospace(cpu);
             ui.monospace(mem);
             ui.label(RichText::new(&container.status).color(p.text_secondary));
@@ -165,7 +165,7 @@ fn containers_table(ui: &mut Ui, id: &str, containers: &[&Container]) -> Option<
                 }
                 None => {
                     for _ in 0..3 {
-                        ui.monospace("—");
+                        ui.monospace("-");
                     }
                 }
             }

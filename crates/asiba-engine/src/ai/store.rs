@@ -19,7 +19,7 @@ pub fn write_report(dir: &Path, report: &AuditReport) -> Option<PathBuf> {
     let scope = report.scope.key().replace(['/', ':', ' '], "_");
     let path = server_dir.join(format!("{stamp}_{scope}.md"));
     let body = format!(
-        "# Audit: {} — {}\n\nmodel: {}\ncontext_tokens: {}\nstarted: {}\n\n{}\n",
+        "# Audit: {} - {}\n\nmodel: {}\ncontext_tokens: {}\nstarted: {}\n\n{}\n",
         report.target.key(),
         report.scope.key(),
         report.model,

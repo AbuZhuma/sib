@@ -228,7 +228,7 @@ fn row_cells(
         process
             .cpu_pct
             .map(|v| format!("{v:.1}%"))
-            .unwrap_or_else(|| "—".to_owned()),
+            .unwrap_or_else(|| "-".to_owned()),
     );
     mono(
         row,
@@ -243,14 +243,14 @@ fn row_cells(
         process
             .read_bps
             .map(format::bytes_per_second)
-            .unwrap_or_else(|| "—".to_owned()),
+            .unwrap_or_else(|| "-".to_owned()),
     );
     mono(
         row,
         process
             .write_bps
             .map(format::bytes_per_second)
-            .unwrap_or_else(|| "—".to_owned()),
+            .unwrap_or_else(|| "-".to_owned()),
     );
     row.col(|ui| {
         let color = if process.is_zombie() {

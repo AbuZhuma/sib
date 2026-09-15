@@ -97,7 +97,7 @@ fn max_tries(snapshot: &SecuritySnapshot) -> Check {
 fn port(snapshot: &SecuritySnapshot) -> Check {
     let check = Check::new(Category::Ssh, "SSH не на порту 22", Weight::Low);
     match snapshot.sshd.port {
-        Some(22) => check.with(CheckStatus::Warn, "порт 22 — основная цель сканеров"),
+        Some(22) => check.with(CheckStatus::Warn, "порт 22 - основная цель сканеров"),
         Some(port) => check.with(CheckStatus::Pass, format!("порт {port}")),
         None => check.with(CheckStatus::Unknown, String::new()),
     }

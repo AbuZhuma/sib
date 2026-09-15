@@ -90,7 +90,7 @@ fn rate_row(ui: &mut Ui, server: &ServerState, label: &str, key: &str, color: eg
         let value = server
             .latest_value(key)
             .map(format::bytes_per_second)
-            .unwrap_or_else(|| "—".to_owned());
+            .unwrap_or_else(|| "-".to_owned());
         ui.allocate_ui(Vec2::new(RATE_LABEL_WIDTH, SUMMARY_RATE_HEIGHT), |ui| {
             ui.vertical(|ui| {
                 ui.label(RichText::new(label).color(p.text_secondary));
@@ -122,7 +122,7 @@ fn interfaces_table(ui: &mut Ui, snapshot: &NetworkSnapshot) {
                 interface
                     .speed_mbps
                     .map(|s| format!("{s} Mb/s"))
-                    .unwrap_or_else(|| "—".to_owned()),
+                    .unwrap_or_else(|| "-".to_owned()),
             );
             match &interface.rates {
                 Some(rates) => {

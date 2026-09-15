@@ -99,7 +99,7 @@ fn filesystems_table(ui: &mut Ui, snapshot: &DiskSnapshot) {
             let inodes = if fs.inodes_total > 0 {
                 format!("{:.0}%", fs.inodes_used_pct())
             } else {
-                "—".to_owned()
+                "-".to_owned()
             };
             ui.monospace(inodes);
             ui.end_row();
@@ -127,7 +127,7 @@ fn devices_table(ui: &mut Ui, snapshot: &DiskSnapshot) {
                 }
                 None => {
                     for _ in 0..4 {
-                        ui.monospace("—");
+                        ui.monospace("-");
                     }
                 }
             }

@@ -51,7 +51,7 @@ impl ModuleView for ServicesView {
             );
         });
         for unit in failed.iter().take(5) {
-            ui.label(RichText::new(format!("{} — {}", unit.name, unit.result)).color(p.critical));
+            ui.label(RichText::new(format!("{} - {}", unit.name, unit.result)).color(p.critical));
         }
         let custom: Vec<&Unit> = snapshot
             .custom()
@@ -136,7 +136,7 @@ fn units_table(ui: &mut Ui, snapshot: &ServicesSnapshot, filters: Filters) -> Op
             ui.monospace(if unit.main_pid > 0 {
                 unit.main_pid.to_string()
             } else {
-                "—".to_owned()
+                "-".to_owned()
             });
             ui.label(&unit.description);
             ui.horizontal(|ui| {
@@ -171,13 +171,13 @@ fn timers_table(ui: &mut Ui, snapshot: &ServicesSnapshot) {
                 timer
                     .next
                     .map(format::date_time)
-                    .unwrap_or_else(|| "—".to_owned()),
+                    .unwrap_or_else(|| "-".to_owned()),
             );
             ui.monospace(
                 timer
                     .last
                     .map(format::date_time)
-                    .unwrap_or_else(|| "—".to_owned()),
+                    .unwrap_or_else(|| "-".to_owned()),
             );
             ui.label(RichText::new(&timer.activates).color(p.text_muted));
             ui.end_row();

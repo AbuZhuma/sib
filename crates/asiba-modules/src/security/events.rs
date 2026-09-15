@@ -57,7 +57,7 @@ fn logins(
             Severity::Info
         };
         let suffix = if is_new_ip {
-            " — новый адрес"
+            " - новый адрес"
         } else {
             ""
         };

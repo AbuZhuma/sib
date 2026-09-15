@@ -182,7 +182,7 @@ fn process_summary(processes: &[(u32, String)]) -> String {
     } else {
         String::new()
     };
-    format!("{} — {}{suffix}", processes.len(), shown.join(", "))
+    format!("{} - {}{suffix}", processes.len(), shown.join(", "))
 }
 
 fn unassigned(ui: &mut Ui, snapshot: &ProjectsSnapshot) {
@@ -223,6 +223,6 @@ mod tests {
             (2, "node".to_owned()),
             (3, "node".to_owned()),
         ];
-        assert_eq!(process_summary(&processes), "3 — node ×2, bash");
+        assert_eq!(process_summary(&processes), "3 - node ×2, bash");
     }
 }

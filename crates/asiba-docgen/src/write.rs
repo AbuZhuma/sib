@@ -2,7 +2,7 @@ use std::fmt::Write;
 
 use chrono::{DateTime, Local, Utc};
 
-pub const NONE: &str = "—";
+pub const NONE: &str = "-";
 
 pub fn line(out: &mut String, text: impl AsRef<str>) {
     let _ = writeln!(out, "{}", text.as_ref());

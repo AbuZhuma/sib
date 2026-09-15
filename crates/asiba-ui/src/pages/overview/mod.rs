@@ -111,9 +111,9 @@ fn server_metrics(ui: &mut Ui, server: &ServerState) {
         server
             .latest_value(key)
             .map(|v| format!("{v:.0}%"))
-            .unwrap_or_else(|| "—".to_owned())
+            .unwrap_or_else(|| "-".to_owned())
     };
-    ui.label(info.map(|i| i.os_name.as_str()).unwrap_or("—"));
+    ui.label(info.map(|i| i.os_name.as_str()).unwrap_or("-"));
     ui.monospace(percent(cpu::KEY_TOTAL));
     ui.monospace(percent(memory::KEY_USED_PCT));
     ui.monospace(percent(disk::KEY_ROOT_USED_PCT));
@@ -126,11 +126,11 @@ fn server_metrics(ui: &mut Ui, server: &ServerState) {
     ui.monospace(
         rx.zip(tx)
             .map(|(rx, tx)| format!("{rx} / {tx}"))
-            .unwrap_or_else(|| "—".to_owned()),
+            .unwrap_or_else(|| "-".to_owned()),
     );
     ui.monospace(
         info.map(|i| i.uptime_human())
-            .unwrap_or_else(|| "—".to_owned()),
+            .unwrap_or_else(|| "-".to_owned()),
     );
 }
 
@@ -160,7 +160,7 @@ pub fn alert_counts(ui: &mut Ui, state: &AppState, server: &ServerState) {
             );
         }
         if critical + warning == 0 {
-            ui.label(RichText::new("—").color(p.text_muted));
+            ui.label(RichText::new("-").color(p.text_muted));
         }
     });
 }
@@ -200,7 +200,7 @@ fn events(ui: &mut Ui, state: &AppState) {
     Table::new("overview-events", &columns).show(ui, |ui| {
         for event in shown {
             ui.monospace(format::clock(event.at));
-            ui.label(event.server.as_ref().map(|s| s.as_str()).unwrap_or("—"));
+            ui.label(event.server.as_ref().map(|s| s.as_str()).unwrap_or("-"));
             ui.label(event.module.0);
             ui.label(RichText::new(&event.message).color(severity_color(&p, event.severity)));
             ui.end_row();

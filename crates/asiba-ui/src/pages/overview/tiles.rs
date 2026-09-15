@@ -24,7 +24,7 @@ pub fn show(ui: &mut Ui, state: &AppState) {
     let percent = |value: Option<f64>| {
         value
             .map(|v| format!("{v:.0}%"))
-            .unwrap_or_else(|| "—".to_owned())
+            .unwrap_or_else(|| "-".to_owned())
     };
     let traffic = sum(state, network::KEY_RX_BPS)
         .zip(sum(state, network::KEY_TX_BPS))
@@ -35,7 +35,7 @@ pub fn show(ui: &mut Ui, state: &AppState) {
                 format::bytes_per_second(tx)
             )
         })
-        .unwrap_or_else(|| "—".to_owned());
+        .unwrap_or_else(|| "-".to_owned());
     let tiles = [
         spec(text::TILE_SERVERS, total.to_string(), None),
         spec(

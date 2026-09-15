@@ -83,7 +83,7 @@ fn risky_ports(snapshot: &SecuritySnapshot) -> Check {
     if ports.is_empty() {
         return check.with(
             CheckStatus::Pass,
-            "telnet, ftp, rsh, docker api, redis, mongo, elastic — закрыты",
+            "telnet, ftp, rsh, docker api, redis, mongo, elastic - закрыты",
         );
     }
     let list: Vec<String> = ports.iter().map(u16::to_string).collect();
