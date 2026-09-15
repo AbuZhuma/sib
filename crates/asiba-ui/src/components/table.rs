@@ -1,3 +1,4 @@
+use egui::scroll_area::ScrollBarVisibility;
 use egui::{Grid, RichText, ScrollArea, Ui};
 
 use crate::theme::{Palette, ROW_HEIGHT};
@@ -15,6 +16,7 @@ impl<'a> Table<'a> {
     pub fn show(self, ui: &mut Ui, add_rows: impl FnOnce(&mut Ui)) {
         ScrollArea::horizontal()
             .id_salt((self.id, "scroll"))
+            .scroll_bar_visibility(ScrollBarVisibility::AlwaysHidden)
             .show(ui, |ui| {
                 Grid::new(self.id)
                     .num_columns(self.columns.len())

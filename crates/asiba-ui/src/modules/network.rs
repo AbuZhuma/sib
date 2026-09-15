@@ -51,7 +51,8 @@ impl ModuleView for NetworkView {
     fn page(&self, ui: &mut Ui, server: &ServerState, _shared: &ViewShared) -> Option<ViewAction> {
         let p = Palette::current(ui.ctx());
         let snapshot = server.data::<NetworkSnapshot>(network::ID)?;
-        let mut plot = TimeSeriesPlot::new("network-plot", Unit::BytesPerSecond);
+        let mut plot =
+            TimeSeriesPlot::new("network-plot", Unit::BytesPerSecond).title(text::PLOT_NETWORK);
         if let Some(series) = server.series.get(network::KEY_RX_BPS) {
             plot = plot.series("RX", series, p.chart[0]);
         }
@@ -62,6 +63,7 @@ impl ModuleView for NetworkView {
         ui.add_space(GAP);
         if let Some(series) = server.series.get(asiba_engine::PING_SERIES_KEY) {
             TimeSeriesPlot::new("ping-plot", Unit::Milliseconds)
+                .title(text::PLOT_PING)
                 .height(SECONDARY_PLOT_HEIGHT)
                 .series(text::NET_PING, series, p.chart[1])
                 .show(ui);
@@ -69,6 +71,7 @@ impl ModuleView for NetworkView {
         }
         if let Some(series) = server.series.get(network::KEY_ESTABLISHED) {
             TimeSeriesPlot::new("connections-plot", Unit::Count)
+                .title(text::PLOT_CONNECTIONS)
                 .height(SECONDARY_PLOT_HEIGHT)
                 .series(text::NET_ESTABLISHED, series, p.chart[4])
                 .show(ui);

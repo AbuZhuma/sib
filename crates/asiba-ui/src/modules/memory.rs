@@ -52,7 +52,7 @@ impl ModuleView for MemoryView {
         let snapshot = server.data::<MemorySnapshot>(memory::ID)?;
         self.summary(ui, server);
         ui.add_space(GAP);
-        let mut plot = TimeSeriesPlot::new("memory-plot", Unit::Bytes);
+        let mut plot = TimeSeriesPlot::new("memory-plot", Unit::Bytes).title(text::PLOT_MEMORY);
         let keys = [
             (memory::KEY_USED_BYTES, text::MEM_USED, p.chart[0]),
             (memory::KEY_CACHED_BYTES, text::MEM_CACHED, p.chart[1]),

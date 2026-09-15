@@ -3,7 +3,7 @@ use asiba_core::{AlertRule, Condition, Severity};
 use egui::{ComboBox, Id, RichText, TextEdit, Ui};
 
 use super::Action;
-use crate::components::{Table, badge, severity_color};
+use crate::components::{Table, badge, chip_value, severity_color};
 use crate::text;
 use crate::theme::{FIELD_WIDTH, GAP, Palette};
 
@@ -155,8 +155,8 @@ fn condition_picker(ui: &mut Ui, condition: &mut Condition) {
         .selected_text(condition.symbol())
         .width(SHORT_FIELD / 2.0)
         .show_ui(ui, |ui| {
-            ui.selectable_value(condition, Condition::Above, Condition::Above.symbol());
-            ui.selectable_value(condition, Condition::Below, Condition::Below.symbol());
+            chip_value(ui, condition, Condition::Above, Condition::Above.symbol());
+            chip_value(ui, condition, Condition::Below, Condition::Below.symbol());
         });
 }
 
@@ -165,7 +165,7 @@ fn severity_picker(ui: &mut Ui, severity: &mut Severity) {
         .selected_text(severity_label(*severity))
         .show_ui(ui, |ui| {
             for level in [Severity::Info, Severity::Warning, Severity::Critical] {
-                ui.selectable_value(severity, level, severity_label(level));
+                chip_value(ui, severity, level, severity_label(level));
             }
         });
 }

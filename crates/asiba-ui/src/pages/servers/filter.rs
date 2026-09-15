@@ -2,6 +2,7 @@ use asiba_core::{AppState, ConnectionStatus, Environment, ServerState};
 use egui::{TextEdit, Ui};
 
 use super::environment_label;
+use crate::components::chip_value;
 use crate::text;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -79,16 +80,21 @@ pub fn toolbar(ui: &mut Ui, filter: &mut Filter, state: &AppState) {
             (StatusFilter::Offline, text::STATUS_OFFLINE),
             (StatusFilter::Problems, text::FILTER_PROBLEMS),
         ] {
-            ui.selectable_value(&mut filter.status, status, label);
+            chip_value(ui, &mut filter.status, status, label);
         }
         ui.separator();
-        ui.selectable_value(&mut filter.environment, None, text::FILTER_ALL);
+        chip_value(ui, &mut filter.environment, None, text::FILTER_ALL);
         for env in environments_in_use(state) {
-            ui.selectable_value(&mut filter.environment, Some(env), environment_label(env));
+            chip_value(
+                ui,
+                &mut filter.environment,
+                Some(env),
+                environment_label(env),
+            );
         }
         ui.separator();
-        ui.selectable_value(&mut filter.view, ViewMode::Grid, text::VIEW_GRID);
-        ui.selectable_value(&mut filter.view, ViewMode::Table, text::VIEW_TABLE);
+        chip_value(ui, &mut filter.view, ViewMode::Grid, text::VIEW_GRID);
+        chip_value(ui, &mut filter.view, ViewMode::Table, text::VIEW_TABLE);
     });
 }
 

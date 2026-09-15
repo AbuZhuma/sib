@@ -4,6 +4,7 @@ use egui::{Id, RichText, TextEdit, Ui};
 use egui_extras::{Column, TableBuilder};
 
 use super::{ModuleView, Tab, ViewAction, ViewShared, action_button};
+use crate::components::chip_value;
 use crate::format;
 use crate::text;
 use crate::theme::{GAP, Palette, ROW_HEIGHT};
@@ -110,7 +111,7 @@ fn toolbar(ui: &mut Ui, state: &mut TableState) {
         );
         ui.label(text::PROC_SORT);
         for (sort, label) in sort_options() {
-            ui.selectable_value(&mut state.sort, sort, label);
+            chip_value(ui, &mut state.sort, sort, label);
         }
     });
 }

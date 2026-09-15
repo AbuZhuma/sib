@@ -7,7 +7,9 @@ use asiba_modules::{cpu, disk, memory, network};
 use egui::{Id, RichText, ScrollArea, Ui, Vec2};
 
 use super::{Action, Page};
-use crate::components::{MapState, Table, page_title, panel, severity_color, status_label};
+use crate::components::{
+    MapState, Table, chip_value, page_title, panel, severity_color, status_label,
+};
 use crate::format;
 use crate::modules::attack_badge;
 use crate::text;
@@ -163,7 +165,7 @@ fn events(ui: &mut Ui, state: &AppState) {
             (Severity::Warning, text::SEVERITY_WARNING),
             (Severity::Critical, text::SEVERITY_CRITICAL),
         ] {
-            ui.selectable_value(&mut minimum, level, label);
+            chip_value(ui, &mut minimum, level, label);
         }
     });
     ui.ctx().data_mut(|d| d.insert_temp(id, minimum));

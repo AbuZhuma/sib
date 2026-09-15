@@ -1,6 +1,6 @@
 use asiba_core::Series;
 use chrono::{Duration as ChronoDuration, Utc};
-use egui::{Color32, Stroke, Ui};
+use egui::{Color32, RichText, Sense, Stroke, Ui, Vec2};
 use egui_plot::{GridMark, HoverPosition, Line, Plot, PlotPoints};
 
 use crate::format;
@@ -13,6 +13,7 @@ const MAX_HEIGHT: f32 = 380.0;
 const HEIGHT_RATIO: f32 = 0.26;
 const DEFAULT_WINDOW_SECS: i64 = 600;
 const MIN_SPAN_SECS: f64 = 30.0;
+const SWATCH: f32 = 8.0;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Unit {
@@ -53,6 +54,7 @@ pub struct TimeSeriesPlot<'a> {
     pub height: Option<f32>,
     pub window_secs: i64,
     pub series: Vec<PlotSeries<'a>>,
+    title: Option<&'a str>,
 }
 
 impl<'a> TimeSeriesPlot<'a> {
@@ -63,7 +65,31 @@ impl<'a> TimeSeriesPlot<'a> {
             height: None,
             window_secs: DEFAULT_WINDOW_SECS,
             series: Vec::new(),
+            title: None,
         }
+    }
+
+    pub fn title(mut self, title: &'a str) -> Self {
+        self.title = Some(title);
+        self
+    }
+
+    fn caption(&self, ui: &mut Ui, p: &Palette) {
+        ui.horizontal_wrapped(|ui| {
+            ui.spacing_mut().item_spacing.x = 6.0;
+            if let Some(title) = self.title {
+                ui.label(
+                    RichText::new(title.to_uppercase())
+                        .small()
+                        .color(p.text_secondary),
+                );
+            }
+            for entry in &self.series {
+                let (rect, _) = ui.allocate_exact_size(Vec2::splat(SWATCH), Sense::hover());
+                ui.painter().rect_filled(rect, 0.0, entry.color);
+                ui.label(RichText::new(entry.label).small().color(p.text_secondary));
+            }
+        });
     }
 
     pub fn height(mut self, height: f32) -> Self {
@@ -107,6 +133,7 @@ impl<'a> TimeSeriesPlot<'a> {
         let window = ChronoDuration::seconds(self.window_secs);
         let left = self.left_edge_secs(now);
         let height = self.resolved_height(ui);
+        self.caption(ui, &p);
         let mut plot = Plot::new(self.id)
             .height(height)
             .allow_drag(false)

@@ -3,7 +3,7 @@ use asiba_core::AppState;
 use egui::{Grid, RichText, ScrollArea, Ui};
 
 use super::Action;
-use crate::components::{page_title, panel};
+use crate::components::{chip_value, page_title, panel};
 use crate::text;
 use crate::theme::{GAP, Palette};
 
@@ -63,8 +63,18 @@ fn theme_picker(ui: &mut Ui, current: ThemeChoice) -> Option<Action> {
     let mut chosen = current;
     ui.horizontal(|ui| {
         ui.label(text::SETTINGS_THEME);
-        ui.selectable_value(&mut chosen, ThemeChoice::Dark, text::SETTINGS_THEME_DARK);
-        ui.selectable_value(&mut chosen, ThemeChoice::Light, text::SETTINGS_THEME_LIGHT);
+        chip_value(
+            ui,
+            &mut chosen,
+            ThemeChoice::Dark,
+            text::SETTINGS_THEME_DARK,
+        );
+        chip_value(
+            ui,
+            &mut chosen,
+            ThemeChoice::Light,
+            text::SETTINGS_THEME_LIGHT,
+        );
     });
     (chosen != current).then_some(Action::SetTheme(chosen))
 }

@@ -133,6 +133,7 @@ mod tests {
             bans: Vec::new(),
             ban_backend: None,
             is_root_view: false,
+            hardening: Default::default(),
         }
     }
 

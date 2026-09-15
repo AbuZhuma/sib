@@ -1,6 +1,7 @@
 use asiba_core::ModuleError;
 use chrono::{DateTime, Utc};
 
+use super::hardening;
 use super::journal;
 use super::model::{Ban, BanBackend, FirewallState, Jail, SecuritySnapshot, SshdSettings, Switch};
 use crate::common::sections::Sections;
@@ -46,6 +47,7 @@ pub fn security_snapshot(raw: &str, now: DateTime<Utc>) -> Result<SecuritySnapsh
         bans,
         ban_backend: ban_backend(&tools),
         is_root_view: sections.get_or_empty("whoami").trim() == "root",
+        hardening: hardening::parse(&sections, units),
     })
 }
 
@@ -199,6 +201,10 @@ fn sshd_settings(raw: &str) -> SshdSettings {
             "permitrootlogin" => settings.permit_root_login = Some(value.to_ascii_lowercase()),
             "port" => settings.port = value.parse().ok(),
             "maxauthtries" => settings.max_auth_tries = value.parse().ok(),
+            "permitemptypasswords" => {
+                settings.permit_empty_passwords = Some(Switch::from_yes_no(value));
+            }
+            "x11forwarding" => settings.x11_forwarding = Some(Switch::from_yes_no(value)),
             _ => {}
         }
     }

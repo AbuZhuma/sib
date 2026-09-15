@@ -39,25 +39,30 @@ impl ModuleView for GpuView {
             gpu_line(ui, gpu);
         }
         ui.add_space(GAP);
-        plot(ui, server, snapshot, "util_pct", Unit::Percent, &p, None);
-        plot(
-            ui,
-            server,
-            snapshot,
-            "mem_pct",
-            Unit::Percent,
-            &p,
-            Some(SECONDARY_PLOT_HEIGHT),
-        );
-        plot(
-            ui,
-            server,
-            snapshot,
-            "temp_c",
-            Unit::Celsius,
-            &p,
-            Some(SECONDARY_PLOT_HEIGHT),
-        );
+        let plots = [
+            ("util_pct", text::PLOT_GPU_UTIL, Unit::Percent, None),
+            (
+                "mem_pct",
+                text::PLOT_GPU_MEM,
+                Unit::Percent,
+                Some(SECONDARY_PLOT_HEIGHT),
+            ),
+            (
+                "temp_c",
+                text::PLOT_GPU_TEMP,
+                Unit::Celsius,
+                Some(SECONDARY_PLOT_HEIGHT),
+            ),
+        ];
+        for (metric, title, unit, height) in plots {
+            let spec = PlotSpec {
+                metric,
+                title,
+                unit,
+                height,
+            };
+            plot(ui, server, snapshot, &spec, &p);
+        }
         processes(ui, snapshot);
         None
     }
@@ -93,17 +98,17 @@ fn gpu_line(ui: &mut Ui, gpu: &Gpu) {
     meter(ui, text::GPU_MEMORY, gpu.memory_pct(), &memory);
 }
 
-fn plot(
-    ui: &mut Ui,
-    server: &ServerState,
-    snapshot: &GpuSnapshot,
-    metric: &str,
+struct PlotSpec {
+    metric: &'static str,
+    title: &'static str,
     unit: Unit,
-    p: &Palette,
     height: Option<f32>,
-) {
+}
+
+fn plot(ui: &mut Ui, server: &ServerState, snapshot: &GpuSnapshot, spec: &PlotSpec, p: &Palette) {
+    let (metric, unit, height) = (spec.metric, spec.unit, spec.height);
     let id = format!("gpu-{metric}");
-    let mut plot = TimeSeriesPlot::new(&id, unit);
+    let mut plot = TimeSeriesPlot::new(&id, unit).title(spec.title);
     let mut has_series = false;
     let labels: Vec<String> = snapshot
         .gpus

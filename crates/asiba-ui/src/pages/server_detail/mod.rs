@@ -9,7 +9,7 @@ use asiba_core::{ModuleId, ServerState};
 use egui::{Id, RichText, ScrollArea, Ui};
 
 use super::Action;
-use crate::components::panel;
+use crate::components::{chip, panel, panel_plain};
 use crate::modules::{ModuleView, Tab, ViewAction, ViewShared, has_data};
 use crate::pages::inspector::{self, Inspector};
 use crate::text;
@@ -89,10 +89,7 @@ fn tab_bar(ui: &mut Ui, tabs: &[Tab], current: &mut Tab) -> bool {
         for tab in tabs {
             let selected = tab == current;
             let color = if selected { p.text } else { p.text_secondary };
-            if ui
-                .selectable_label(selected, RichText::new(tab.label()).color(color))
-                .clicked()
-            {
+            if chip(ui, selected, RichText::new(tab.label()).color(color)).clicked() {
                 *current = *tab;
                 changed = true;
             }
@@ -105,11 +102,17 @@ fn tab_bar(ui: &mut Ui, tabs: &[Tab], current: &mut Tab) -> bool {
 fn pages_for(ui: &mut Ui, ctx: &DetailContext<'_>, tab: Tab) -> Option<Action> {
     let (server, views) = (ctx.server, ctx.views);
     let mut action = None;
-    for view in views
+    let shown: Vec<&Box<dyn ModuleView>> = views
         .iter()
         .filter(|v| v.tab() == tab && has_data(server, v.id()))
-    {
-        let view_action = panel(ui, view.title(), |ui| view.page(ui, server, &ctx.shared));
+        .collect();
+    let is_single = shown.len() == 1;
+    for view in shown {
+        let view_action = if is_single {
+            panel_plain(ui, |ui| view.page(ui, server, &ctx.shared))
+        } else {
+            panel(ui, view.title(), |ui| view.page(ui, server, &ctx.shared))
+        };
         if let Some(view_action) = view_action {
             action = Some(to_action(view_action, server, view.id()));
         }

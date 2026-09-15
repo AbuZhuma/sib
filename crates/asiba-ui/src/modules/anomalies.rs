@@ -164,7 +164,8 @@ fn counters(ui: &mut Ui, snapshot: &AnomaliesSnapshot) {
 }
 
 fn plots(ui: &mut Ui, server: &ServerState, p: &Palette) {
-    let mut plot = TimeSeriesPlot::new("anomalies-conn-plot", Unit::Count);
+    let mut plot =
+        TimeSeriesPlot::new("anomalies-conn-plot", Unit::Count).title(text::PLOT_ANOM_CONN);
     if let Some(series) = server.series.get(anomalies::KEY_SYN_RECV) {
         plot = plot.series(text::ANOM_PLOT_SYN, series, p.chart[3]);
     }
@@ -173,7 +174,7 @@ fn plots(ui: &mut Ui, server: &ServerState, p: &Palette) {
     }
     plot.height(SECONDARY_PLOT_HEIGHT).show(ui);
     ui.add_space(GAP);
-    let mut pps = TimeSeriesPlot::new("anomalies-pps-plot", Unit::Count);
+    let mut pps = TimeSeriesPlot::new("anomalies-pps-plot", Unit::Count).title(text::PLOT_ANOM_PPS);
     if let Some(series) = server.series.get(anomalies::KEY_PPS_IN) {
         pps = pps.series("pps in", series, p.chart[0]);
     }

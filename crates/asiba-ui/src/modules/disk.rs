@@ -45,7 +45,8 @@ impl ModuleView for DiskView {
         let snapshot = server.data::<DiskSnapshot>(disk::ID)?;
         filesystems_table(ui, snapshot);
         ui.add_space(GAP);
-        let mut plot = TimeSeriesPlot::new("disk-io-plot", Unit::BytesPerSecond);
+        let mut plot =
+            TimeSeriesPlot::new("disk-io-plot", Unit::BytesPerSecond).title(text::PLOT_DISK_IO);
         if let Some(series) = server.series.get(disk::KEY_READ_BPS) {
             plot = plot.series(text::DISK_READ, series, p.chart[0]);
         }

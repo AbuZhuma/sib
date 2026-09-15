@@ -1,5 +1,5 @@
 use asiba_core::Series;
-use egui::{Color32, Pos2, Sense, Stroke, Ui, Vec2};
+use egui::{Color32, Pos2, Rect, Sense, Stroke, Ui, Vec2};
 
 const LINE_WIDTH: f32 = 1.25;
 
@@ -10,19 +10,20 @@ pub fn sparkline(
     color: Color32,
     max: Option<f64>,
 ) {
-    let (rect, _) = ui.allocate_exact_size(size, Sense::hover());
+    let (allocated, _) = ui.allocate_exact_size(size, Sense::hover());
+    let rect = Rect::from_center_size(allocated.center(), size);
     let Some(series) = series.filter(|s| s.len() > 1) else {
         return;
     };
     let top = max.unwrap_or_else(|| series.max_value()).max(1e-9);
-    let count = series.len();
-    let step = rect.width() / (count - 1) as f32;
-    let points: Vec<Pos2> = series
+    let values = downsample(series, rect.width() as usize);
+    let step = rect.width() / (values.len().max(2) - 1) as f32;
+    let points: Vec<Pos2> = values
         .iter()
         .enumerate()
-        .map(|(index, point)| {
+        .map(|(index, value)| {
             let x = rect.left() + step * index as f32;
-            let ratio = (point.value / top).clamp(0.0, 1.0) as f32;
+            let ratio = (value / top).clamp(0.0, 1.0) as f32;
             Pos2::new(x, rect.bottom() - ratio * rect.height())
         })
         .collect();
@@ -53,4 +54,17 @@ pub fn sparkline_fill(
 ) {
     let width = ui.available_width();
     sparkline(ui, series, Vec2::new(width, height), color, max);
+}
+
+fn downsample(series: &Series, columns: usize) -> Vec<f64> {
+    let values: Vec<f64> = series.iter().map(|p| p.value).collect();
+    let columns = columns.max(2);
+    if values.len() <= columns {
+        return values;
+    }
+    let bucket = values.len().div_ceil(columns);
+    values
+        .chunks(bucket)
+        .map(|chunk| chunk.iter().copied().fold(f64::MIN, f64::max))
+        .collect()
 }

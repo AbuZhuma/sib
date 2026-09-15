@@ -74,7 +74,7 @@ impl ModuleView for CpuView {
     fn page(&self, ui: &mut Ui, server: &ServerState, _shared: &ViewShared) -> Option<ViewAction> {
         let p = Palette::current(ui.ctx());
         let snapshot = server.data::<CpuSnapshot>(cpu::ID)?;
-        let mut plot = TimeSeriesPlot::new("cpu-plot", Unit::Percent);
+        let mut plot = TimeSeriesPlot::new("cpu-plot", Unit::Percent).title(text::PLOT_CPU);
         let keys = [
             (cpu::KEY_TOTAL, text::CPU_TOTAL, p.chart[0]),
             (cpu::KEY_USER, text::CPU_USER, p.chart[1]),
@@ -91,6 +91,7 @@ impl ModuleView for CpuView {
         ui.add_space(GAP);
         if let Some(series) = server.series.get(cpu::KEY_TEMPERATURE) {
             TimeSeriesPlot::new("cpu-temperature", Unit::Celsius)
+                .title(text::PLOT_CPU_TEMP)
                 .height(SECONDARY_PLOT_HEIGHT)
                 .series(text::CPU_TEMPERATURE, series, p.chart[3])
                 .show(ui);

@@ -8,7 +8,7 @@ use egui::{ComboBox, Grid, RichText, ScrollArea, TextEdit, Ui};
 
 use super::servers::environment_label;
 use super::{Action, Page};
-use crate::components::{field, page_title, panel, password_field, section_label};
+use crate::components::{chip_value, field, page_title, panel, password_field, section_label};
 use crate::modules::ModuleView;
 use crate::text;
 use crate::theme::{FIELD_WIDTH, GAP, Palette};
@@ -94,9 +94,14 @@ impl ServerForm {
             });
         section_label(ui, text::FORM_SECTION_AUTH);
         ui.horizontal(|ui| {
-            ui.selectable_value(&mut f.auth, AuthChoice::Auto, text::FORM_AUTH_AUTO);
-            ui.selectable_value(&mut f.auth, AuthChoice::KeyFile, text::FORM_AUTH_KEY);
-            ui.selectable_value(&mut f.auth, AuthChoice::Password, text::FORM_AUTH_PASSWORD);
+            chip_value(ui, &mut f.auth, AuthChoice::Auto, text::FORM_AUTH_AUTO);
+            chip_value(ui, &mut f.auth, AuthChoice::KeyFile, text::FORM_AUTH_KEY);
+            chip_value(
+                ui,
+                &mut f.auth,
+                AuthChoice::Password,
+                text::FORM_AUTH_PASSWORD,
+            );
         });
         let secret_hint = if self.editing.is_some() {
             text::FORM_SECRETS_KEPT
@@ -123,13 +128,15 @@ impl ServerForm {
             });
         section_label(ui, text::FORM_SECTION_SUDO);
         ui.horizontal(|ui| {
-            ui.selectable_value(&mut f.sudo, SudoMode::None, text::FORM_SUDO_NONE);
-            ui.selectable_value(
+            chip_value(ui, &mut f.sudo, SudoMode::None, text::FORM_SUDO_NONE);
+            chip_value(
+                ui,
                 &mut f.sudo,
                 SudoMode::Passwordless,
                 text::FORM_SUDO_PASSWORDLESS,
             );
-            ui.selectable_value(
+            chip_value(
+                ui,
                 &mut f.sudo,
                 SudoMode::WithPassword,
                 text::FORM_SUDO_PASSWORD,
@@ -270,7 +277,7 @@ fn environment_picker(ui: &mut Ui, value: &mut Environment) {
         .selected_text(environment_label(*value))
         .show_ui(ui, |ui| {
             for option in options {
-                ui.selectable_value(value, option, environment_label(option));
+                chip_value(ui, value, option, environment_label(option));
             }
         });
 }

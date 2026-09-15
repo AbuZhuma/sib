@@ -4,6 +4,7 @@ use asiba_modules::security;
 use egui::{ComboBox, Modal, RichText, Ui};
 
 use super::AsibaApp;
+use crate::components::chip;
 use crate::text;
 use crate::theme::Palette;
 
@@ -92,7 +93,7 @@ fn duration_picker(ui: &mut Ui, request: &mut ActionRequest) {
         .selected_text(label)
         .show_ui(ui, |ui| {
             for (value, label) in BAN_DURATIONS {
-                if ui.selectable_label(current == value, label).clicked() {
+                if chip(ui, current == value, label).clicked() {
                     request.argument = Some(value.to_owned());
                 }
             }

@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use chrono::{DateTime, Duration, Utc};
 
 pub const BRUTE_FORCE_WINDOW_MINUTES: i64 = 10;
@@ -93,6 +95,8 @@ pub struct SshdSettings {
     pub pubkey_auth: Option<Switch>,
     pub port: Option<u16>,
     pub max_auth_tries: Option<u32>,
+    pub permit_empty_passwords: Option<Switch>,
+    pub x11_forwarding: Option<Switch>,
 }
 
 impl SshdSettings {
@@ -144,6 +148,36 @@ pub struct Ban {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub enum MacStatus {
+    SelinuxEnforcing,
+    SelinuxPermissive,
+    AppArmor,
+    Disabled,
+    Unknown,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct Hardening {
+    pub sysctl: BTreeMap<String, String>,
+    pub mac: Option<MacStatus>,
+    pub ntp_synced: Option<bool>,
+    pub extra_uid0: Vec<String>,
+    pub empty_passwords: Option<Vec<String>>,
+    pub sudo_nopasswd: Option<u32>,
+    pub writable_keys: Vec<String>,
+    pub world_writable_etc: Vec<String>,
+    pub risky_ports: Vec<u16>,
+    pub auto_updates: bool,
+    pub auditd: bool,
+}
+
+impl Hardening {
+    pub fn sysctl(&self, key: &str) -> Option<&str> {
+        self.sysctl.get(key).map(String::as_str)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SecuritySnapshot {
     pub attackers: Vec<Attacker>,
     pub failed_logins: u64,
@@ -157,6 +191,7 @@ pub struct SecuritySnapshot {
     pub bans: Vec<Ban>,
     pub ban_backend: Option<BanBackend>,
     pub is_root_view: bool,
+    pub hardening: Hardening,
 }
 
 impl SecuritySnapshot {

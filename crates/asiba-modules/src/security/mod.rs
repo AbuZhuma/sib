@@ -1,6 +1,7 @@
 mod actions;
 mod checks;
 mod events;
+mod hardening;
 mod journal;
 mod model;
 mod parse;
@@ -13,7 +14,7 @@ use async_trait::async_trait;
 use chrono::Utc;
 
 pub use actions::{ACTION_BAN, ACTION_UNBAN, PERMANENT, SPEC_BAN, SPEC_UNBAN};
-pub use checks::{Check, CheckStatus, checks, score};
+pub use checks::{Category, Check, CheckStatus, Grade, Score, Weight, checks, score};
 pub use model::{
     Attacker, BRUTE_FORCE_THRESHOLD, BRUTE_FORCE_WINDOW_MINUTES, Ban, BanBackend, FirewallState,
     Jail, Login, SecuritySnapshot, SshdSettings, SudoCall, Switch,
@@ -38,11 +39,12 @@ fn script() -> String {
     let sudo = format!(
         "if command -v journalctl >/dev/null; then journalctl -q --no-pager -o short-iso --since {LOG_SINCE} -t sudo -n {SUDO_LOG_LINES}; else grep -h 'sudo' /var/log/auth.log /var/log/secure | tail -n {SUDO_LOG_LINES}; fi"
     );
+    let sysctl = format!("sysctl {}", hardening::SYSCTL_KEYS.join(" "));
     let parts = [
         ("whoami", "id -un"),
         (
             "units",
-            "for s in firewalld ufw nftables iptables netfilter-persistent fail2ban; do printf '%s %s\\n' \"$s\" \"$(systemctl is-active \"$s\" 2>/dev/null)\"; done",
+            "for s in firewalld ufw nftables iptables netfilter-persistent fail2ban auditd unattended-upgrades dnf-automatic.timer dnf-automatic-install.timer; do printf '%s %s\\n' \"$s\" \"$(systemctl is-active \"$s\" 2>/dev/null)\"; done",
         ),
         (
             "tools",
@@ -56,7 +58,7 @@ fn script() -> String {
         ),
         (
             "sshd",
-            "sshd -T 2>/dev/null | grep -iE '^(passwordauthentication|permitrootlogin|pubkeyauthentication|port|maxauthtries) ' || grep -hiE '^[[:space:]]*(PasswordAuthentication|PermitRootLogin|PubkeyAuthentication|Port|MaxAuthTries)[[:space:]]' /etc/ssh/sshd_config /etc/ssh/sshd_config.d/*.conf",
+            "sshd -T 2>/dev/null | grep -iE '^(passwordauthentication|permitrootlogin|pubkeyauthentication|port|maxauthtries|permitemptypasswords|x11forwarding) ' || grep -hiE '^[[:space:]]*(PasswordAuthentication|PermitRootLogin|PubkeyAuthentication|Port|MaxAuthTries|PermitEmptyPasswords|X11Forwarding)[[:space:]]' /etc/ssh/sshd_config /etc/ssh/sshd_config.d/*.conf",
         ),
         (
             "hashes",
@@ -68,6 +70,36 @@ fn script() -> String {
         ),
         ("iptbans", "iptables -S ASIBA; ip6tables -S ASIBA"),
         ("ufwbans", "ufw status | grep DENY"),
+        ("sysctl", sysctl.as_str()),
+        (
+            "mac",
+            "getenforce 2>/dev/null; aa-status --enabled 2>/dev/null && echo apparmor",
+        ),
+        ("ntp", "timedatectl show -p NTPSynchronized --value"),
+        (
+            "uid0",
+            "awk -F: '$3==0 && $1!=\"root\"{print $1}' /etc/passwd",
+        ),
+        (
+            "shadow",
+            "[ -r /etc/shadow ] && awk -F: '($2==\"\"){print $1}' /etc/shadow",
+        ),
+        (
+            "nopasswd",
+            "[ -r /etc/sudoers ] && grep -rhs NOPASSWD /etc/sudoers /etc/sudoers.d | grep -vc '^#'",
+        ),
+        (
+            "keyperms",
+            "find /root/.ssh /home/*/.ssh -name authorized_keys -perm /go+w 2>/dev/null",
+        ),
+        (
+            "wwfiles",
+            "find /etc -maxdepth 2 -type f -perm -o+w 2>/dev/null | head -5",
+        ),
+        (
+            "risky",
+            "ss -tlnH | awk '{print $4}' | grep -E ':(21|23|512|513|514|2375|2376|6379|27017|9200)$'",
+        ),
     ];
     sections::script(&parts)
 }
