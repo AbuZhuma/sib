@@ -104,6 +104,7 @@ mod tests {
             server: ServerId::parse("neo").expect("id"),
             rule_id: "cpu".into(),
             rule_name: "CPU".into(),
+            metric: "cpu.total".into(),
             severity,
             value: 99.0,
             message: "high".into(),

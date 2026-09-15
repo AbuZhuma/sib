@@ -60,6 +60,7 @@ pub struct Alert {
     pub server: ServerId,
     pub rule_id: String,
     pub rule_name: String,
+    pub metric: String,
     pub severity: Severity,
     pub value: f64,
     pub message: String,

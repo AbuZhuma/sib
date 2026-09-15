@@ -1,9 +1,10 @@
 use asiba_core::{AppState, AuditScope, Incident, IncidentKind};
 use chrono::Utc;
-use egui::{RichText, Ui};
+use egui::{CursorIcon, Label, RichText, Sense, Ui};
 
 use super::{badge, severity_color};
 use crate::format;
+use crate::modules::Tab;
 use crate::text;
 use crate::theme::Palette;
 
@@ -34,8 +35,27 @@ pub struct IncidentLine<'a> {
 #[derive(Default)]
 pub struct IncidentClick {
     pub open_server: bool,
+    pub open_details: bool,
     pub audit: bool,
     pub open_report: bool,
+}
+
+pub fn incident_tab(state: &AppState, incident: &Incident) -> Tab {
+    match incident.kind {
+        IncidentKind::Alert => state
+            .alerts
+            .iter()
+            .find(|a| a.server == incident.server && a.rule_id == incident.subject)
+            .map(|a| Tab::for_metric(&a.metric))
+            .unwrap_or(Tab::Summary),
+        IncidentKind::Anomaly => Tab::Anomalies,
+        IncidentKind::BruteForce | IncidentKind::SecurityCheck => Tab::Security,
+        IncidentKind::UnitFailed => Tab::Services,
+        IncidentKind::ContainerDown => Tab::Docker,
+        IncidentKind::DeployFailed => Tab::Deploy,
+        IncidentKind::DiskFull | IncidentKind::Memory => Tab::Resources,
+        IncidentKind::Updates | IncidentKind::ModuleError | IncidentKind::Clock => Tab::Summary,
+    }
 }
 
 pub fn incident_line(ui: &mut Ui, line: &IncidentLine<'_>) -> IncidentClick {
@@ -51,7 +71,13 @@ pub fn incident_line(ui: &mut Ui, line: &IncidentLine<'_>) -> IncidentClick {
         if line.show_server && ui.link(incident.server.as_str()).clicked() {
             click.open_server = true;
         }
-        ui.label(&incident.summary);
+        let summary = ui
+            .add(Label::new(&incident.summary).sense(Sense::click()))
+            .on_hover_cursor(CursorIcon::PointingHand)
+            .on_hover_text(text::INCIDENT_OPEN_HINT);
+        if summary.clicked() {
+            click.open_details = true;
+        }
         let age =
             format::duration_short((Utc::now() - incident.started_at).num_seconds().max(0) as f64);
         ui.label(RichText::new(age).small().color(p.text_muted));

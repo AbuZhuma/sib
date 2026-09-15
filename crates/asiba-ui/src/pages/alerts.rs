@@ -1,11 +1,13 @@
 use asiba_core::{Alert, AppState};
 use chrono::{Duration, Utc};
-use egui::{Label, RichText, Ui};
+use egui::{CursorIcon, Label, RichText, Sense, Ui};
 
 use super::alert_rules::severity_label;
+use super::server_detail::select_tab;
 use super::{Action, Page};
 use crate::components::{Table, badge, page_title, panel, scroll, severity_color};
 use crate::format;
+use crate::modules::Tab;
 use crate::text;
 use crate::theme::{GAP, Palette};
 
@@ -49,15 +51,11 @@ fn active_table(ui: &mut Ui, state: &AppState) -> Option<Action> {
             let color = severity_color(&p, alert.severity);
             badge(ui, severity_label(alert.severity), color);
             if ui.link(alert.server.as_str()).clicked() {
-                action = Some(Action::Navigate(Page::ServerDetail(alert.server.clone())));
+                action = Some(open_details(ui, alert));
             }
-            ui.vertical(|ui| {
-                ui.add(Label::new(&alert.rule_name).extend());
-                let message = RichText::new(&alert.message)
-                    .small()
-                    .color(p.text_secondary);
-                ui.add(Label::new(message).extend());
-            });
+            if rule_cell(ui, alert, &p) {
+                action = Some(open_details(ui, alert));
+            }
             ui.monospace(format!("{:.1}", alert.value));
             ui.monospace(format::clock(alert.started_at));
             ui.monospace(format::duration_short(
@@ -70,6 +68,29 @@ fn active_table(ui: &mut Ui, state: &AppState) -> Option<Action> {
         }
     });
     action
+}
+
+fn open_details(ui: &Ui, alert: &Alert) -> Action {
+    select_tab(ui.ctx(), Tab::for_metric(&alert.metric));
+    Action::Navigate(Page::ServerDetail(alert.server.clone()))
+}
+
+fn rule_cell(ui: &mut Ui, alert: &Alert, p: &Palette) -> bool {
+    ui.vertical(|ui| {
+        let name = clickable(ui, RichText::new(&alert.rule_name));
+        let message = RichText::new(&alert.message)
+            .small()
+            .color(p.text_secondary);
+        clickable(ui, message) || name
+    })
+    .inner
+}
+
+fn clickable(ui: &mut Ui, text: RichText) -> bool {
+    ui.add(Label::new(text).extend().sense(Sense::click()))
+        .on_hover_cursor(CursorIcon::PointingHand)
+        .on_hover_text(text::ALERTS_OPEN_HINT)
+        .clicked()
 }
 
 fn alert_buttons(ui: &mut Ui, alert: &Alert) -> Option<Action> {
@@ -129,9 +150,11 @@ fn history_table(ui: &mut Ui, state: &AppState) -> Option<Action> {
             let color = severity_color(&p, alert.severity);
             badge(ui, severity_label(alert.severity), color);
             if ui.link(alert.server.as_str()).clicked() {
-                action = Some(Action::Navigate(Page::ServerDetail(alert.server.clone())));
+                action = Some(open_details(ui, alert));
             }
-            ui.label(&alert.rule_name);
+            if clickable(ui, RichText::new(&alert.rule_name)) {
+                action = Some(open_details(ui, alert));
+            }
             ui.monospace(format::date_time(alert.started_at));
             ui.monospace(format::duration_short(
                 alert.duration(now).num_seconds() as f64

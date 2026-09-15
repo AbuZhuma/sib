@@ -75,6 +75,7 @@ impl Evaluator {
                 Some(Check {
                     rule_id: rule.id.clone(),
                     rule_name: rule.name.clone(),
+                    metric: rule.metric.clone(),
                     severity: rule.severity,
                     for_secs: rule.for_secs,
                     value,
@@ -140,6 +141,7 @@ impl Evaluator {
             server: server.clone(),
             rule_id: check.rule_id,
             rule_name: check.rule_name,
+            metric: check.metric,
             severity: check.severity,
             value: check.value,
             message: check.message,
@@ -157,6 +159,7 @@ impl Evaluator {
 struct Check {
     rule_id: String,
     rule_name: String,
+    metric: String,
     severity: Severity,
     for_secs: u64,
     value: f64,
@@ -176,6 +179,7 @@ fn baseline_check(metric: &str, value: f64, deviation: Option<Deviation>) -> Che
     Check {
         rule_id: format!("{BASELINE_RULE_PREFIX}{metric}"),
         rule_name: format!("Аномалия {metric}"),
+        metric: metric.to_owned(),
         severity: Severity::Warning,
         for_secs: BASELINE_FOR_SECS,
         value,

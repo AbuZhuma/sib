@@ -4,8 +4,8 @@ use egui::{Id, RichText, Ui};
 
 use super::{connection, header, modules_table, select_tab};
 use crate::components::{
-    AiBlock, IncidentLine, ai_block, has_report, incident_line, incident_scope, panel,
-    panel_with_controls,
+    AiBlock, IncidentLine, ai_block, has_report, incident_line, incident_scope, incident_tab,
+    panel, panel_with_controls,
 };
 use crate::modules::{ModuleView, Tab, has_data};
 use crate::pages::Action;
@@ -141,6 +141,8 @@ fn incidents(ui: &mut Ui, ctx: &SummaryContext<'_>) -> Option<Action> {
                 });
             } else if click.open_report {
                 select_tab(ui.ctx(), Tab::Audit);
+            } else if click.open_details {
+                select_tab(ui.ctx(), incident_tab(ctx.state, incident));
             }
         }
     });

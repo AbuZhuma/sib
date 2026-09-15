@@ -86,7 +86,6 @@ pub const UPD_SECURITY: &str = "security";
 pub const UPD_REBOOT: &str = "требуется перезагрузка";
 pub const UPD_NONE: &str = "система обновлена";
 
-
 pub const CPU_CORES: &str = "ядер";
 pub const CPU_TOTAL: &str = "всего";
 pub const CPU_USER: &str = "user";

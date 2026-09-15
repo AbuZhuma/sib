@@ -40,11 +40,7 @@ const PORTS: Playbook = Playbook {
 };
 
 const DOCKER: Playbook = Playbook {
-    sections: &[
-        SectionId::Findings,
-        SectionId::Docker,
-        SectionId::Resources,
-    ],
+    sections: &[SectionId::Findings, SectionId::Docker, SectionId::Resources],
     task: "Проанализируй контейнеры: остановленные с ненулевым кодом, рестарты, unhealthy, контейнеры без \
 политики перезапуска у сервисов, которые должны жить постоянно, порты, проброшенные на 0.0.0.0, \
 устаревшие образы, мусор (образы, тома). Учитывай compose-проекты.",
@@ -52,11 +48,7 @@ const DOCKER: Playbook = Playbook {
 };
 
 const SERVICES: Playbook = Playbook {
-    sections: &[
-        SectionId::Findings,
-        SectionId::Services,
-        SectionId::Logs,
-    ],
+    sections: &[SectionId::Findings, SectionId::Services, SectionId::Logs],
     task: "Проанализируй сервисы systemd: упавшие, с частыми рестартами, пользовательские юниты и их \
 состояние. Сопоставь с ошибками в журнале.",
     format: FORMAT_SECTION,
@@ -111,11 +103,7 @@ sync-cookies и сбросы, доля топовых адресов, conntrack.
 };
 
 const DEPLOY: Playbook = Playbook {
-    sections: &[
-        SectionId::Findings,
-        SectionId::Deploy,
-        SectionId::Docker,
-    ],
+    sections: &[SectionId::Findings, SectionId::Deploy, SectionId::Docker],
     task: "Проанализируй деплои: частота, длительность, ошибки, незавершённые, события compose. \
 Ищи нестабильные проекты (частые падения), деплои в нерабочее время, зависшие.",
     format: FORMAT_SECTION,

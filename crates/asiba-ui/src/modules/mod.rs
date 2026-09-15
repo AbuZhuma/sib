@@ -81,6 +81,31 @@ impl Tab {
         }
     }
 
+    pub fn for_module(module: &str) -> Option<Self> {
+        let tab = match module {
+            "system" | "updates" | "connection" | "ping" => Tab::Summary,
+            "cpu" | "memory" | "disk" => Tab::Resources,
+            "network" => Tab::Network,
+            "processes" => Tab::Processes,
+            "ports" => Tab::Ports,
+            "docker" => Tab::Docker,
+            "services" => Tab::Services,
+            "logs" => Tab::Logs,
+            "users" => Tab::Users,
+            "security" => Tab::Security,
+            "anomalies" => Tab::Anomalies,
+            "deploy" => Tab::Deploy,
+            "gpu" => Tab::Gpu,
+            _ => return None,
+        };
+        Some(tab)
+    }
+
+    pub fn for_metric(metric: &str) -> Self {
+        let module = metric.split('.').next().unwrap_or_default();
+        Self::for_module(module).unwrap_or(Tab::Summary)
+    }
+
     pub fn label(self) -> &'static str {
         match self {
             Tab::Summary => text::TAB_SUMMARY,
