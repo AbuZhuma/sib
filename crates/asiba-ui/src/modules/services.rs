@@ -3,10 +3,18 @@ use asiba_modules::services::{self, ServicesSnapshot, Unit, UnitOrigin};
 use egui::{Id, RichText, Ui};
 
 use super::{ModuleView, Tab, ViewAction, ViewShared, action_button};
-use crate::components::{Table, badge};
+use crate::components::{Sort, SortColumn, SortKey, Table, badge, sort_rows};
 use crate::format;
 use crate::text;
 use crate::theme::{GAP, Palette};
+
+const UNIT_SORTABLE: [SortColumn; 4] = [
+    SortColumn::text(0),
+    SortColumn::text(1),
+    SortColumn::number(2),
+    SortColumn::text(3),
+];
+const UNIT_DEFAULT_SORT: Sort = Sort::ascending(0);
 
 #[derive(Debug, Clone, Copy, Default)]
 struct Filters {
@@ -112,7 +120,15 @@ fn units_table(ui: &mut Ui, snapshot: &ServicesSnapshot, filters: Filters) -> Op
         (!filters.only_problems || u.is_failed() || u.restarts > 0)
             && (!filters.only_custom || u.origin() == UnitOrigin::Custom)
     });
-    Table::new("services-units", &columns).show(ui, |ui| {
+    let table = Table::new("services-units", &columns).sortable(&UNIT_SORTABLE, UNIT_DEFAULT_SORT);
+    table.show_sorted(ui, |ui, sort| {
+        let mut rows: Vec<&Unit> = rows.collect();
+        sort_rows(&mut rows, sort, |unit, column| match column {
+            0 => SortKey::text(unit.short_name()),
+            1 => SortKey::text(&unit.sub),
+            2 => SortKey::number(unit.restarts as f64),
+            _ => SortKey::number(unit.main_pid as f64),
+        });
         for unit in rows {
             ui.monospace(unit.short_name());
             let color = if unit.is_failed() {

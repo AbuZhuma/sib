@@ -1,12 +1,29 @@
 use asiba_core::{ModuleId, ServerState};
-use asiba_modules::disk::{self, DiskSnapshot};
+use asiba_modules::disk::{self, DeviceIo, DiskSnapshot, Filesystem};
 use egui::{RichText, Ui};
 
 use super::{ModuleView, Tab, ViewAction, ViewShared};
-use crate::components::{Table, TimeSeriesPlot, Unit, meter};
+use crate::components::{Sort, SortColumn, SortKey, Table, TimeSeriesPlot, Unit, meter, sort_rows};
 use crate::format;
 use crate::text;
 use crate::theme::{GAP, Palette};
+
+const FILESYSTEM_SORTABLE: [SortColumn; 5] = [
+    SortColumn::text(0),
+    SortColumn::number(2),
+    SortColumn::number(3),
+    SortColumn::number(4),
+    SortColumn::number(5),
+];
+const FILESYSTEM_DEFAULT_SORT: Sort = Sort::descending(2);
+const DEVICE_SORTABLE: [SortColumn; 5] = [
+    SortColumn::text(0),
+    SortColumn::number(1),
+    SortColumn::number(2),
+    SortColumn::number(3),
+    SortColumn::number(4),
+];
+const DEVICE_DEFAULT_SORT: Sort = Sort::ascending(0);
 
 const SUMMARY_FILESYSTEMS: usize = 6;
 
@@ -85,8 +102,12 @@ fn filesystems_table(ui: &mut Ui, snapshot: &DiskSnapshot) {
         text::DISK_AVAILABLE,
         text::DISK_INODES,
     ];
-    Table::new("disk-filesystems", &columns).show(ui, |ui| {
-        for fs in &snapshot.filesystems {
+    let table = Table::new("disk-filesystems", &columns)
+        .sortable(&FILESYSTEM_SORTABLE, FILESYSTEM_DEFAULT_SORT);
+    table.show_sorted(ui, |ui, sort| {
+        let mut rows: Vec<&Filesystem> = snapshot.filesystems.iter().collect();
+        sort_rows(&mut rows, sort, |fs, column| filesystem_key(fs, column));
+        for fs in rows {
             ui.monospace(&fs.mount);
             ui.monospace(&fs.device);
             ui.monospace(format!(
@@ -107,6 +128,27 @@ fn filesystems_table(ui: &mut Ui, snapshot: &DiskSnapshot) {
     });
 }
 
+fn filesystem_key(fs: &Filesystem, column: usize) -> SortKey {
+    match column {
+        0 => SortKey::text(&fs.mount),
+        2 => SortKey::number(fs.used_pct()),
+        3 => SortKey::number(fs.total_bytes as f64),
+        4 => SortKey::number(fs.available_bytes as f64),
+        _ => SortKey::number(fs.inodes_used_pct()),
+    }
+}
+
+fn device_key(device: &DeviceIo, column: usize) -> SortKey {
+    let rates = device.rates.as_ref();
+    match column {
+        0 => SortKey::text(&device.name),
+        1 => SortKey::optional(rates.map(|r| r.read_bps)),
+        2 => SortKey::optional(rates.map(|r| r.write_bps)),
+        3 => SortKey::optional(rates.map(|r| r.read_iops + r.write_iops)),
+        _ => SortKey::optional(rates.map(|r| r.util_pct)),
+    }
+}
+
 fn devices_table(ui: &mut Ui, snapshot: &DiskSnapshot) {
     let columns = [
         text::DISK_DEVICE,
@@ -115,8 +157,12 @@ fn devices_table(ui: &mut Ui, snapshot: &DiskSnapshot) {
         text::DISK_IOPS,
         text::DISK_UTIL,
     ];
-    Table::new("disk-devices", &columns).show(ui, |ui| {
-        for device in &snapshot.devices {
+    let table =
+        Table::new("disk-devices", &columns).sortable(&DEVICE_SORTABLE, DEVICE_DEFAULT_SORT);
+    table.show_sorted(ui, |ui, sort| {
+        let mut rows: Vec<&DeviceIo> = snapshot.devices.iter().collect();
+        sort_rows(&mut rows, sort, |device, column| device_key(device, column));
+        for device in rows {
             ui.monospace(&device.name);
             match &device.rates {
                 Some(rates) => {

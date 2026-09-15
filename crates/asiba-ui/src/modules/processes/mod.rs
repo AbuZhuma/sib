@@ -1,35 +1,60 @@
+mod row;
+
 use asiba_core::{ModuleId, ServerState};
 use asiba_modules::processes::{self, Process, ProcessSnapshot};
 use egui::scroll_area::ScrollBarVisibility;
 use egui::{Id, RichText, TextEdit, Ui};
 use egui_extras::{Column, TableBuilder};
 
-use super::{ModuleView, Tab, ViewAction, ViewShared, action_button};
-use crate::components::chip_value;
+use super::{ModuleView, Tab, ViewAction, ViewShared};
+use crate::components::{Sort, SortColumn, SortKey, sort_header, sort_rows};
 use crate::format;
 use crate::text;
 use crate::theme::{GAP, Palette, ROW_HEIGHT};
 
 const SUMMARY_TOP: usize = 8;
-const CMD_MAX_CHARS: usize = 120;
 const ACTIONS_WIDTH: f32 = 104.0;
+const USER_WIDTH: f32 = 130.0;
 const MEMORY_WIDTH: f32 = 130.0;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-enum SortBy {
-    #[default]
-    Cpu,
-    Memory,
-    Read,
-    Write,
-    Pid,
-    Name,
+const COLUMN_PID: usize = 0;
+const COLUMN_USER: usize = 1;
+const COLUMN_CPU: usize = 2;
+const COLUMN_MEMORY: usize = 3;
+const COLUMN_READ: usize = 4;
+const COLUMN_WRITE: usize = 5;
+const COLUMN_STATE: usize = 6;
+const COLUMN_UPTIME: usize = 7;
+const COLUMN_COMMAND: usize = 9;
+const SORTABLE: [SortColumn; 9] = [
+    SortColumn {
+        index: COLUMN_PID,
+        descending_first: false,
+    },
+    SortColumn::text(COLUMN_USER),
+    SortColumn::number(COLUMN_CPU),
+    SortColumn::number(COLUMN_MEMORY),
+    SortColumn::number(COLUMN_READ),
+    SortColumn::number(COLUMN_WRITE),
+    SortColumn::text(COLUMN_STATE),
+    SortColumn::number(COLUMN_UPTIME),
+    SortColumn::text(COLUMN_COMMAND),
+];
+const DEFAULT_SORT: Sort = Sort::descending(COLUMN_CPU);
+
+#[derive(Debug, Clone)]
+struct TableState {
+    sort: Sort,
+    filter: String,
 }
 
-#[derive(Debug, Clone, Default)]
-struct TableState {
-    sort: SortBy,
-    filter: String,
+impl Default for TableState {
+    fn default() -> Self {
+        Self {
+            sort: DEFAULT_SORT,
+            filter: String::new(),
+        }
+    }
 }
 
 pub struct ProcessesView;
@@ -84,7 +109,7 @@ impl ModuleView for ProcessesView {
                 for process in top.iter().take(SUMMARY_TOP) {
                     ui.monospace(format!("{:>5.1}%", process.cpu_pct.unwrap_or(0.0)));
                     ui.monospace(format::bytes(process.rss_bytes));
-                    ui.label(truncate(process.display_name(), 48));
+                    ui.label(row::truncate(process.display_name(), 48));
                     ui.end_row();
                 }
             });
@@ -104,28 +129,25 @@ impl ModuleView for ProcessesView {
 }
 
 fn toolbar(ui: &mut Ui, state: &mut TableState) {
-    ui.horizontal(|ui| {
-        ui.add(
-            TextEdit::singleline(&mut state.filter)
-                .hint_text(text::PROC_FILTER)
-                .desired_width(240.0),
-        );
-        ui.label(text::PROC_SORT);
-        for (sort, label) in sort_options() {
-            chip_value(ui, &mut state.sort, sort, label);
-        }
-    });
+    ui.add(
+        TextEdit::singleline(&mut state.filter)
+            .hint_text(text::PROC_FILTER)
+            .desired_width(240.0),
+    );
 }
 
-fn sort_options() -> [(SortBy, &'static str); 6] {
-    [
-        (SortBy::Cpu, "CPU"),
-        (SortBy::Memory, "RAM"),
-        (SortBy::Read, "R"),
-        (SortBy::Write, "W"),
-        (SortBy::Pid, "PID"),
-        (SortBy::Name, text::COL_NAME),
-    ]
+fn sort_key(process: &Process, snapshot: &ProcessSnapshot, column: usize) -> SortKey {
+    match column {
+        COLUMN_PID => SortKey::number(process.pid),
+        COLUMN_USER => SortKey::text(&process.user),
+        COLUMN_CPU => SortKey::optional(process.cpu_pct),
+        COLUMN_MEMORY => SortKey::number(process.rss_bytes as f64),
+        COLUMN_READ => SortKey::optional(process.read_bps),
+        COLUMN_WRITE => SortKey::optional(process.write_bps),
+        COLUMN_STATE => SortKey::text(&process.state.to_string()),
+        COLUMN_UPTIME => SortKey::number(snapshot.started_secs_ago(process)),
+        _ => SortKey::text(process.display_name()),
+    }
 }
 
 fn filtered_sorted<'a>(snapshot: &'a ProcessSnapshot, state: &TableState) -> Vec<&'a Process> {
@@ -139,15 +161,8 @@ fn filtered_sorted<'a>(snapshot: &'a ProcessSnapshot, state: &TableState) -> Vec
                 || p.user.contains(&needle)
         })
         .collect();
-    let by_f64 =
-        |a: Option<f64>, b: Option<f64>| b.partial_cmp(&a).unwrap_or(std::cmp::Ordering::Equal);
-    rows.sort_by(|a, b| match state.sort {
-        SortBy::Cpu => by_f64(a.cpu_pct, b.cpu_pct),
-        SortBy::Memory => b.rss_bytes.cmp(&a.rss_bytes),
-        SortBy::Read => by_f64(a.read_bps, b.read_bps),
-        SortBy::Write => by_f64(a.write_bps, b.write_bps),
-        SortBy::Pid => a.pid.cmp(&b.pid),
-        SortBy::Name => a.display_name().cmp(b.display_name()),
+    sort_rows(&mut rows, state.sort, |process, column| {
+        sort_key(process, snapshot, column)
     });
     rows
 }
@@ -177,7 +192,7 @@ fn table(
         .scroll_bar_visibility(ScrollBarVisibility::AlwaysHidden)
         .striped(true)
         .column(Column::exact(64.0))
-        .column(Column::exact(90.0))
+        .column(Column::exact(USER_WIDTH))
         .column(Column::exact(64.0))
         .column(Column::exact(MEMORY_WIDTH))
         .column(Column::exact(90.0))
@@ -188,110 +203,34 @@ fn table(
         .column(Column::remainder().clip(true))
         .min_scrolled_height(body_height)
         .header(ROW_HEIGHT, |mut header| {
-            for label in headers {
-                header.col(|ui| {
-                    ui.label(
-                        RichText::new(label.to_uppercase())
-                            .small()
-                            .color(p.text_secondary),
-                    );
-                });
+            for (index, label) in headers.into_iter().enumerate() {
+                header.col(|ui| header_cell(ui, index, label, &mut state.sort));
             }
         })
         .body(|body| {
             body.rows(ROW_HEIGHT, rows.len(), |mut row| {
                 let process = rows[row.index()];
-                if let Some(next) = row_cells(&mut row, snapshot, process, &p) {
+                if let Some(next) = row::cells(&mut row, snapshot, process, &p) {
                     action = Some(next);
                 }
             });
         });
-    let _ = state;
     action
 }
 
-fn row_cells(
-    row: &mut egui_extras::TableRow<'_, '_>,
-    snapshot: &ProcessSnapshot,
-    process: &Process,
-    p: &Palette,
-) -> Option<ViewAction> {
-    let mono = |row: &mut egui_extras::TableRow<'_, '_>, value: String| {
-        row.col(|ui| {
-            ui.monospace(value);
-        });
-    };
-    mono(row, process.pid.to_string());
-    mono(row, process.user.clone());
-    mono(
-        row,
-        process
-            .cpu_pct
-            .map(|v| format!("{v:.1}%"))
-            .unwrap_or_else(|| "-".to_owned()),
-    );
-    mono(
-        row,
-        format!(
-            "{} ({:.1}%)",
-            format::bytes(process.rss_bytes),
-            snapshot.memory_pct(process)
-        ),
-    );
-    mono(
-        row,
-        process
-            .read_bps
-            .map(format::bytes_per_second)
-            .unwrap_or_else(|| "-".to_owned()),
-    );
-    mono(
-        row,
-        process
-            .write_bps
-            .map(format::bytes_per_second)
-            .unwrap_or_else(|| "-".to_owned()),
-    );
-    row.col(|ui| {
-        let color = if process.is_zombie() {
-            p.warning
-        } else {
-            p.text
-        };
+fn header_cell(ui: &mut Ui, index: usize, label: &str, sort: &mut Sort) {
+    let p = Palette::current(ui.ctx());
+    let Some(column) = SORTABLE.iter().find(|c| c.index == index) else {
         ui.label(
-            RichText::new(process.state.to_string())
-                .monospace()
-                .color(color),
+            RichText::new(label.to_uppercase())
+                .small()
+                .color(p.text_secondary),
         );
-    });
-    mono(
-        row,
-        format::duration_short(snapshot.started_secs_ago(process)),
-    );
-    let mut action = None;
-    row.col(|ui| {
-        action = process_buttons(ui, process);
-    });
-    row.col(|ui| {
-        ui.label(truncate(process.display_name(), CMD_MAX_CHARS));
-    });
-    action
-}
-
-fn process_buttons(ui: &mut Ui, process: &Process) -> Option<ViewAction> {
-    let pid = process.pid.to_string();
-    ui.horizontal(|ui| {
-        ui.spacing_mut().item_spacing.x = 2.0;
-        action_button(ui, text::ACT_TERM, processes::SPEC_TERMINATE, &pid)
-            .or_else(|| action_button(ui, text::ACT_KILL, processes::SPEC_KILL, &pid))
-    })
-    .inner
-}
-
-fn truncate(value: &str, max_chars: usize) -> String {
-    if value.chars().count() <= max_chars {
-        return value.to_owned();
+        return;
+    };
+    let mut current = Some(*sort);
+    sort_header(ui, label, *column, &mut current);
+    if let Some(next) = current {
+        *sort = next;
     }
-    let cut: String = value.chars().take(max_chars).collect();
-    format!("{cut}…")
 }

@@ -1,14 +1,24 @@
 use asiba_core::{ModuleId, QueryRequest, ServerState};
-use asiba_modules::docker::{self, Container, DockerSnapshot};
+use asiba_modules::docker::{self, Container, DockerSnapshot, Image};
 use egui::{RichText, Ui};
 
 use super::{ModuleView, Tab, ViewAction, ViewShared, action_button};
-use crate::components::{Table, badge};
+use crate::components::{Sort, SortColumn, SortKey, Table, badge, sort_rows};
 use crate::format;
 use crate::text;
 use crate::theme::{GAP, Palette};
 
 const SUMMARY_CONTAINERS: usize = 8;
+const CONTAINER_SORTABLE: [SortColumn; 5] = [
+    SortColumn::text(0),
+    SortColumn::number(2),
+    SortColumn::number(3),
+    SortColumn::number(4),
+    SortColumn::text(5),
+];
+const CONTAINER_DEFAULT_SORT: Sort = Sort::ascending(0);
+const IMAGE_SORTABLE: [SortColumn; 2] = [SortColumn::text(0), SortColumn::number(3)];
+const IMAGE_DEFAULT_SORT: Sort = Sort::descending(3);
 
 pub struct DockerView;
 
@@ -132,6 +142,17 @@ fn section_title(ui: &mut Ui, title: &str) {
     );
 }
 
+fn container_key(container: &Container, column: usize) -> SortKey {
+    let stats = container.stats.as_ref();
+    match column {
+        0 => SortKey::text(&container.name),
+        2 => SortKey::optional(stats.map(|s| s.cpu_pct)),
+        3 => SortKey::optional(stats.map(|s| s.mem_usage as f64)),
+        4 => SortKey::optional(stats.map(|s| (s.net_rx + s.net_tx) as f64)),
+        _ => SortKey::text(&container.image),
+    }
+}
+
 fn containers_table(ui: &mut Ui, id: &str, containers: &[&Container]) -> Option<ViewAction> {
     let p = Palette::current(ui.ctx());
     let mut action = None;
@@ -145,8 +166,13 @@ fn containers_table(ui: &mut Ui, id: &str, containers: &[&Container]) -> Option<
         text::DOCKER_PORTS,
         "",
     ];
-    Table::new(id, &columns).show(ui, |ui| {
-        for container in containers {
+    let table = Table::new(id, &columns).sortable(&CONTAINER_SORTABLE, CONTAINER_DEFAULT_SORT);
+    table.show_sorted(ui, |ui, sort| {
+        let mut rows: Vec<&Container> = containers.to_vec();
+        sort_rows(&mut rows, sort, |container, column| {
+            container_key(container, column)
+        });
+        for container in rows {
             ui.monospace(&container.name);
             status_cell(ui, container, &p);
             match &container.stats {
@@ -224,8 +250,14 @@ fn images_table(ui: &mut Ui, snapshot: &DockerSnapshot) {
         ),
     );
     let columns = [text::DOCKER_IMAGE, "TAG", "ID", text::DISK_TOTAL, ""];
-    Table::new("docker-images", &columns).show(ui, |ui| {
-        for image in &snapshot.images {
+    let table = Table::new("docker-images", &columns).sortable(&IMAGE_SORTABLE, IMAGE_DEFAULT_SORT);
+    table.show_sorted(ui, |ui, sort| {
+        let mut rows: Vec<&Image> = snapshot.images.iter().collect();
+        sort_rows(&mut rows, sort, |image, column| match column {
+            0 => SortKey::text(&image.repository),
+            _ => SortKey::number(image.size_bytes as f64),
+        });
+        for image in rows {
             ui.monospace(&image.repository);
             ui.monospace(&image.tag);
             ui.monospace(&image.id);

@@ -3,10 +3,18 @@ use asiba_modules::gpu::{self, Gpu, GpuSnapshot};
 use egui::{RichText, Ui};
 
 use super::{ModuleView, Tab, ViewAction, ViewShared};
-use crate::components::{Table, TimeSeriesPlot, Unit, meter};
+use crate::components::{Sort, SortColumn, SortKey, Table, TimeSeriesPlot, Unit, meter, sort_rows};
 use crate::format;
 use crate::text;
 use crate::theme::{GAP, Palette, SECONDARY_PLOT_HEIGHT};
+
+const PROCESS_SORTABLE: [SortColumn; 4] = [
+    SortColumn::text(0),
+    SortColumn::text(1),
+    SortColumn::text(2),
+    SortColumn::number(3),
+];
+const PROCESS_DEFAULT_SORT: Sort = Sort::descending(3);
 
 pub struct GpuView;
 
@@ -147,7 +155,16 @@ fn processes(ui: &mut Ui, snapshot: &GpuSnapshot) {
             .color(p.text_secondary),
     );
     let columns = ["GPU", "PID", text::COL_NAME, text::GPU_MEMORY];
-    Table::new("gpu-processes", &columns).show(ui, |ui| {
+    let table =
+        Table::new("gpu-processes", &columns).sortable(&PROCESS_SORTABLE, PROCESS_DEFAULT_SORT);
+    table.show_sorted(ui, |ui, sort| {
+        let mut rows = rows;
+        sort_rows(&mut rows, sort, |(gpu, process), column| match column {
+            0 => SortKey::number(gpu.index),
+            1 => SortKey::number(process.pid),
+            2 => SortKey::text(&process.name),
+            _ => SortKey::number(process.memory_bytes as f64),
+        });
         for (gpu, process) in rows {
             ui.monospace(gpu.index.to_string());
             ui.monospace(process.pid.to_string());

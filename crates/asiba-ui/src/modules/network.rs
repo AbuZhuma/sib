@@ -1,14 +1,23 @@
 use asiba_core::{ModuleId, ServerState};
-use asiba_modules::network::{self, NetworkSnapshot};
+use asiba_modules::network::{self, Interface, NetworkSnapshot};
 use egui::{RichText, Ui, Vec2};
 
 use super::{ModuleView, Tab, ViewAction, ViewShared};
-use crate::components::{Table, TimeSeriesPlot, Unit, sparkline_fill};
+use crate::components::{
+    Sort, SortColumn, SortKey, Table, TimeSeriesPlot, Unit, sort_rows, sparkline_fill,
+};
 use crate::format;
 use crate::text;
 use crate::theme::{GAP, Palette, SECONDARY_PLOT_HEIGHT, SUMMARY_RATE_HEIGHT};
 
 const RATE_LABEL_WIDTH: f32 = 130.0;
+const INTERFACE_SORTABLE: [SortColumn; 4] = [
+    SortColumn::text(0),
+    SortColumn::number(4),
+    SortColumn::number(5),
+    SortColumn::number(6),
+];
+const INTERFACE_DEFAULT_SORT: Sort = Sort::ascending(0);
 
 pub struct NetworkView;
 
@@ -112,8 +121,14 @@ fn interfaces_table(ui: &mut Ui, snapshot: &NetworkSnapshot) {
         "TX",
         text::NET_ERRORS,
     ];
-    Table::new("network-interfaces", &columns).show(ui, |ui| {
-        for interface in &snapshot.interfaces {
+    let table = Table::new("network-interfaces", &columns)
+        .sortable(&INTERFACE_SORTABLE, INTERFACE_DEFAULT_SORT);
+    table.show_sorted(ui, |ui, sort| {
+        let mut rows: Vec<&Interface> = snapshot.interfaces.iter().collect();
+        sort_rows(&mut rows, sort, |interface, column| {
+            interface_key(interface, column)
+        });
+        for interface in rows {
             ui.monospace(&interface.name);
             let color = if interface.is_up() { p.ok } else { p.offline };
             ui.label(RichText::new(&interface.state).color(color));
@@ -145,6 +160,20 @@ fn interfaces_table(ui: &mut Ui, snapshot: &NetworkSnapshot) {
             ui.end_row();
         }
     });
+}
+
+fn interface_key(interface: &Interface, column: usize) -> SortKey {
+    let rx = interface.rates.as_ref().map(|r| r.rx_bps);
+    let tx = interface.rates.as_ref().map(|r| r.tx_bps);
+    match column {
+        0 => SortKey::text(&interface.name),
+        4 => SortKey::number(rx.unwrap_or(interface.rx.bytes as f64)),
+        5 => SortKey::number(tx.unwrap_or(interface.tx.bytes as f64)),
+        _ => SortKey::number(
+            (interface.rx.errors + interface.tx.errors + interface.rx.drops + interface.tx.drops)
+                as f64,
+        ),
+    }
 }
 
 fn connections_table(ui: &mut Ui, snapshot: &NetworkSnapshot) {

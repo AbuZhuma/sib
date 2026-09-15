@@ -3,9 +3,16 @@ use asiba_modules::ports::{self, ListeningPort, PortsSnapshot};
 use egui::{RichText, Ui};
 
 use super::{ModuleView, Tab, ViewShared};
-use crate::components::{Table, badge};
+use crate::components::{Sort, SortColumn, SortKey, Table, badge, sort_rows};
 use crate::text;
 use crate::theme::Palette;
+
+const PORT_SORTABLE: [SortColumn; 3] = [
+    SortColumn::text(0),
+    SortColumn::text(3),
+    SortColumn::number(4),
+];
+const PORT_DEFAULT_SORT: Sort = Sort::ascending(0);
 
 pub struct PortsView;
 
@@ -75,8 +82,15 @@ impl ModuleView for PortsView {
             text::PORT_FIREWALL,
             text::PORT_REACHABLE,
         ];
-        Table::new("ports-table", &columns).show(ui, |ui| {
-            for port in &snapshot.ports {
+        let table = Table::new("ports-table", &columns).sortable(&PORT_SORTABLE, PORT_DEFAULT_SORT);
+        table.show_sorted(ui, |ui, sort| {
+            let mut rows: Vec<&ListeningPort> = snapshot.ports.iter().collect();
+            sort_rows(&mut rows, sort, |port, column| match column {
+                0 => SortKey::number(port.port),
+                3 => SortKey::text(&port.process_label()),
+                _ => SortKey::number(port.connections as f64),
+            });
+            for port in rows {
                 ui.monospace(RichText::new(port.port.to_string()).strong());
                 ui.monospace(port.protocol.label());
                 ui.monospace(&port.address);
