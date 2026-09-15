@@ -5,7 +5,7 @@ use asiba_modules::{cpu, disk, memory, network};
 use egui::{RichText, Ui};
 
 use super::{Action, Page};
-use crate::components::{Table, badge, panel, severity_color};
+use crate::components::{Table, badge, incident_line, panel, severity_color};
 use crate::format;
 use crate::modules::deploy_timeline;
 use crate::text;
@@ -35,6 +35,26 @@ pub fn active_deploys(ui: &mut Ui, state: &AppState) -> Option<Action> {
                 ui.label(RichText::new(deploy.source.label()).color(p.text_muted));
                 deploy_timeline(ui, deploy, &p);
             });
+        }
+    });
+    ui.add_space(GAP);
+    action
+}
+
+pub fn active_incidents(ui: &mut Ui, state: &AppState) -> Option<Action> {
+    let mut incidents: Vec<&asiba_core::Incident> = state.active_incidents().collect();
+    if incidents.is_empty() {
+        return None;
+    }
+    incidents.sort_by_key(|i| std::cmp::Reverse((i.severity, i.started_at)));
+    let mut action = None;
+    panel(ui, text::SECTION_INCIDENTS, |ui| {
+        for incident in incidents {
+            if incident_line(ui, incident, true) {
+                action = Some(Action::Navigate(Page::ServerDetail(
+                    incident.server.clone(),
+                )));
+            }
         }
     });
     ui.add_space(GAP);

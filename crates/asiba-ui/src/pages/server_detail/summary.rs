@@ -1,9 +1,9 @@
 use asiba_config::SummaryLayout;
-use asiba_core::ServerState;
+use asiba_core::{AppState, ServerState};
 use egui::{Id, RichText, Ui};
 
 use super::{connection, header, modules_table, select_tab};
-use crate::components::{panel, panel_with_controls};
+use crate::components::{incident_line, panel, panel_with_controls};
 use crate::modules::{ModuleView, Tab, has_data};
 use crate::pages::Action;
 use crate::text;
@@ -13,6 +13,7 @@ const EDIT_KEY: &str = "summary-layout-editing";
 
 pub struct SummaryContext<'a> {
     pub server: &'a ServerState,
+    pub state: &'a AppState,
     pub views: &'a [Box<dyn ModuleView>],
     pub layout: &'a SummaryLayout,
 }
@@ -23,6 +24,7 @@ pub fn show(ui: &mut Ui, ctx: &SummaryContext<'_>) -> Option<Action> {
         connection::show(ui, server)
     });
     ui.add_space(GAP);
+    incidents(ui, ctx);
     let editing = edit_toggle(ui);
     let available: Vec<&dyn ModuleView> = ctx
         .views
@@ -82,6 +84,24 @@ pub fn show(ui: &mut Ui, ctx: &SummaryContext<'_>) -> Option<Action> {
         });
     }
     action
+}
+
+fn incidents(ui: &mut Ui, ctx: &SummaryContext<'_>) {
+    let mut incidents: Vec<&asiba_core::Incident> = ctx
+        .state
+        .active_incidents()
+        .filter(|i| i.server == ctx.server.spec.id)
+        .collect();
+    if incidents.is_empty() {
+        return;
+    }
+    incidents.sort_by_key(|i| std::cmp::Reverse((i.severity, i.started_at)));
+    panel(ui, text::SECTION_INCIDENTS, |ui| {
+        for incident in incidents {
+            incident_line(ui, incident, false);
+        }
+    });
+    ui.add_space(GAP);
 }
 
 fn shorter_column(columns: &[Ui]) -> usize {

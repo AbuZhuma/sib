@@ -1,8 +1,8 @@
 use std::time::Duration;
 
 use asiba_core::{
-    ActionRecord, ActionRequest, Availability, Credentials, Intervals, ModuleId, QueryRequest,
-    QueryResponse, ServerId, ServerSpec, Snapshot, TransportError,
+    ActionRecord, ActionRequest, Availability, Credentials, Incident, Intervals, ModuleId,
+    QueryRequest, QueryResponse, ServerId, ServerSpec, Snapshot, TransportError,
 };
 use asiba_transport::HostKeyPolicy;
 use chrono::{DateTime, Utc};
@@ -83,6 +83,7 @@ pub enum EngineEvent {
         result: Result<QueryResponse, String>,
     },
     ActionFinished(ActionRecord),
+    IncidentsOpened(Vec<Incident>),
     ServerSaved(ServerId),
     ServerRemoved(ServerId),
     Warning(String),

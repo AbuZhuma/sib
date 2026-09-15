@@ -19,6 +19,7 @@ asiba-core ◄── asiba-transport ◄──┐
 | `asiba-config` | пути XDG, `config.toml`, `servers/<name>.toml`, keyring, раскладка виджетов | сеть, UI |
 | `asiba-modules` | сборщики данных и их парсеры | как и когда их вызывают |
 | `asiba-storage` | SQLite: история метрик, даунсэмплинг, поток записи | модули, UI |
+| `asiba-incidents` | детекторы инцидентов (`Detector`) и сверка с состоянием (`reconcile`) | docgen, движок |
 | `asiba-docgen` | секции данных сервера; рендер `servers/<name>.md` (человек) и `servers/<name>.llm.md` (модель) | движок, UI |
 | `asiba-alerts` | встроенные правила, оценка правил и базовой линии над `AppState`, уведомления на рабочий стол | транспорт, UI |
 | `asiba-engine` | воркеры серверов, задачи сбора по модулям, пинг, переподключение, геолокация, алерты, действия, команды от UI | egui |
@@ -68,7 +69,7 @@ UI → `ViewAction::Act { spec, request }` → `Action::AskPerform` → диал
 
 ## Файл сервера
 
-`asiba-docgen` описывает данные сервера как набор секций (`Section` с `SectionId`, по одному файлу в `sections/`): каждая секция умеет `human` (русский markdown) и `llm` (английский, `key: value`, ограниченные списки). `render_human` и `render_llm` собирают все доступные секции, `render_llm_sections` — выбранные (для контекста модели). Секция `findings` собирает выводы самой программы (провалы проверок, алерты, аномалии, упавшие юниты, контейнеры, деплои, диски, память, обновления) и идёт первой. `DocWriter` в воркере после каждого цикла любого модуля, не чаще раза в 10 с и только при изменении тела, пишет `servers/<name>.md` (сохраняя блок `<!-- notes:start -->…<!-- notes:end -->`) и `servers/<name>.llm.md`.
+`asiba-docgen` описывает данные сервера как набор секций (`Section` с `SectionId`, по одному файлу в `sections/`): каждая секция умеет `human` (русский markdown) и `llm` (английский, `key: value`, ограниченные списки). `render_human` и `render_llm` собирают все доступные секции, `render_llm_sections` — выбранные (для контекста модели). Секция `findings` показывает выводы детекторов `asiba-incidents` и идёт первой. `DocWriter` в воркере после каждого цикла любого модуля, не чаще раза в 10 с и только при изменении тела, пишет `servers/<name>.md` (сохраняя блок `<!-- notes:start -->…<!-- notes:end -->`) и `servers/<name>.llm.md`.
 
 ## Данные для графиков
 
@@ -92,3 +93,7 @@ system, cpu, memory, disk, network, processes, services, docker, ports, logs, us
 | серверы | `~/.config/asiba/servers/<name>.toml` |
 | секреты | keyring, сервис `asiba`, аккаунт `<name>/password` / `<name>/passphrase` / `<name>/sudo` |
 | история (этап 2) | `~/.local/share/asiba/history.db` |
+
+## Инциденты
+
+`asiba-incidents` — единый источник «негатива»: каждый детектор (`detectors/<name>.rs`, трейт `Detector`) по состоянию сервера возвращает `IncidentDraft { kind, severity, subject, summary, evidence }`. Детекторы: алерты, признаки DDoS, брутфорс SSH, проверки безопасности, упавшие юниты, контейнеры (остановлен при политике перезапуска, unhealthy, рестарт-петля), упавшие деплои, диски, память (OOM, swap), обновления безопасности, ошибки модулей, расхождение часов. `reconcile(&mut AppState, now)` сравнивает черновики (уровень ≥ warning) с активными `AppState.incidents` по `kind + subject`: новые открывает, исчезнувшие закрывает, совпавшие обновляет. Цикл алертов в движке вызывает `reconcile` каждые 5 с, пишет события, шлёт уведомления на рабочий стол и `EngineEvent::IncidentsOpened`. UI показывает активные инциденты на главной и в сводке сервера. Инциденты — точка запуска ЛЛМ-аудита (см. `docs/LLM-PLAN.md`): новый детектор автоматически становится новым триггером.

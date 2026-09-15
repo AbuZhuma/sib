@@ -5,7 +5,7 @@ mod modules_table;
 mod summary;
 
 use asiba_config::SummaryLayout;
-use asiba_core::{ModuleId, ServerState};
+use asiba_core::{AppState, ModuleId, ServerState};
 use egui::{Id, RichText, Ui};
 
 use super::Action;
@@ -19,6 +19,7 @@ const TAB_KEY: &str = "server-detail-tab";
 
 pub struct DetailContext<'a> {
     pub server: &'a ServerState,
+    pub state: &'a AppState,
     pub views: &'a [Box<dyn ModuleView>],
     pub inspector: Option<&'a Inspector>,
     pub layout: &'a SummaryLayout,
@@ -51,6 +52,7 @@ pub fn show(ui: &mut Ui, ctx: &DetailContext<'_>) -> Option<Action> {
                 ui,
                 &summary::SummaryContext {
                     server,
+                    state: ctx.state,
                     views,
                     layout: ctx.layout,
                 },

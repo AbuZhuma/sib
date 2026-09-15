@@ -1,12 +1,11 @@
 [package]
-name = "asiba-docgen"
+name = "asiba-incidents"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 
 [dependencies]
 asiba-core.workspace = true
-asiba-incidents.workspace = true
 asiba-modules.workspace = true
 chrono.workspace = true
 

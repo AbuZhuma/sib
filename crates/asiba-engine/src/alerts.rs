@@ -3,10 +3,12 @@ use std::time::Duration;
 use asiba_alerts::Evaluator;
 use asiba_core::{AlertRule, SharedState};
 use chrono::{DateTime, Utc};
-use tokio::sync::watch;
+use tokio::sync::{mpsc, watch};
 use tokio::time::{MissedTickBehavior, interval};
 
+use crate::command::EngineEvent;
 use crate::engine::RepaintNotifier;
+use crate::incidents;
 
 const EVALUATE_INTERVAL: Duration = Duration::from_secs(5);
 
@@ -29,6 +31,7 @@ pub struct AlertLoop {
     pub state: SharedState,
     pub settings: watch::Receiver<AlertSettings>,
     pub notify: RepaintNotifier,
+    pub events: mpsc::UnboundedSender<EngineEvent>,
 }
 
 pub fn spawn(context: AlertLoop) {
@@ -45,11 +48,16 @@ async fn run(mut context: AlertLoop) {
             let settings = context.settings.borrow_and_update().clone();
             evaluator.set_rules(settings.rules);
         }
-        let raised = match context.state.write() {
-            Ok(mut state) => evaluator.evaluate(&mut state, Utc::now()).0,
+        let now = Utc::now();
+        let (raised, opened) = match context.state.write() {
+            Ok(mut state) => {
+                let raised = evaluator.evaluate(&mut state, now).0;
+                let opened = incidents::reconcile(&mut state, now);
+                (raised, opened)
+            }
             Err(_) => continue,
         };
-        if raised.is_empty() {
+        if raised.is_empty() && opened.is_empty() {
             continue;
         }
         let notify_desktop = context.settings.borrow().desktop_notifications;
@@ -59,6 +67,8 @@ async fn run(mut context: AlertLoop) {
                 asiba_alerts::send_desktop(alert);
             }
         }
+        incidents::announce(&opened, notify_desktop);
+        let _ = context.events.send(EngineEvent::IncidentsOpened(opened));
         (context.notify)();
     }
 }

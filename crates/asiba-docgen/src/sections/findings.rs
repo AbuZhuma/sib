@@ -1,38 +1,8 @@
-mod infrastructure;
-mod security;
-mod system;
-
-use asiba_core::Severity;
+use asiba_core::{IncidentDraft, Severity};
 
 use super::alerts::severity_name;
 use crate::section::{DocContext, Section, SectionId};
 use crate::write::{blank, field, heading, line};
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Finding {
-    pub severity: Severity,
-    pub area: &'static str,
-    pub text: String,
-}
-
-impl Finding {
-    pub fn new(severity: Severity, area: &'static str, text: impl Into<String>) -> Self {
-        Self {
-            severity,
-            area,
-            text: text.into(),
-        }
-    }
-}
-
-pub fn collect_findings(ctx: &DocContext<'_>) -> Vec<Finding> {
-    let mut findings = Vec::new();
-    system::collect(ctx, &mut findings);
-    security::collect(ctx, &mut findings);
-    infrastructure::collect(ctx, &mut findings);
-    findings.sort_by_key(|f| std::cmp::Reverse(f.severity));
-    findings
-}
 
 pub struct FindingsSection;
 
@@ -42,6 +12,22 @@ fn severity_label(severity: Severity) -> &'static str {
         Severity::Warning => "внимание",
         Severity::Info => "к сведению",
     }
+}
+
+fn drafts(ctx: &DocContext<'_>) -> Vec<IncidentDraft> {
+    let mut drafts = asiba_incidents::detect(ctx.server, ctx.state);
+    if !ctx.server.connection.is_online() {
+        drafts.insert(
+            0,
+            IncidentDraft::new(
+                asiba_core::IncidentKind::Alert,
+                Severity::Critical,
+                "offline",
+                "server is offline or unreachable",
+            ),
+        );
+    }
+    drafts
 }
 
 impl Section for FindingsSection {
@@ -55,19 +41,19 @@ impl Section for FindingsSection {
 
     fn human(&self, out: &mut String, ctx: &DocContext<'_>) {
         heading(out, "Что требует внимания");
-        let findings = collect_findings(ctx);
-        if findings.is_empty() {
+        let drafts = drafts(ctx);
+        if drafts.is_empty() {
             line(out, "Проблем не обнаружено.\n");
             return;
         }
-        for finding in findings {
+        for draft in drafts {
             line(
                 out,
                 format!(
                     "- **{}** [{}] {}",
-                    severity_label(finding.severity),
-                    finding.area,
-                    finding.text
+                    severity_label(draft.severity),
+                    draft.kind.key(),
+                    draft.summary
                 ),
             );
         }
@@ -76,21 +62,21 @@ impl Section for FindingsSection {
 
     fn llm(&self, out: &mut String, ctx: &DocContext<'_>) {
         heading(out, "Findings (detected by Asiba)");
-        let findings = collect_findings(ctx);
-        let critical = findings
+        let drafts = drafts(ctx);
+        let critical = drafts
             .iter()
-            .filter(|f| f.severity == Severity::Critical)
+            .filter(|d| d.severity == Severity::Critical)
             .count();
-        field(out, "total", findings.len().to_string());
+        field(out, "total", drafts.len().to_string());
         field(out, "critical", critical.to_string());
-        for finding in findings {
+        for draft in drafts {
             line(
                 out,
                 format!(
                     "- [{}] {}: {}",
-                    severity_name(finding.severity),
-                    finding.area,
-                    finding.text
+                    severity_name(draft.severity),
+                    draft.kind.key(),
+                    draft.summary
                 ),
             );
         }
@@ -109,9 +95,8 @@ mod tests {
     fn findings_for_new_server_report_offline_only() {
         let state = AppState::default();
         let server = server();
-        let findings = collect_findings(&DocContext::new(&server, &state));
-        assert_eq!(findings.len(), 1);
-        assert_eq!(findings[0].area, "connection");
-        assert_eq!(findings[0].severity, Severity::Critical);
+        let drafts = drafts(&DocContext::new(&server, &state));
+        assert_eq!(drafts.len(), 1);
+        assert_eq!(drafts[0].subject, "offline");
     }
 }

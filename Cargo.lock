@@ -376,6 +376,7 @@ name = "asiba-docgen"
 version = "0.1.0"
 dependencies = [
  "asiba-core",
+ "asiba-incidents",
  "asiba-modules",
  "chrono",
 ]
@@ -388,6 +389,7 @@ dependencies = [
  "asiba-config",
  "asiba-core",
  "asiba-docgen",
+ "asiba-incidents",
  "asiba-modules",
  "asiba-storage",
  "asiba-transport",
@@ -398,6 +400,15 @@ dependencies = [
  "tokio",
  "tracing",
  "ureq",
+]
+
+[[package]]
+name = "asiba-incidents"
+version = "0.1.0"
+dependencies = [
+ "asiba-core",
+ "asiba-modules",
+ "chrono",
 ]
 
 [[package]]

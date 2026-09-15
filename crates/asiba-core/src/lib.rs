@@ -1,6 +1,7 @@
 pub mod action;
 pub mod alert;
 pub mod event;
+pub mod incident;
 pub mod module;
 pub mod registry;
 pub mod series;
@@ -12,6 +13,7 @@ pub mod transport;
 pub use action::{ActionOutcome, ActionRecord, ActionRequest, ActionSpec, Danger};
 pub use alert::{Alert, AlertRule, Condition, METRIC_OFFLINE};
 pub use event::{Event, Severity};
+pub use incident::{Incident, IncidentDraft, IncidentKind};
 pub use module::{
     Availability, Intervals, Module, ModuleError, ModuleId, QueryRequest, QueryResponse,
     SETTING_ENABLED, SETTING_INTERVAL, Schedule,

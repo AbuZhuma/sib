@@ -6,6 +6,7 @@ use chrono::{DateTime, Utc};
 use crate::action::ActionRecord;
 use crate::alert::Alert;
 use crate::event::Event;
+use crate::incident::Incident;
 use crate::module::{Availability, ModuleId};
 use crate::series::{Point, Series};
 use crate::server::{Location, ServerId, ServerSpec};
@@ -14,6 +15,7 @@ use crate::snapshot::{ModuleData, Sample, Snapshot};
 const MAX_EVENTS: usize = 500;
 const MAX_ACTIONS: usize = 200;
 const MAX_RESOLVED_ALERTS: usize = 300;
+const MAX_RESOLVED_INCIDENTS: usize = 300;
 const MAX_SERVER_EVENTS: usize = 500;
 
 pub type SharedState = Arc<RwLock<AppState>>;
@@ -24,6 +26,7 @@ pub struct AppState {
     pub events: Vec<Event>,
     pub actions: Vec<ActionRecord>,
     pub alerts: Vec<Alert>,
+    pub incidents: Vec<Incident>,
     pub self_location: Option<Location>,
     pub ip_countries: BTreeMap<String, String>,
 }
@@ -66,6 +69,25 @@ impl AppState {
         let mut overflow = resolved - MAX_RESOLVED_ALERTS;
         self.alerts.retain(|a| {
             if a.is_active() || overflow == 0 {
+                return true;
+            }
+            overflow -= 1;
+            false
+        });
+    }
+
+    pub fn active_incidents(&self) -> impl Iterator<Item = &Incident> {
+        self.incidents.iter().filter(|i| i.is_active())
+    }
+
+    pub fn trim_resolved_incidents(&mut self) {
+        let resolved = self.incidents.iter().filter(|i| !i.is_active()).count();
+        if resolved <= MAX_RESOLVED_INCIDENTS {
+            return;
+        }
+        let mut overflow = resolved - MAX_RESOLVED_INCIDENTS;
+        self.incidents.retain(|i| {
+            if i.is_active() || overflow == 0 {
                 return true;
             }
             overflow -= 1;

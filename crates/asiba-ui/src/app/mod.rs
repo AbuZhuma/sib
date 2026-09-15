@@ -25,6 +25,7 @@ use crate::theme::{self, GAP, SIDEBAR_WIDTH, STATUSBAR_HEIGHT};
 const REPAINT_INTERVAL: Duration = Duration::from_secs(1);
 const WINDOW_SIZE: [f32; 2] = [1280.0, 800.0];
 const MIN_WINDOW_SIZE: [f32; 2] = [900.0, 600.0];
+const MAX_INCIDENT_NOTICES: usize = 3;
 
 pub struct AppDeps {
     pub state: SharedState,
@@ -150,6 +151,16 @@ impl AsibaApp {
                     );
                     self.notices.push(Notice::new(message));
                 }
+                EngineEvent::IncidentsOpened(incidents) => {
+                    for incident in incidents.iter().take(MAX_INCIDENT_NOTICES) {
+                        self.notices.push(Notice::new(format!(
+                            "{} {}: {}",
+                            text::INCIDENT_NOTICE,
+                            incident.server,
+                            incident.summary
+                        )));
+                    }
+                }
                 EngineEvent::ServerSaved(_) | EngineEvent::ServerRemoved(_) => {}
                 EngineEvent::Warning(message) => self.notices.push(Notice::new(message)),
             }
@@ -181,6 +192,7 @@ impl AsibaApp {
                     let layout = self.layouts.for_server(id.as_str());
                     let detail = DetailContext {
                         server,
+                        state,
                         views: &self.views,
                         inspector: self.inspector.as_ref(),
                         layout: &layout,

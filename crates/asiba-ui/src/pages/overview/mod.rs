@@ -29,6 +29,7 @@ pub fn show(ui: &mut Ui, state: &AppState, map: &mut MapState) -> Option<Action>
                 action = next;
             }
         };
+        set(blocks::active_incidents(ui, state));
         set(blocks::active_deploys(ui, state));
         set(blocks::active_anomalies(ui, state));
         set(panel(ui, text::SECTION_SERVERS, |ui| {

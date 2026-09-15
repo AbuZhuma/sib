@@ -88,6 +88,7 @@ pub fn spawn(
         state: Arc::clone(&deps.state),
         settings: alert_receiver,
         notify: Arc::clone(&notify),
+        events: events.clone(),
     };
     let mut engine = Engine {
         registry: deps.registry,

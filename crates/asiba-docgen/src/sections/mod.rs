@@ -5,7 +5,7 @@ mod deploy;
 mod description;
 mod docker;
 mod events;
-pub mod findings;
+mod findings;
 mod gpu;
 mod logs;
 mod ports;

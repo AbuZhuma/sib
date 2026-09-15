@@ -1,6 +1,7 @@
 mod badge;
 mod chip;
 mod fields;
+mod incidents;
 mod map;
 mod meter;
 mod nav;
@@ -15,6 +16,7 @@ mod tile;
 pub use badge::{badge, severity_color};
 pub use chip::{chip, chip_value};
 pub use fields::{field, password_field, section_label};
+pub use incidents::incident_line;
 pub use map::MapState;
 pub use meter::meter;
 pub use nav::nav_item;
