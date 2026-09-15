@@ -1,7 +1,8 @@
 use asiba_core::ServerId;
-use egui::{RichText, ScrollArea, TextEdit, Ui};
+use egui::{RichText, TextEdit, Ui};
 
 use super::Action;
+use crate::components::scroll;
 use crate::text;
 use crate::theme::{GAP, Palette};
 
@@ -50,16 +51,14 @@ pub fn show(ui: &mut Ui, inspector: &Inspector) -> Option<Action> {
             ui.label(RichText::new(error).color(p.critical));
         }
         Some(Ok(body)) => {
-            ScrollArea::vertical()
-                .max_height(MAX_HEIGHT)
-                .show(ui, |ui| {
-                    let mut text = body.as_str();
-                    ui.add(
-                        TextEdit::multiline(&mut text)
-                            .font(egui::TextStyle::Monospace)
-                            .desired_width(f32::INFINITY),
-                    );
-                });
+            scroll::vertical().max_height(MAX_HEIGHT).show(ui, |ui| {
+                let mut text = body.as_str();
+                ui.add(
+                    TextEdit::multiline(&mut text)
+                        .font(egui::TextStyle::Monospace)
+                        .desired_width(f32::INFINITY),
+                );
+            });
         }
     }
     action

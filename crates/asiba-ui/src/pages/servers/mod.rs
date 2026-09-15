@@ -3,13 +3,14 @@ mod filter;
 mod table;
 
 use asiba_core::{AppState, ServerState};
-use egui::{Id, ScrollArea, Ui, Vec2};
+use egui::{Id, Ui, Vec2};
 
 pub use card::environment_label;
 use filter::{Filter, ViewMode};
 
 use super::{Action, Page};
 use crate::components::page_title;
+use crate::components::scroll;
 use crate::text;
 use crate::theme::GAP;
 
@@ -43,7 +44,7 @@ pub fn show(ui: &mut Ui, state: &AppState) -> Option<Action> {
         ui.label(text::SERVERS_NO_MATCH);
         return action;
     }
-    ScrollArea::vertical().show(ui, |ui| {
+    scroll::vertical().show(ui, |ui| {
         let clicked = match filter.view {
             ViewMode::Grid => cards(ui, &servers, state),
             ViewMode::Table => table::show(ui, &servers, state),

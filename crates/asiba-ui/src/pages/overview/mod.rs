@@ -4,11 +4,11 @@ mod tiles;
 use asiba_core::{AppState, ServerState, Severity};
 use asiba_modules::system::{self, SystemInfo};
 use asiba_modules::{cpu, disk, memory, network};
-use egui::{Id, RichText, ScrollArea, Ui, Vec2};
+use egui::{Id, RichText, Ui, Vec2};
 
 use super::{Action, Page};
 use crate::components::{
-    MapState, Table, chip_value, page_title, panel, severity_color, status_label,
+    MapState, Table, chip_value, page_title, panel, scroll, severity_color, status_label,
 };
 use crate::format;
 use crate::modules::attack_badge;
@@ -23,7 +23,7 @@ pub fn show(ui: &mut Ui, state: &AppState, map: &mut MapState) -> Option<Action>
     tiles::show(ui, state);
     ui.add_space(GAP);
     let mut action = None;
-    ScrollArea::vertical().show(ui, |ui| {
+    scroll::vertical().show(ui, |ui| {
         let mut set = |next: Option<Action>| {
             if next.is_some() {
                 action = next;

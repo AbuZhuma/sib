@@ -4,11 +4,13 @@ mod test;
 use asiba_core::{Environment, ServerId, ServerSpec, SudoMode};
 use asiba_engine::{TestReport, TestRequest};
 use asiba_transport::HostKeyPolicy;
-use egui::{ComboBox, Grid, RichText, ScrollArea, TextEdit, Ui};
+use egui::{ComboBox, Grid, RichText, TextEdit, Ui};
 
 use super::servers::environment_label;
 use super::{Action, Page};
-use crate::components::{chip_value, field, page_title, panel, password_field, section_label};
+use crate::components::{
+    chip_value, field, page_title, panel, password_field, scroll, section_label,
+};
 use crate::modules::ModuleView;
 use crate::text;
 use crate::theme::{FIELD_WIDTH, GAP, Palette};
@@ -59,7 +61,7 @@ impl ServerForm {
         };
         page_title(ui, title);
         let mut action = None;
-        ScrollArea::vertical().show(ui, |ui| {
+        scroll::vertical().show(ui, |ui| {
             panel(ui, text::FORM_SECTION_CONNECTION, |ui| {
                 self.connection_fields(ui)
             });

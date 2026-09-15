@@ -6,10 +6,10 @@ mod summary;
 
 use asiba_config::SummaryLayout;
 use asiba_core::{ModuleId, ServerState};
-use egui::{Id, RichText, ScrollArea, Ui};
+use egui::{Id, RichText, Ui};
 
 use super::Action;
-use crate::components::{chip, panel, panel_plain};
+use crate::components::{chip, panel, panel_plain, scroll};
 use crate::modules::{ModuleView, Tab, ViewAction, ViewShared, has_data};
 use crate::pages::inspector::{self, Inspector};
 use crate::text;
@@ -45,7 +45,7 @@ pub fn show(ui: &mut Ui, ctx: &DetailContext<'_>) -> Option<Action> {
         });
         ui.add_space(GAP);
     }
-    ScrollArea::vertical().show(ui, |ui| {
+    scroll::vertical().show(ui, |ui| {
         let next = match tab {
             Tab::Summary => summary::show(
                 ui,

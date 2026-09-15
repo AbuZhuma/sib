@@ -1,5 +1,6 @@
 use asiba_core::{ModuleId, ServerState};
 use asiba_modules::processes::{self, Process, ProcessSnapshot};
+use egui::scroll_area::ScrollBarVisibility;
 use egui::{Id, RichText, TextEdit, Ui};
 use egui_extras::{Column, TableBuilder};
 
@@ -173,6 +174,7 @@ fn table(
     let body_height = ui.available_height();
     let mut action = None;
     TableBuilder::new(ui)
+        .scroll_bar_visibility(ScrollBarVisibility::AlwaysHidden)
         .striped(true)
         .column(Column::exact(64.0))
         .column(Column::exact(90.0))

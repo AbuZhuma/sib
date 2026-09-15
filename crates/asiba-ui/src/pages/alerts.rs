@@ -1,10 +1,10 @@
 use asiba_core::{Alert, AppState};
 use chrono::{Duration, Utc};
-use egui::{Label, RichText, ScrollArea, Ui};
+use egui::{Label, RichText, Ui};
 
 use super::alert_rules::severity_label;
 use super::{Action, Page};
-use crate::components::{Table, badge, page_title, panel, severity_color};
+use crate::components::{Table, badge, page_title, panel, scroll, severity_color};
 use crate::format;
 use crate::text;
 use crate::theme::{GAP, Palette};
@@ -14,7 +14,7 @@ const HISTORY_SHOWN: usize = 100;
 pub fn show(ui: &mut Ui, state: &AppState) -> Option<Action> {
     page_title(ui, text::ALERTS_TITLE);
     let mut action = None;
-    ScrollArea::vertical().show(ui, |ui| {
+    scroll::vertical().show(ui, |ui| {
         action = panel(ui, text::ALERTS_ACTIVE, |ui| active_table(ui, state));
         ui.add_space(GAP);
         let history = panel(ui, text::ALERTS_HISTORY, |ui| history_table(ui, state));

@@ -1,8 +1,8 @@
 use asiba_core::AppState;
-use egui::{RichText, ScrollArea, Ui};
+use egui::{RichText, Ui};
 
 use crate::components::status::status_color;
-use crate::components::{nav_item, status_dot};
+use crate::components::{nav_item, scroll, status_dot};
 use crate::pages::{Action, Page};
 use crate::text;
 use crate::theme::{GAP, Palette};
@@ -34,7 +34,7 @@ pub fn sidebar(ui: &mut Ui, page: &Page, state: &AppState) -> Option<Action> {
     }
     ui.add_space(GAP);
     ui.separator();
-    ScrollArea::vertical().show(ui, |ui| {
+    scroll::vertical().show(ui, |ui| {
         for server in state.servers.values() {
             let id = &server.spec.id;
             let selected = matches!(page, Page::ServerDetail(current) if current == id);

@@ -1,9 +1,9 @@
 use asiba_config::{AppConfig, Paths, ThemeChoice};
 use asiba_core::AppState;
-use egui::{Grid, RichText, ScrollArea, Ui};
+use egui::{Grid, RichText, Ui};
 
 use super::Action;
-use crate::components::{chip_value, page_title, panel};
+use crate::components::{chip_value, page_title, panel, scroll};
 use crate::text;
 use crate::theme::{GAP, Palette};
 
@@ -16,7 +16,7 @@ pub struct SettingsContext<'a> {
 pub fn show(ui: &mut Ui, ctx: &SettingsContext<'_>) -> Option<Action> {
     page_title(ui, text::SETTINGS_TITLE);
     let mut action = None;
-    ScrollArea::vertical().show(ui, |ui| {
+    scroll::vertical().show(ui, |ui| {
         action = sections(ui, ctx);
     });
     action

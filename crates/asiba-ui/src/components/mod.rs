@@ -6,6 +6,7 @@ mod meter;
 mod nav;
 mod panel;
 mod plot;
+pub mod scroll;
 mod sparkline;
 pub mod status;
 mod table;
