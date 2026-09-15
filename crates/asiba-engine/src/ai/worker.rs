@@ -25,9 +25,13 @@ pub struct AuditWorker {
     pub notify: RepaintNotifier,
 }
 
+const QUOTA_STATUS: u16 = 429;
+const QUOTA_PAUSE: Duration = Duration::from_secs(15 * 60);
+
 struct Runner {
     worker: AuditWorker,
     cooldowns: HashMap<String, Instant>,
+    quota_paused_until: Option<Instant>,
 }
 
 pub fn spawn_detached() -> mpsc::UnboundedSender<Box<AuditJob>> {
@@ -40,6 +44,7 @@ pub fn spawn(worker: AuditWorker) -> mpsc::UnboundedSender<Box<AuditJob>> {
         Runner {
             worker,
             cooldowns: HashMap::new(),
+            quota_paused_until: None,
         },
         receiver,
     ));
@@ -56,6 +61,12 @@ impl Runner {
     fn should_skip_auto(&mut self, job: &AuditJob, config: &AiConfig) -> bool {
         if !job.is_auto {
             return false;
+        }
+        if self
+            .quota_paused_until
+            .is_some_and(|until| Instant::now() < until)
+        {
+            return true;
         }
         let severity_ok = job
             .incident
@@ -107,6 +118,12 @@ impl Runner {
             tracing::warn!(model = fallback, "модель недоступна, пробуем запасную");
             report.model = (*fallback).to_owned();
             result = complete(&config, fallback, Arc::clone(&completion)).await;
+        }
+        if let Err(AiError::Api { status, .. }) = &result
+            && *status == QUOTA_STATUS
+        {
+            tracing::warn!("квота ИИ исчерпана, автозапросы приостановлены на 15 минут");
+            self.quota_paused_until = Some(Instant::now() + QUOTA_PAUSE);
         }
         self.finish(report, result.map_err(|e| e.to_string()));
     }
