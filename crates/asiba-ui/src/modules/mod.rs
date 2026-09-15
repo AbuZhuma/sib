@@ -101,6 +101,23 @@ impl Tab {
         Some(tab)
     }
 
+    pub fn section_key(self) -> Option<&'static str> {
+        match self {
+            Tab::Processes => Some("processes"),
+            Tab::Resources | Tab::Network => Some("resources"),
+            Tab::Ports => Some("ports"),
+            Tab::Docker => Some("docker"),
+            Tab::Services => Some("services"),
+            Tab::Logs => Some("logs"),
+            Tab::Users => Some("users"),
+            Tab::Security => Some("security"),
+            Tab::Anomalies => Some("anomalies"),
+            Tab::Deploy => Some("deploy"),
+            Tab::Gpu => Some("gpu"),
+            Tab::Summary | Tab::Audit => None,
+        }
+    }
+
     pub fn for_metric(metric: &str) -> Self {
         let module = metric.split('.').next().unwrap_or_default();
         Self::for_module(module).unwrap_or(Tab::Summary)

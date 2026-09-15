@@ -6,7 +6,7 @@ mod paths;
 mod secrets;
 mod server_store;
 
-pub use ai_config::{AiConfig, AiProvider};
+pub use ai_config::{AiConfig, AiProvider, SECTION_KEYS};
 pub use app_config::{AppConfig, Retention, ThemeChoice};
 pub use error::ConfigError;
 pub use layout::{LayoutStore, SummaryLayout};

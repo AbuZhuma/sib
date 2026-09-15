@@ -80,6 +80,7 @@ fn empty_body(ui: &mut Ui, block: &AiBlock<'_>, p: &Palette) {
 pub fn report_body(ui: &mut Ui, report: &AuditReport, p: &Palette) {
     ui.horizontal_wrapped(|ui| {
         match &report.status {
+            AuditStatus::Queued => badge(ui, text::AUDIT_QUEUED, p.text_secondary),
             AuditStatus::Running => badge(ui, text::AUDIT_RUNNING, p.accent),
             AuditStatus::Done => badge(ui, text::AUDIT_DONE, p.ok),
             AuditStatus::Failed(_) => badge(ui, text::AUDIT_FAILED, p.critical),
@@ -99,7 +100,7 @@ pub fn report_body(ui: &mut Ui, report: &AuditReport, p: &Palette) {
         AuditStatus::Failed(error) => {
             ui.label(RichText::new(error).color(p.critical));
         }
-        AuditStatus::Running => {
+        AuditStatus::Queued | AuditStatus::Running => {
             ui.spinner();
         }
         AuditStatus::Done => markdown_lite(ui, &report.text),

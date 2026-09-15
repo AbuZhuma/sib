@@ -91,12 +91,15 @@ impl Runner {
     async fn handle(&mut self, job: AuditJob) {
         let config = self.worker.config.borrow().clone();
         if !config.is_ready() {
-            if !job.is_auto {
+            if job.is_auto {
+                self.drop_queued(job.report_id);
+            } else {
                 self.finish(self.open(&job, String::new()), Err(NOT_READY.to_owned()));
             }
             return;
         }
         if self.should_skip_auto(&job, &config) {
+            self.drop_queued(job.report_id);
             return;
         }
         let report = self.open(&job, config.model.clone());
@@ -130,7 +133,7 @@ impl Runner {
 
     fn open(&self, job: &AuditJob, model: String) -> AuditReport {
         let mut report = AuditReport {
-            id: 0,
+            id: job.report_id,
             target: job.target.clone(),
             scope: job.scope.clone(),
             started_at: Utc::now(),
@@ -141,11 +144,23 @@ impl Runner {
             status: AuditStatus::Running,
         };
         if let Ok(mut state) = self.worker.state.write() {
-            report.id = state.audits.iter().map(|a| a.id).max().unwrap_or(0) + 1;
-            state.audits.push(report.clone());
+            match state.audit_mut(job.report_id) {
+                Some(stored) => *stored = report.clone(),
+                None => {
+                    report.id = state.audits.iter().map(|a| a.id).max().unwrap_or(0) + 1;
+                    state.audits.push(report.clone());
+                }
+            }
         }
         (self.worker.notify)();
         report
+    }
+
+    fn drop_queued(&self, report_id: u64) {
+        if let Ok(mut state) = self.worker.state.write() {
+            state.audits.retain(|a| a.id != report_id);
+        }
+        (self.worker.notify)();
     }
 
     fn finish(&self, mut report: AuditReport, result: Result<String, String>) {

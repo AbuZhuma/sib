@@ -110,28 +110,11 @@ fn tab_bar(ui: &mut Ui, tabs: &[Tab], current: &mut Tab) -> bool {
     changed
 }
 
-fn section_key(tab: Tab) -> Option<&'static str> {
-    match tab {
-        Tab::Processes => Some("processes"),
-        Tab::Resources | Tab::Network => Some("resources"),
-        Tab::Ports => Some("ports"),
-        Tab::Docker => Some("docker"),
-        Tab::Services => Some("services"),
-        Tab::Logs => Some("logs"),
-        Tab::Users => Some("users"),
-        Tab::Security => Some("security"),
-        Tab::Anomalies => Some("anomalies"),
-        Tab::Deploy => Some("deploy"),
-        Tab::Gpu => Some("gpu"),
-        Tab::Summary | Tab::Audit => None,
-    }
-}
-
 fn section_analysis(ui: &mut Ui, ctx: &DetailContext<'_>, tab: Tab) -> Option<Action> {
     if !ctx.ai.consent {
         return None;
     }
-    let key = section_key(tab)?;
+    let key = tab.section_key()?;
     let block = AiBlock {
         state: ctx.state,
         target: AuditTarget::Server(ctx.server.spec.id.clone()),
@@ -140,7 +123,7 @@ fn section_analysis(ui: &mut Ui, ctx: &DetailContext<'_>, tab: Tab) -> Option<Ac
         },
         title: text::AI_BLOCK_SECTION,
         can_audit: ctx.ai.is_ready(),
-        auto_request: true,
+        auto_request: ctx.ai.is_section_auto(key),
     };
     let action = ai_block(ui, &block);
     ui.add_space(GAP);

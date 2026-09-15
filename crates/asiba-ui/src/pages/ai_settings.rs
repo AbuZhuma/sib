@@ -4,6 +4,7 @@ use egui::{ComboBox, Grid, Id, RichText, TextEdit, Ui};
 
 use super::Action;
 use crate::components::chip_value;
+use crate::modules::Tab;
 use crate::text;
 use crate::theme::{GAP, Palette};
 
@@ -24,6 +25,8 @@ struct Draft {
     auto_audit: bool,
     min_severity: Severity,
     cooldown_minutes: String,
+    auto_sections: bool,
+    sections: Vec<String>,
 }
 
 impl Draft {
@@ -38,6 +41,15 @@ impl Draft {
             auto_audit: config.auto_audit,
             min_severity: config.auto_audit_min_severity,
             cooldown_minutes: (config.cooldown_secs / SECONDS_PER_MINUTE).to_string(),
+            auto_sections: config.auto_sections,
+            sections: config.sections.clone(),
+        }
+    }
+
+    fn toggle_section(&mut self, key: &str, is_enabled: bool) {
+        self.sections.retain(|s| s != key);
+        if is_enabled {
+            self.sections.push(key.to_owned());
         }
     }
 
@@ -56,6 +68,8 @@ impl Draft {
             auto_audit: self.auto_audit,
             auto_audit_min_severity: self.min_severity,
             cooldown_secs: self.cooldown_minutes.trim().parse::<u64>().ok()? * SECONDS_PER_MINUTE,
+            auto_sections: self.auto_sections,
+            sections: self.sections.clone(),
         })
     }
 }
@@ -95,6 +109,8 @@ pub fn show(ui: &mut Ui, config: &AppConfig, state: &AppState) -> Option<Action>
             text::SEVERITY_CRITICAL,
         );
     });
+    ui.add_space(GAP);
+    section_picker(ui, &mut draft, &p);
     ui.label(RichText::new(text::AI_HINT).small().color(p.text_muted));
     ui.add_space(GAP);
     let action = apply_button(ui, &draft, config, state);
@@ -103,6 +119,37 @@ pub fn show(ui: &mut Ui, config: &AppConfig, state: &AppState) -> Option<Action>
         ui.ctx().data_mut(|d| d.remove::<Draft>(id));
     }
     action
+}
+
+fn section_picker(ui: &mut Ui, draft: &mut Draft, p: &Palette) {
+    ui.checkbox(&mut draft.auto_sections, text::AI_AUTO_SECTIONS);
+    ui.label(
+        RichText::new(text::AI_SECTIONS_HINT)
+            .small()
+            .color(p.text_muted),
+    );
+    let mut seen: Vec<&str> = Vec::new();
+    ui.horizontal_wrapped(|ui| {
+        for tab in Tab::ALL {
+            let Some(key) = tab.section_key() else {
+                continue;
+            };
+            if seen.contains(&key) {
+                continue;
+            }
+            seen.push(key);
+            let mut is_enabled = draft.sections.iter().any(|s| s == key);
+            let changed = ui
+                .add_enabled(
+                    draft.auto_sections,
+                    egui::Checkbox::new(&mut is_enabled, tab.label()),
+                )
+                .changed();
+            if changed {
+                draft.toggle_section(key, is_enabled);
+            }
+        }
+    });
 }
 
 fn model_selector(ui: &mut Ui, draft: &mut Draft) {

@@ -3,6 +3,19 @@ use serde::{Deserialize, Serialize};
 
 pub const DEFAULT_CONTEXT_TOKENS: usize = 60_000;
 pub const DEFAULT_COOLDOWN_SECS: u64 = 1800;
+pub const SECTION_KEYS: [&str; 11] = [
+    "processes",
+    "resources",
+    "ports",
+    "docker",
+    "services",
+    "logs",
+    "users",
+    "security",
+    "anomalies",
+    "deploy",
+    "gpu",
+];
 const GEMINI_MODELS: [&str; 7] = [
     "gemini-3.6-flash",
     "gemini-3.7-flash",
@@ -95,6 +108,8 @@ pub struct AiConfig {
     pub auto_audit: bool,
     pub auto_audit_min_severity: Severity,
     pub cooldown_secs: u64,
+    pub auto_sections: bool,
+    pub sections: Vec<String>,
 }
 
 impl Default for AiConfig {
@@ -109,6 +124,8 @@ impl Default for AiConfig {
             auto_audit: true,
             auto_audit_min_severity: Severity::Warning,
             cooldown_secs: DEFAULT_COOLDOWN_SECS,
+            auto_sections: true,
+            sections: SECTION_KEYS.iter().map(|k| (*k).to_owned()).collect(),
         }
     }
 }
@@ -120,6 +137,10 @@ impl AiConfig {
             self.model = self.provider.default_model().to_owned();
         }
         self
+    }
+
+    pub fn is_section_auto(&self, key: &str) -> bool {
+        self.auto_sections && self.sections.iter().any(|s| s == key)
     }
 
     pub fn is_ready(&self) -> bool {
@@ -152,6 +173,18 @@ mod tests {
         let parsed: AiConfig =
             toml::from_str("provider = \"open_ai_compatible\"\nmodel = \"llama\"").expect("parse");
         assert_eq!(parsed.with_supported_model().model, "llama");
+    }
+
+    #[test]
+    fn sections_default_to_all_and_respect_master_switch() {
+        let parsed: AiConfig = toml::from_str("").expect("parse");
+        assert!(parsed.is_section_auto("docker"));
+        let manual: AiConfig =
+            toml::from_str("auto_sections = false\nsections = [\"docker\"]").expect("parse");
+        assert!(!manual.is_section_auto("docker"));
+        let partial: AiConfig = toml::from_str("sections = [\"docker\"]").expect("parse");
+        assert!(partial.is_section_auto("docker"));
+        assert!(!partial.is_section_auto("logs"));
     }
 
     #[test]

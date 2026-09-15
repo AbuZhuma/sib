@@ -7,11 +7,12 @@ use std::sync::{Arc, Mutex};
 
 use asiba_config::AiConfig;
 use asiba_core::{
-    AuditScope, AuditTarget, Credentials, Intervals, ModuleId, ModuleRegistry, ServerId,
-    ServerSpec, SharedState,
+    AuditReport, AuditScope, AuditStatus, AuditTarget, Credentials, Intervals, ModuleId,
+    ModuleRegistry, ServerId, ServerSpec, SharedState,
 };
 use asiba_storage::StorageWriter;
 use asiba_transport::HostKeyPolicy;
+use chrono::Utc;
 use tokio::sync::{broadcast, mpsc, watch};
 use tokio::task::JoinHandle;
 
@@ -164,6 +165,7 @@ impl Engine {
             AuditScope::Full | AuditScope::Section { .. } => None,
         };
         let job = AuditJob {
+            report_id: self.enqueue_report(&target, &scope),
             transport: target.server().and_then(|id| self.transport_of(id)),
             target,
             scope,
@@ -171,6 +173,27 @@ impl Engine {
             is_auto,
         };
         let _ = self.audits.send(Box::new(job));
+    }
+
+    fn enqueue_report(&self, target: &AuditTarget, scope: &AuditScope) -> u64 {
+        let Ok(mut state) = self.state.write() else {
+            return 0;
+        };
+        let id = state.audits.iter().map(|a| a.id).max().unwrap_or(0) + 1;
+        state.audits.push(AuditReport {
+            id,
+            target: target.clone(),
+            scope: scope.clone(),
+            started_at: Utc::now(),
+            finished_at: None,
+            model: self.ai_config.borrow().model.clone(),
+            context_tokens: 0,
+            text: String::new(),
+            status: AuditStatus::Queued,
+        });
+        drop(state);
+        (self.notify)();
+        id
     }
 
     fn set_ai_config(&mut self, config: AiConfig) {

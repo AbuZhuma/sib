@@ -225,6 +225,8 @@ pub const AI_CONTEXT: &str = "Лимит контекста, токенов";
 pub const AI_COOLDOWN: &str = "Повтор по одному инциденту, мин";
 pub const AI_AUTO_AUDIT: &str = "автоматически разбирать инциденты";
 pub const AI_MIN_SEVERITY: &str = "начиная с уровня";
+pub const AI_AUTO_SECTIONS: &str = "анализировать разделы автоматически при открытии вкладки";
+pub const AI_SECTIONS_HINT: &str = "Снимите галочку - анализ разделов только по кнопке «Проанализировать». Ниже - какие разделы анализировать автоматически:";
 pub const AI_HINT: &str = "Ключ хранится в config.toml. Gemini - aistudio.google.com, OpenAI - platform.openai.com, Claude - console.anthropic.com; OpenAI-совместимый API - любой сервис с /chat/completions (Groq, Mistral, DeepSeek, локальный сервер). Каждый анализ - один запрос; повторы по тому же инциденту ограничены кулдауном.";
 pub const AI_STATUS_OFF: &str = "ИИ-анализ выключен";
 pub const AI_STATUS_NO_KEY: &str = "не указан ключ API (или URL для совместимого API)";
@@ -247,6 +249,7 @@ pub const AUDIT_REPORT: &str = "отчёт";
 pub const AUDIT_EMPTY: &str = "Отчётов пока нет. Запустите полный аудит или включите автоматический разбор инцидентов в настройках.";
 pub const AUDIT_DISABLED: &str =
     "ИИ-анализ выключен - включите его в настройках и укажите ключ API.";
+pub const AUDIT_QUEUED: &str = "в очереди";
 pub const AUDIT_RUNNING: &str = "выполняется";
 pub const AUDIT_DONE: &str = "готов";
 pub const AUDIT_FAILED: &str = "ошибка";

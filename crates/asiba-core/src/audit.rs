@@ -54,6 +54,7 @@ impl AuditScope {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum AuditStatus {
+    Queued,
     Running,
     Done,
     Failed(String),
@@ -74,7 +75,7 @@ pub struct AuditReport {
 
 impl AuditReport {
     pub fn is_running(&self) -> bool {
-        self.status == AuditStatus::Running
+        matches!(self.status, AuditStatus::Queued | AuditStatus::Running)
     }
 
     pub fn is_done(&self) -> bool {

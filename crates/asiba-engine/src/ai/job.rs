@@ -4,6 +4,7 @@ use asiba_core::{AuditScope, AuditTarget, Incident, Transport};
 
 #[derive(Clone)]
 pub struct AuditJob {
+    pub report_id: u64,
     pub target: AuditTarget,
     pub scope: AuditScope,
     pub incident: Option<Incident>,
