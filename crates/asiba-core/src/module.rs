@@ -96,6 +96,8 @@ pub enum ModuleError {
     CommandFailed(String),
     #[error("модуль не поддерживает запрос {0}")]
     UnsupportedQuery(String),
+    #[error("модуль не умеет подгружать историю")]
+    UnsupportedBackfill,
     #[error("модуль не поддерживает действие {0}")]
     UnsupportedAction(String),
     #[error("действие не выполнено: {0}")]
@@ -145,6 +147,14 @@ pub trait Module: Send + Sync {
         request: &QueryRequest,
     ) -> Result<QueryResponse, ModuleError> {
         Err(ModuleError::UnsupportedQuery(request.kind.clone()))
+    }
+
+    async fn backfill(
+        &self,
+        _transport: &dyn Transport,
+        _context: &CollectContext,
+    ) -> Result<Snapshot, ModuleError> {
+        Err(ModuleError::UnsupportedBackfill)
     }
 
     fn actions(&self) -> &'static [ActionSpec] {

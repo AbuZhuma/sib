@@ -34,6 +34,10 @@ pub enum Command {
         module: ModuleId,
         request: QueryRequest,
     },
+    Backfill {
+        server: ServerId,
+        module: ModuleId,
+    },
     Perform {
         server: ServerId,
         module: ModuleId,

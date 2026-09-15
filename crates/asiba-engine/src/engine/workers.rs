@@ -2,6 +2,7 @@ use std::sync::{Arc, Mutex};
 
 use asiba_core::{Credentials, ServerId, ServerSpec, ServerState};
 use asiba_transport::HostKeyPolicy;
+use tokio::sync::broadcast;
 
 use super::{Engine, WorkerEntry};
 use crate::command::EngineEvent;
@@ -62,6 +63,7 @@ impl Engine {
                 .insert(spec.id.clone(), ServerState::new(spec.clone()));
         }
         let transport: TransportSlot = Arc::new(Mutex::new(None));
+        let (backfill, _) = broadcast::channel(worker::BACKFILL_QUEUE);
         let ctx = WorkerContext {
             spec: spec.clone(),
             intervals: self.intervals,
@@ -72,6 +74,7 @@ impl Engine {
             notify: Arc::clone(&self.notify),
             storage: self.storage.clone(),
             transport: Arc::clone(&transport),
+            backfill: backfill.clone(),
             docs: DocWriter::new(
                 self.persistence.doc_path(&spec.id),
                 self.persistence.llm_doc_path(&spec.id),
@@ -91,6 +94,7 @@ impl Engine {
             spec: spec.clone(),
             credentials,
             transport,
+            backfill,
         };
         self.workers.insert(spec.id, entry);
         (self.notify)();

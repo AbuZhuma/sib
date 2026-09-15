@@ -7,6 +7,7 @@ use asiba_core::{
     Snapshot, Transport,
 };
 use async_trait::async_trait;
+use chrono::{DateTime, Utc};
 
 pub use model::{LogEntry, LogGroup, LogsSnapshot};
 
@@ -15,6 +16,8 @@ pub const KEY_WARNINGS_PER_MIN: &str = "logs.warnings_per_min";
 pub const KEY_ERRORS_PER_MIN: &str = "logs.errors_per_min";
 
 const INITIAL_LINES: u32 = 300;
+const OLDER_LINES: u32 = 300;
+const MICROS_PER_SECOND: i64 = 1_000_000;
 const INITIAL_SINCE: &str = "-1h";
 const BURST_THRESHOLD: usize = 30;
 const CRITICAL_PRIORITY: u8 = 2;
@@ -24,6 +27,15 @@ pub struct LogsModule;
 fn initial_command() -> String {
     format!(
         "journalctl -p warning -o json --no-pager -q --since {INITIAL_SINCE} -n {INITIAL_LINES}"
+    )
+}
+
+fn older_command(before: DateTime<Utc>) -> String {
+    let micros = before.timestamp_micros() - 1;
+    format!(
+        "journalctl -p warning -o json --no-pager -q --until=@{}.{:06} -n {OLDER_LINES}",
+        micros.div_euclid(MICROS_PER_SECOND),
+        micros.rem_euclid(MICROS_PER_SECOND)
     )
 }
 
@@ -88,6 +100,31 @@ impl Module for LogsModule {
             .with_samples(samples)
             .with_events(events))
     }
+
+    async fn backfill(
+        &self,
+        transport: &dyn Transport,
+        context: &CollectContext,
+    ) -> Result<Snapshot, ModuleError> {
+        backfill_older(transport, context).await
+    }
+}
+
+async fn backfill_older(
+    transport: &dyn Transport,
+    context: &CollectContext,
+) -> Result<Snapshot, ModuleError> {
+    let previous = context
+        .previous
+        .as_ref()
+        .and_then(|s| s.downcast::<LogsSnapshot>())
+        .ok_or(ModuleError::UnsupportedBackfill)?;
+    let Some(oldest) = previous.entries.first() else {
+        return Err(ModuleError::UnsupportedBackfill);
+    };
+    let output = transport.exec(&older_command(oldest.at)).await?;
+    let older = parse::entries(&output.stdout);
+    Ok(Snapshot::new(model::prepend_older(previous, older)))
 }
 
 fn events_for(snapshot: &LogsSnapshot, has_previous: bool) -> Vec<Event> {
@@ -108,4 +145,17 @@ fn events_for(snapshot: &LogsSnapshot, has_previous: bool) -> Vec<Event> {
         events.push(Event::new(ID, Severity::Warning, message));
     }
     events
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn older_command_ends_one_microsecond_before_oldest_entry() {
+        let at = DateTime::from_timestamp(1_700_000_000, 0).unwrap_or_default();
+        let command = older_command(at);
+        assert!(command.contains("--until=@1699999999.999999"));
+        assert!(command.ends_with("-n 300"));
+    }
 }

@@ -70,6 +70,9 @@ pub const LOG_GROUPED: &str = "группировать повторы";
 pub const LOG_SOURCE: &str = "Источник";
 pub const LOG_LEVEL: &str = "Уровень";
 pub const LOG_COUNT: &str = "Раз";
+pub const LOG_ENTRIES: &str = "записей";
+pub const LOG_LOADING_OLDER: &str = "подгружаем более ранние записи...";
+pub const LOG_ALL_LOADED: &str = "весь журнал загружен";
 
 pub const USERS_SESSIONS: &str = "Активные сессии";
 pub const USERS_LOGINS: &str = "Последние входы";
@@ -146,7 +149,6 @@ pub const PROC_TOTAL: &str = "процессов";
 pub const PROC_RUNNING: &str = "работают";
 pub const PROC_ZOMBIES: &str = "зомби";
 pub const PROC_FILTER: &str = "фильтр по имени или пользователю";
-pub const PROC_SORT: &str = "сортировка:";
 pub const PROC_USER: &str = "Пользователь";
 pub const PROC_STATE: &str = "S";
 pub const PROC_UPTIME: &str = "Время";

@@ -19,6 +19,7 @@
 - Расписание: `Fast` — только для живых метрик (cpu, memory, network, processes, docker stats); `Normal` — списки и состояния; `Slow` — редко меняющееся.
 - Действия — `Module::actions()` (список `ActionSpec` константами модуля: `SPEC_BAN`, `SPEC_KILL`, …) и `Module::perform(transport, &ActionRequest)`. Это единственные команды записи; каждая перечислена в реестре ниже с пометкой **действие**. Цель действия модуль валидирует сам. UI возвращает `ViewAction::Act { spec, request }`, приложение показывает подтверждение, движок выполняет и пишет в журнал (`actions` в SQLite).
 - Запросы по требованию — `Module::query(transport, QueryRequest { kind, target })` → `QueryResponse { title, text }`. UI-представление возвращает `ViewAction::Query`, движок выполняет запрос на живой сессии сервера и отдаёт результат в панель «Просмотр». Так сделаны логи контейнера и журнал юнита.
+- Подгрузка истории — `Module::backfill(transport, &CollectContext)`: возвращает новый снимок, в котором к предыдущему добавлены более ранние данные. UI-представление возвращает `ViewAction::Backfill`, движок передаёт запрос в цикл сбора того же модуля (`Command::Backfill` → `broadcast` в воркере), и снимок заменяется без гонки со следующим сбором. Так сделана бесконечная прокрутка журнала: модуль `logs` хранит подгруженные записи отдельно от живого окна (`older_count`) и не режет их по времени; `has_older = false`, когда сервер больше ничего не вернул.
 - Модулю, которому нужен sudo, `Transport::sudo_mode()` говорит, есть ли он; `exec_root` при `SudoMode::None` возвращает ошибку. В `detect` отвечай `Partial { missing }`, если без sudo часть данных недоступна.
 - Проверки «снаружи» (доступность порта, пинг) делаются из приложения: `CollectContext.host` — адрес, по которому подключились.
 
@@ -67,7 +68,7 @@
 `ss -tulpnH`, `ss -Htan state established`. Через sudo (если настроен): `ufw status`, `firewall-cmd --list-all`, `nft list ruleset`, `iptables -S INPUT`. Доступность снаружи: TCP-connect из приложения на публичные порты (≤64, таймаут 1.5 с), повтор не чаще раза в 5 минут при неизменном наборе.
 
 ### logs
-Первый сбор: `journalctl -p warning -o json --no-pager -q --since -1h -n 300`, далее `--after-cursor=<cursor последней записи>`. Детект: `command -v journalctl`, пробный `journalctl -q -n 1 --system`.
+Первый сбор: `journalctl -p warning -o json --no-pager -q --since -1h -n 300`, далее `--after-cursor=<cursor последней записи>`. Подгрузка истории (прокрутка вниз в UI): `journalctl -p warning -o json --no-pager -q --until=@<секунды.микросекунды самой старой записи минус 1 мкс> -n 300`. Детект: `command -v journalctl`, пробный `journalctl -q -n 1 --system`.
 
 ### users
 `who`, `last -F -n 30 -w`, `getent passwd`, `getent group sudo wheel admin`, подсчёт строк в `/root/.ssh/authorized_keys` и `/home/*/.ssh/authorized_keys`.

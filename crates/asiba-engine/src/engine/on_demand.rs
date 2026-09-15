@@ -44,6 +44,12 @@ impl Engine {
         });
     }
 
+    pub(super) fn backfill(&self, server: &ServerId, module: ModuleId) {
+        if let Some(entry) = self.workers.get(server) {
+            let _ = entry.backfill.send(module);
+        }
+    }
+
     pub(super) fn perform(&self, server: &ServerId, module: ModuleId, request: ActionRequest) {
         let transport = self.transport_of(server);
         actions::perform(Perform {

@@ -1,15 +1,18 @@
+mod entries;
+
 use asiba_core::{ModuleId, ServerState};
 use asiba_modules::logs::{self, LogsSnapshot};
 use chrono::Duration;
 use egui::{Id, RichText, TextEdit, Ui};
 
-use super::{ModuleView, Tab, ViewShared};
+use super::{ModuleView, Tab, ViewAction, ViewShared};
 use crate::components::Table;
 use crate::format;
 use crate::text;
 use crate::theme::{GAP, Palette};
 
-const MAX_ROWS: usize = 300;
+const MAX_GROUP_ROWS: usize = 300;
+const FILTER_WIDTH: f32 = 280.0;
 
 #[derive(Debug, Clone, Default)]
 struct LogFilter {
@@ -74,77 +77,45 @@ impl ModuleView for LogsView {
         }
     }
 
-    fn page(
-        &self,
-        ui: &mut Ui,
-        server: &ServerState,
-        _shared: &ViewShared,
-    ) -> Option<super::ViewAction> {
+    fn page(&self, ui: &mut Ui, server: &ServerState, _shared: &ViewShared) -> Option<ViewAction> {
         let snapshot = server.data::<LogsSnapshot>(logs::ID)?;
         let id = Id::new(("logs-filter", server.spec.id.as_str()));
         let mut filter: LogFilter = ui.ctx().data(|d| d.get_temp(id)).unwrap_or_default();
-        ui.horizontal(|ui| {
-            ui.add(
-                TextEdit::singleline(&mut filter.query)
-                    .hint_text(text::LOG_FILTER)
-                    .desired_width(280.0),
-            );
-            ui.checkbox(&mut filter.grouped, text::LOG_GROUPED);
-        });
+        toolbar(ui, &mut filter, snapshot);
         ui.ctx().data_mut(|d| d.insert_temp(id, filter.clone()));
         ui.add_space(GAP);
         if filter.grouped {
             grouped_table(ui, snapshot, &filter.query);
-        } else {
-            entries_table(ui, snapshot, &filter.query);
+            return None;
         }
-        None
+        entries::table(ui, server.spec.id.as_str(), snapshot, &filter.query)
     }
 }
 
-fn matches(query: &str, source: &str, message: &str) -> bool {
+fn toolbar(ui: &mut Ui, filter: &mut LogFilter, snapshot: &LogsSnapshot) {
+    let p = Palette::current(ui.ctx());
+    ui.horizontal(|ui| {
+        ui.add(
+            TextEdit::singleline(&mut filter.query)
+                .hint_text(text::LOG_FILTER)
+                .desired_width(FILTER_WIDTH),
+        );
+        ui.checkbox(&mut filter.grouped, text::LOG_GROUPED);
+        ui.label(
+            RichText::new(format!("{} {}", snapshot.entries.len(), text::LOG_ENTRIES))
+                .color(p.text_muted),
+        );
+        if !snapshot.has_older {
+            ui.label(RichText::new(text::LOG_ALL_LOADED).color(p.text_muted));
+        }
+    });
+}
+
+pub(super) fn matches(query: &str, source: &str, message: &str) -> bool {
     let needle = query.trim().to_lowercase();
     needle.is_empty()
         || source.to_lowercase().contains(&needle)
         || message.to_lowercase().contains(&needle)
-}
-
-fn priority_color(p: &Palette, priority: u8) -> egui::Color32 {
-    match priority {
-        0..=2 => p.critical,
-        3 => p.critical,
-        4 => p.warning,
-        _ => p.text_secondary,
-    }
-}
-
-fn entries_table(ui: &mut Ui, snapshot: &LogsSnapshot, query: &str) {
-    let p = Palette::current(ui.ctx());
-    let columns = [
-        text::COL_TIME,
-        text::LOG_LEVEL,
-        text::LOG_SOURCE,
-        text::COL_MESSAGE,
-    ];
-    Table::new("logs-entries", &columns).show(ui, |ui| {
-        let rows = snapshot
-            .entries
-            .iter()
-            .rev()
-            .filter(|e| matches(query, e.source(), &e.message))
-            .take(MAX_ROWS);
-        for entry in rows {
-            ui.monospace(format::clock(entry.at));
-            ui.label(
-                RichText::new(entry.priority_label())
-                    .monospace()
-                    .color(priority_color(&p, entry.priority)),
-            );
-            ui.monospace(entry.source());
-            ui.label(entry.message_short());
-            ui.end_row();
-        }
-    });
 }
 
 fn grouped_table(ui: &mut Ui, snapshot: &LogsSnapshot, query: &str) {
@@ -161,7 +132,7 @@ fn grouped_table(ui: &mut Ui, snapshot: &LogsSnapshot, query: &str) {
             .groups()
             .into_iter()
             .filter(|g| matches(query, &g.source, &g.message))
-            .take(MAX_ROWS);
+            .take(MAX_GROUP_ROWS);
         for group in rows {
             ui.monospace(format!("×{}", group.count));
             ui.monospace(format::clock(group.last_at));
@@ -174,7 +145,7 @@ fn grouped_table(ui: &mut Ui, snapshot: &LogsSnapshot, query: &str) {
             ui.label(
                 RichText::new(label)
                     .monospace()
-                    .color(priority_color(&p, group.priority)),
+                    .color(entries::priority_color(&p, group.priority)),
             );
             ui.monospace(&group.source);
             ui.label(&group.message);

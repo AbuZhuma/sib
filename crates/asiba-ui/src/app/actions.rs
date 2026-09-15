@@ -64,6 +64,9 @@ impl AsibaApp {
                 module,
                 request,
             } => self.start_query(server, module, request),
+            Action::Backfill { server, module } => {
+                self.engine.send(Command::Backfill { server, module });
+            }
             Action::AskPerform {
                 server,
                 spec,

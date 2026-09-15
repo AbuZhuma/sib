@@ -56,6 +56,10 @@ Command::AddServer ─► Persistence::save ─► start_worker
 
 UI (`ModuleView::page`) → `ViewAction::Query` → `Action::Query` → `Command::Query { token, server, module, request }` → движок берёт транспорт сервера из слота воркера → `Module::query` → `EngineEvent::QueryFinished` → панель «Просмотр» на странице сервера.
 
+## Подгрузка истории
+
+UI → `ViewAction::Backfill` → `Action::Backfill` → `Command::Backfill { server, module }` → движок шлёт `ModuleId` в `broadcast`-канал воркера → цикл сбора нужного модуля (`worker/collect.rs`) вызывает `Module::backfill` с текущим снимком вместо очередного `collect` и записывает результат как обычный снимок. Запрос выполняется в том же цикле, что и сбор, поэтому снимок не теряет свежие записи. Используется вкладкой «Логи»: при прокрутке до последней строки UI запрашивает следующие 300 записей, пока модуль не ответит `has_older = false`.
+
 ## Действия
 
 UI → `ViewAction::Act { spec, request }` → `Action::AskPerform` → диалог подтверждения (`Danger::High` или production — с вводом имени сервера) → `Command::Perform` → `Module::perform` на транспорте сервера → `ActionRecord` в SQLite (`actions`), в `AppState.actions` и `EngineEvent::ActionFinished` (уведомление в статусбаре). Журнал — в настройках.

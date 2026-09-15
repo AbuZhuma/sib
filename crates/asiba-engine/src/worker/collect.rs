@@ -1,9 +1,11 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use asiba_core::{CollectContext, Module, ModuleError, Snapshot, Transport, TransportError};
+use asiba_core::{
+    CollectContext, Module, ModuleError, ModuleId, Snapshot, Transport, TransportError,
+};
 use asiba_storage::StoredSample;
-use tokio::sync::watch;
+use tokio::sync::{broadcast, watch};
 use tokio::time::{MissedTickBehavior, interval};
 
 use super::WorkerContext;
@@ -21,16 +23,20 @@ pub struct LoopContext {
 pub async fn run(ctx: LoopContext) {
     let mut ticker = interval(ctx.interval);
     ticker.set_missed_tick_behavior(MissedTickBehavior::Delay);
+    let mut requests = ctx.worker.backfill.subscribe();
     let mut previous: Option<Snapshot> = None;
     let mut failures = 0;
     loop {
-        ticker.tick().await;
-        let context = CollectContext {
-            previous: previous.clone(),
-            host: ctx.worker.spec.host.clone(),
-            settings: ctx.worker.spec.module_settings(ctx.module.id().0),
+        let is_backfill = tokio::select! {
+            _ = ticker.tick() => false,
+            request = requests.recv() => {
+                if !is_own_request(&ctx, request) {
+                    continue;
+                }
+                true
+            }
         };
-        match ctx.module.collect(ctx.transport.as_ref(), &context).await {
+        match fetch(&ctx, previous.clone(), is_backfill).await {
             Ok(snapshot) => {
                 failures = 0;
                 record_snapshot(&ctx, &snapshot);
@@ -40,6 +46,7 @@ pub async fn run(ctx: LoopContext) {
                 let _ = ctx.lost.send(Some(reason));
                 return;
             }
+            Err(error) if is_backfill => record_error(&ctx, &error),
             Err(error) => {
                 failures += 1;
                 record_error(&ctx, &error);
@@ -50,6 +57,29 @@ pub async fn run(ctx: LoopContext) {
             }
         }
     }
+}
+
+async fn fetch(
+    ctx: &LoopContext,
+    previous: Option<Snapshot>,
+    is_backfill: bool,
+) -> Result<Snapshot, ModuleError> {
+    let context = CollectContext {
+        previous,
+        host: ctx.worker.spec.host.clone(),
+        settings: ctx.worker.spec.module_settings(ctx.module.id().0),
+    };
+    if is_backfill {
+        return ctx.module.backfill(ctx.transport.as_ref(), &context).await;
+    }
+    ctx.module.collect(ctx.transport.as_ref(), &context).await
+}
+
+fn is_own_request(
+    ctx: &LoopContext,
+    request: Result<ModuleId, broadcast::error::RecvError>,
+) -> bool {
+    matches!(request, Ok(module) if module == ctx.module.id())
 }
 
 fn record_snapshot(ctx: &LoopContext, snapshot: &Snapshot) {

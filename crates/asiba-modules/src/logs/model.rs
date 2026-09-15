@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashSet};
 
 use chrono::{DateTime, Duration, Utc};
 
@@ -71,6 +71,8 @@ pub struct LogsSnapshot {
     pub entries: Vec<LogEntry>,
     pub fresh: Vec<LogEntry>,
     pub cursor: Option<String>,
+    pub older_count: usize,
+    pub has_older: bool,
 }
 
 impl LogsSnapshot {
@@ -108,20 +110,17 @@ impl LogsSnapshot {
 
 pub fn merge(previous: Option<&LogsSnapshot>, fresh: Vec<LogEntry>) -> LogsSnapshot {
     let cutoff = Utc::now() - RETENTION;
-    let mut entries: Vec<LogEntry> = previous
-        .map(|p| {
-            p.entries
-                .iter()
-                .filter(|e| e.at >= cutoff)
-                .cloned()
-                .collect()
-        })
-        .unwrap_or_default();
-    entries.extend(fresh.iter().cloned());
-    if entries.len() > MAX_ENTRIES {
-        let overflow = entries.len() - MAX_ENTRIES;
-        entries.drain(..overflow);
+    let (older, live) = previous
+        .map(|p| p.entries.split_at(p.older_count.min(p.entries.len())))
+        .unwrap_or((&[], &[]));
+    let mut window: Vec<LogEntry> = live.iter().filter(|e| e.at >= cutoff).cloned().collect();
+    window.extend(fresh.iter().cloned());
+    if window.len() > MAX_ENTRIES {
+        let overflow = window.len() - MAX_ENTRIES;
+        window.drain(..overflow);
     }
+    let mut entries = older.to_vec();
+    entries.extend(window);
     let cursor = fresh
         .last()
         .map(|e| e.cursor.clone())
@@ -130,6 +129,25 @@ pub fn merge(previous: Option<&LogsSnapshot>, fresh: Vec<LogEntry>) -> LogsSnaps
         entries,
         fresh,
         cursor,
+        older_count: older.len(),
+        has_older: previous.is_none_or(|p| p.has_older),
+    }
+}
+
+pub fn prepend_older(previous: &LogsSnapshot, older: Vec<LogEntry>) -> LogsSnapshot {
+    let known: HashSet<&str> = previous.entries.iter().map(|e| e.cursor.as_str()).collect();
+    let mut entries: Vec<LogEntry> = older
+        .into_iter()
+        .filter(|e| !known.contains(e.cursor.as_str()))
+        .collect();
+    let added = entries.len();
+    entries.extend(previous.entries.iter().cloned());
+    LogsSnapshot {
+        entries,
+        fresh: Vec::new(),
+        cursor: previous.cursor.clone(),
+        older_count: previous.older_count + added,
+        has_older: added > 0,
     }
 }
 
@@ -162,6 +180,31 @@ mod tests {
         let first = merge(None, vec![entry("a", "c1")]);
         let second = merge(Some(&first), vec![]);
         assert_eq!(second.cursor.as_deref(), Some("c1"));
+    }
+
+    #[test]
+    fn prepend_older_skips_known_cursors_and_marks_end() {
+        let first = merge(None, vec![entry("a", "c1")]);
+        let extended = prepend_older(&first, vec![entry("old", "c0"), entry("a", "c1")]);
+        assert_eq!(extended.entries.len(), 2);
+        assert_eq!(extended.entries[0].cursor, "c0");
+        assert_eq!(extended.older_count, 1);
+        assert!(extended.has_older);
+        let exhausted = prepend_older(&extended, vec![entry("old", "c0")]);
+        assert!(!exhausted.has_older);
+        assert_eq!(exhausted.entries.len(), 2);
+    }
+
+    #[test]
+    fn merge_keeps_older_entries_beyond_retention() {
+        let first = merge(None, vec![entry("a", "c1")]);
+        let mut stale = entry("old", "c0");
+        stale.at = Utc::now() - RETENTION - Duration::hours(1);
+        let extended = prepend_older(&first, vec![stale]);
+        let next = merge(Some(&extended), vec![entry("b", "c2")]);
+        assert_eq!(next.entries.len(), 3);
+        assert_eq!(next.older_count, 1);
+        assert_eq!(next.entries[0].cursor, "c0");
     }
 
     #[test]

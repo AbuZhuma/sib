@@ -57,6 +57,10 @@ pub enum Action {
         module: ModuleId,
         request: QueryRequest,
     },
+    Backfill {
+        server: ServerId,
+        module: ModuleId,
+    },
     AskPerform {
         server: ServerId,
         spec: ActionSpec,

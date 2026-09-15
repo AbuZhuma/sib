@@ -7,12 +7,12 @@ use std::sync::{Arc, Mutex};
 
 use asiba_config::AiConfig;
 use asiba_core::{
-    AuditScope, AuditTarget, Credentials, Intervals, ModuleRegistry, ServerId, ServerSpec,
-    SharedState,
+    AuditScope, AuditTarget, Credentials, Intervals, ModuleId, ModuleRegistry, ServerId,
+    ServerSpec, SharedState,
 };
 use asiba_storage::StorageWriter;
 use asiba_transport::HostKeyPolicy;
-use tokio::sync::{mpsc, watch};
+use tokio::sync::{broadcast, mpsc, watch};
 use tokio::task::JoinHandle;
 
 use crate::actions;
@@ -54,6 +54,7 @@ struct WorkerEntry {
     spec: ServerSpec,
     credentials: Credentials,
     transport: TransportSlot,
+    backfill: broadcast::Sender<ModuleId>,
 }
 
 pub struct EngineDeps {
@@ -256,6 +257,7 @@ impl Engine {
             } => {
                 self.query(token, &server, module, request);
             }
+            Command::Backfill { server, module } => self.backfill(&server, module),
             Command::Perform {
                 server,
                 module,

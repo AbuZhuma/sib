@@ -108,6 +108,7 @@ impl Tab {
 
 pub enum ViewAction {
     Query(QueryRequest),
+    Backfill,
     Act {
         spec: ActionSpec,
         request: ActionRequest,

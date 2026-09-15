@@ -7,13 +7,14 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use asiba_core::{
-    ConnectionStatus, Credentials, Intervals, ModuleRegistry, ModuleSettings, SETTING_ENABLED,
-    SETTING_INTERVAL, Schedule, ServerSpec, SharedState, Transport, TransportError,
+    ConnectionStatus, Credentials, Intervals, ModuleId, ModuleRegistry, ModuleSettings,
+    SETTING_ENABLED, SETTING_INTERVAL, Schedule, ServerSpec, SharedState, Transport,
+    TransportError,
 };
 use asiba_storage::StorageWriter;
 use asiba_transport::{HostKeyPolicy, connect};
 use chrono::Utc;
-use tokio::sync::watch;
+use tokio::sync::{broadcast, watch};
 use tokio::task::JoinSet;
 use tokio::time::sleep;
 
@@ -25,6 +26,7 @@ pub use docs::DocWriter;
 pub use ping::SERIES_KEY as PING_SERIES_KEY;
 
 const REDETECT_INTERVAL: Duration = Duration::from_secs(600);
+pub const BACKFILL_QUEUE: usize = 16;
 
 pub type TransportSlot = Arc<Mutex<Option<Arc<dyn Transport>>>>;
 
@@ -38,6 +40,7 @@ pub struct WorkerContext {
     pub notify: RepaintNotifier,
     pub storage: Option<StorageWriter>,
     pub transport: TransportSlot,
+    pub backfill: broadcast::Sender<ModuleId>,
     pub docs: docs::DocWriter,
 }
 
