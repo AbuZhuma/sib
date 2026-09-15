@@ -125,6 +125,7 @@ pub const DETAIL_SECTION_EVENTS: &str = "События сервера";
 pub const DETAIL_LAYOUT: &str = "раскладка";
 pub const DETAIL_LAYOUT_DONE: &str = "готово";
 pub const DETAIL_HIDE: &str = "скрыть";
+pub const DETAIL_OPEN: &str = "перейти →";
 pub const DETAIL_SHOW: &str = "показать";
 pub const DETAIL_HIDDEN: &str = "Скрытые виджеты";
 pub const DETAIL_UP: &str = "▲";

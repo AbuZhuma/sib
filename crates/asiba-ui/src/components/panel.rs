@@ -1,4 +1,4 @@
-use egui::{Color32, CursorIcon, Frame, Margin, RichText, Sense, Stroke, Ui, UiBuilder};
+use egui::{Color32, Frame, Margin, RichText, Stroke, Ui};
 
 use crate::theme::{GAP, GAP_SMALL, Palette};
 
@@ -37,28 +37,6 @@ pub fn panel<R>(ui: &mut Ui, title: &str, add_contents: impl FnOnce(&mut Ui) -> 
 pub fn panel_plain<R>(ui: &mut Ui, add_contents: impl FnOnce(&mut Ui) -> R) -> R {
     let p = Palette::current(ui.ctx());
     framed(ui, p.border, add_contents)
-}
-
-pub fn panel_link<R>(
-    ui: &mut Ui,
-    title: &str,
-    add_contents: impl FnOnce(&mut Ui) -> R,
-) -> (R, bool) {
-    let p = Palette::current(ui.ctx());
-    let builder = UiBuilder::new().id_salt(title).sense(Sense::click());
-    let scoped = ui.scope_builder(builder, |ui| {
-        let hovered = ui.response().hovered();
-        let stroke = if hovered { p.border_active } else { p.border };
-        if hovered {
-            ui.ctx().set_cursor_icon(CursorIcon::PointingHand);
-        }
-        framed(ui, stroke, |ui| {
-            title_label(ui, title);
-            ui.add_space(GAP_SMALL);
-            add_contents(ui)
-        })
-    });
-    (scoped.inner, scoped.response.clicked())
 }
 
 pub fn panel_with_controls<R>(

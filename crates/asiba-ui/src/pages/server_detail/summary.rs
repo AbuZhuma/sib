@@ -3,8 +3,8 @@ use asiba_core::ServerState;
 use egui::{Id, RichText, Ui};
 
 use super::{connection, header, modules_table, select_tab};
-use crate::components::{panel, panel_link, panel_with_controls};
-use crate::modules::{ModuleView, has_data};
+use crate::components::{panel, panel_with_controls};
+use crate::modules::{ModuleView, Tab, has_data};
 use crate::pages::Action;
 use crate::text;
 use crate::theme::{GAP, Palette};
@@ -51,10 +51,12 @@ pub fn show(ui: &mut Ui, ctx: &SummaryContext<'_>) -> Option<Action> {
                     |ui| view.summary(ui, server),
                 );
             } else {
-                let (_, clicked) = panel_link(column, view.title(), |ui| view.summary(ui, server));
-                if clicked {
-                    select_tab(column.ctx(), view.tab());
-                }
+                panel_with_controls(
+                    column,
+                    view.title(),
+                    |ui| open_button(ui, view.tab()),
+                    |ui| view.summary(ui, server),
+                );
             }
             column.add_space(GAP);
         }
@@ -62,12 +64,13 @@ pub fn show(ui: &mut Ui, ctx: &SummaryContext<'_>) -> Option<Action> {
     if editing {
         changed |= hidden_list(ui, &mut layout, &available);
     }
-    panel(ui, text::DETAIL_SECTION_MODULES, |ui| {
-        modules_table::show(ui, server)
-    });
-    ui.add_space(GAP);
-    panel(ui, text::DETAIL_SECTION_DESCRIPTION, |ui| {
-        header::description(ui, server)
+    ui.columns(2, |columns| {
+        panel(&mut columns[0], text::DETAIL_SECTION_MODULES, |ui| {
+            modules_table::show(ui, server)
+        });
+        panel(&mut columns[1], text::DETAIL_SECTION_DESCRIPTION, |ui| {
+            header::description(ui, server)
+        });
     });
     if changed {
         action = Some(Action::SaveLayout {
@@ -76,6 +79,12 @@ pub fn show(ui: &mut Ui, ctx: &SummaryContext<'_>) -> Option<Action> {
         });
     }
     action
+}
+
+fn open_button(ui: &mut Ui, tab: Tab) {
+    if ui.small_button(text::DETAIL_OPEN).clicked() {
+        select_tab(ui.ctx(), tab);
+    }
 }
 
 fn edit_toggle(ui: &mut Ui) -> bool {

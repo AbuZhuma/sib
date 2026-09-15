@@ -18,7 +18,7 @@ pub use fields::{field, password_field, section_label};
 pub use map::MapState;
 pub use meter::meter;
 pub use nav::nav_item;
-pub use panel::{page_title, panel, panel_link, panel_plain, panel_with_controls};
+pub use panel::{page_title, panel, panel_plain, panel_with_controls};
 pub use plot::{TimeSeriesPlot, Unit};
 pub use sparkline::{sparkline, sparkline_fill};
 pub use status::{status_dot, status_label};
