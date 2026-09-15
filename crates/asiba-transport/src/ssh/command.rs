@@ -55,7 +55,12 @@ async fn run_inner(
 }
 
 fn disconnected(error: russh::Error) -> TransportError {
-    TransportError::Disconnected(error.to_string())
+    match error {
+        russh::Error::ChannelOpenFailure(reason) => {
+            TransportError::Exec(format!("канал не открыт: {reason:?}"))
+        }
+        other => TransportError::Disconnected(other.to_string()),
+    }
 }
 
 fn exec_failed(error: russh::Error) -> TransportError {
