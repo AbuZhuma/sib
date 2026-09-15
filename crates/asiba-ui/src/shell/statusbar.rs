@@ -59,8 +59,22 @@ pub fn statusbar(ui: &mut Ui, ctx: StatusContext<'_>) {
         if is_under_attack(state) {
             badge(ui, text::STATUS_ATTACK, p.critical);
         }
+        let queued = state
+            .audits
+            .iter()
+            .filter(|a| a.status == asiba_core::AuditStatus::Queued)
+            .count();
         if state.audits.iter().any(|a| a.is_running()) {
-            badge(ui, text::STATUS_AI_BUSY, p.accent);
+            let label = if queued > 0 {
+                format!(
+                    "{} · {} {queued}",
+                    text::STATUS_AI_BUSY,
+                    text::STATUS_AI_QUEUED
+                )
+            } else {
+                text::STATUS_AI_BUSY.to_owned()
+            };
+            badge(ui, &label, p.accent);
         }
         for notice in ctx.notices.iter().rev().take(2) {
             ui.separator();

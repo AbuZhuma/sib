@@ -1,4 +1,4 @@
-mod audit;
+pub mod audit;
 mod connection;
 mod events;
 mod header;

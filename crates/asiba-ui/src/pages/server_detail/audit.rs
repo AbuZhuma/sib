@@ -2,7 +2,7 @@ use asiba_core::{AuditReport, AuditScope, AuditTarget};
 use egui::{Id, RichText, Ui};
 
 use super::DetailContext;
-use crate::components::{chip, panel, report_body};
+use crate::components::{audit_status_label, chip, panel, report_body};
 use crate::format;
 use crate::pages::Action;
 use crate::text;
@@ -61,9 +61,10 @@ fn pick(ui: &mut Ui, reports: &[&AuditReport]) -> u64 {
     ui.horizontal_wrapped(|ui| {
         for report in reports {
             let label = format!(
-                "{} · {}",
+                "{} · {} · {}",
                 format::clock(report.started_at),
-                scope_label(&report.scope)
+                scope_label(&report.scope),
+                audit_status_label(&report.status)
             );
             if chip(ui, report.id == selected, label).clicked() {
                 selected = report.id;

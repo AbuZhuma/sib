@@ -77,14 +77,27 @@ fn empty_body(ui: &mut Ui, block: &AiBlock<'_>, p: &Palette) {
     ui.label(RichText::new(label).color(p.text_muted));
 }
 
+pub fn status_badge(ui: &mut Ui, status: &AuditStatus, p: &Palette) {
+    match status {
+        AuditStatus::Queued => badge(ui, text::AUDIT_QUEUED, p.text_secondary),
+        AuditStatus::Running => badge(ui, text::AUDIT_RUNNING, p.accent),
+        AuditStatus::Done => badge(ui, text::AUDIT_DONE, p.ok),
+        AuditStatus::Failed(_) => badge(ui, text::AUDIT_FAILED, p.critical),
+    }
+}
+
+pub fn audit_status_label(status: &AuditStatus) -> &'static str {
+    match status {
+        AuditStatus::Queued => text::AUDIT_QUEUED,
+        AuditStatus::Running => text::AUDIT_RUNNING,
+        AuditStatus::Done => text::AUDIT_DONE,
+        AuditStatus::Failed(_) => text::AUDIT_FAILED,
+    }
+}
+
 pub fn report_body(ui: &mut Ui, report: &AuditReport, p: &Palette) {
     ui.horizontal_wrapped(|ui| {
-        match &report.status {
-            AuditStatus::Queued => badge(ui, text::AUDIT_QUEUED, p.text_secondary),
-            AuditStatus::Running => badge(ui, text::AUDIT_RUNNING, p.accent),
-            AuditStatus::Done => badge(ui, text::AUDIT_DONE, p.ok),
-            AuditStatus::Failed(_) => badge(ui, text::AUDIT_FAILED, p.critical),
-        }
+        status_badge(ui, &report.status, p);
         ui.label(
             RichText::new(format!(
                 "{} · {}",
