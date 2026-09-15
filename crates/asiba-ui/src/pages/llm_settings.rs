@@ -2,10 +2,12 @@ use std::path::PathBuf;
 
 use asiba_config::{AppConfig, LlmConfig};
 use asiba_core::{AppState, Severity};
-use egui::{Grid, Id, RichText, TextEdit, Ui};
+use asiba_llm::{InstallProgress, InstallStep};
+use egui::{Grid, Id, ProgressBar, RichText, TextEdit, Ui};
 
 use super::Action;
 use crate::components::chip_value;
+use crate::format;
 use crate::text;
 use crate::theme::{GAP, Palette};
 
@@ -13,6 +15,7 @@ const DRAFT_KEY: &str = "llm-settings-draft";
 const PATH_FIELD: f32 = 420.0;
 const NUMBER_FIELD: f32 = 80.0;
 const SECONDS_PER_MINUTE: u64 = 60;
+const PROGRESS_WIDTH: f32 = 420.0;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 struct Draft {
@@ -62,8 +65,20 @@ impl Draft {
     }
 }
 
-pub fn show(ui: &mut Ui, config: &AppConfig, state: &AppState) -> Option<Action> {
+pub fn show(
+    ui: &mut Ui,
+    config: &AppConfig,
+    state: &AppState,
+    install: Option<InstallProgress>,
+) -> Option<Action> {
     let p = Palette::current(ui.ctx());
+    if let Some(progress) = install {
+        installing(ui, progress);
+        return None;
+    }
+    if !config.llm.is_ready() && install_block(ui, &p) {
+        return Some(Action::InstallLlm);
+    }
     let id = Id::new(DRAFT_KEY);
     let mut draft: Draft = ui
         .ctx()
@@ -101,6 +116,40 @@ pub fn show(ui: &mut Ui, config: &AppConfig, state: &AppState) -> Option<Action>
         ui.ctx().data_mut(|d| d.remove::<Draft>(id));
     }
     action
+}
+
+fn install_block(ui: &mut Ui, p: &Palette) -> bool {
+    let clicked = ui.button(text::LLM_INSTALL).clicked();
+    ui.label(
+        RichText::new(text::LLM_INSTALL_HINT)
+            .small()
+            .color(p.text_muted),
+    );
+    ui.add_space(GAP);
+    clicked
+}
+
+fn installing(ui: &mut Ui, progress: InstallProgress) {
+    let p = Palette::current(ui.ctx());
+    let step = match progress.step {
+        InstallStep::LlamaDownload => text::LLM_INSTALLING_LLAMA,
+        InstallStep::LlamaExtract => text::LLM_INSTALLING_EXTRACT,
+        InstallStep::ModelDownload => text::LLM_INSTALLING_MODEL,
+        InstallStep::Done => text::LLM_INSTALLING_DONE,
+    };
+    let done = format::bytes(progress.done_bytes);
+    let label = match progress.total_bytes {
+        Some(total) => format!("{step}: {done} / {}", format::bytes(total)),
+        None => format!("{step}: {done}"),
+    };
+    ui.label(RichText::new(label).color(p.text));
+    let fraction = progress
+        .total_bytes
+        .filter(|t| *t > 0)
+        .map(|t| progress.done_bytes as f32 / t as f32)
+        .unwrap_or(0.0);
+    ui.add(ProgressBar::new(fraction).desired_width(PROGRESS_WIDTH));
+    ui.ctx().request_repaint();
 }
 
 fn fields(ui: &mut Ui, draft: &mut Draft) {

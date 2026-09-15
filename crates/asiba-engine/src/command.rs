@@ -6,6 +6,7 @@ use asiba_core::{
     Intervals, ModuleId, QueryRequest, QueryResponse, ServerId, ServerSpec, Snapshot,
     TransportError,
 };
+use asiba_llm::{InstallProgress, Installed};
 use asiba_transport::HostKeyPolicy;
 use chrono::{DateTime, Utc};
 
@@ -53,6 +54,7 @@ pub enum Command {
     },
     SetLlmConfig(LlmConfig),
     UnloadModel,
+    InstallLlm,
 }
 
 #[derive(Debug, Clone)]
@@ -94,6 +96,8 @@ pub enum EngineEvent {
     ActionFinished(ActionRecord),
     IncidentsOpened(Vec<Incident>),
     AuditFinished(AuditReport),
+    LlmInstallProgress(InstallProgress),
+    LlmInstalled(Result<Installed, String>),
     ServerSaved(ServerId),
     ServerRemoved(ServerId),
     Warning(String),

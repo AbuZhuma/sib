@@ -3,6 +3,7 @@ use asiba_core::{
     ActionRequest, ActionSpec, AlertRule, Environment, ModuleId, QueryRequest, ServerId,
 };
 use asiba_engine::{AlertSettings, Command};
+use asiba_llm::{InstallProgress, InstallStep, Installed};
 
 use super::AsibaApp;
 use super::confirm::ConfirmDialog;
@@ -11,6 +12,7 @@ use crate::pages::inspector::Inspector;
 use crate::pages::server_form::ServerForm;
 use crate::pages::{Action, Page};
 use crate::shell::Notice;
+use crate::text;
 use crate::theme;
 
 impl AsibaApp {
@@ -95,6 +97,7 @@ impl AsibaApp {
                 }
             }
             Action::UnloadModel => self.engine.send(Command::UnloadModel),
+            Action::InstallLlm => self.start_install(),
             Action::Audit { server, scope } => self.engine.send(Command::Audit {
                 server,
                 scope,
@@ -159,6 +162,36 @@ impl AsibaApp {
             )));
         if let Err(error) = self.config.save(&self.paths) {
             self.notices.push(Notice::new(error.to_string()));
+        }
+    }
+
+    fn start_install(&mut self) {
+        self.llm_install = Some(InstallProgress {
+            step: InstallStep::LlamaDownload,
+            done_bytes: 0,
+            total_bytes: None,
+        });
+        self.engine.send(Command::InstallLlm);
+    }
+
+    pub(super) fn finish_install(&mut self, result: Result<Installed, String>) {
+        self.llm_install = None;
+        match result {
+            Ok(installed) => {
+                self.config.llm.enabled = true;
+                self.config.llm.model_path = Some(installed.model_path);
+                self.config.llm.server_binary = installed.server_binary.display().to_string();
+                self.engine
+                    .send(Command::SetLlmConfig(self.config.llm.clone()));
+                if let Err(error) = self.config.save(&self.paths) {
+                    self.notices.push(Notice::new(error.to_string()));
+                }
+                self.notices
+                    .push(Notice::new(text::LLM_INSTALLED.to_owned()));
+            }
+            Err(error) => self
+                .notices
+                .push(Notice::new(format!("{} {error}", text::LLM_INSTALL_FAILED))),
         }
     }
 

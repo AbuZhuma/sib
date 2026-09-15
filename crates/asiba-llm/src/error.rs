@@ -14,4 +14,8 @@ pub enum LlmError {
     Request(String),
     #[error("unexpected response: {0}")]
     Response(String),
+    #[error("download failed: {0}")]
+    Download(String),
+    #[error("archive extraction failed: {0}")]
+    Extract(String),
 }

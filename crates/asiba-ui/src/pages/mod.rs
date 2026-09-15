@@ -78,6 +78,7 @@ pub enum Action {
     },
     SaveLlmConfig(LlmConfig),
     UnloadModel,
+    InstallLlm,
     Audit {
         server: ServerId,
         scope: AuditScope,

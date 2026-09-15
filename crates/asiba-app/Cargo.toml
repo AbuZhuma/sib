@@ -12,6 +12,7 @@ path = "src/main.rs"
 asiba-core.workspace = true
 asiba-config.workspace = true
 asiba-engine.workspace = true
+asiba-llm.workspace = true
 asiba-modules.workspace = true
 asiba-storage.workspace = true
 asiba-ui.workspace = true

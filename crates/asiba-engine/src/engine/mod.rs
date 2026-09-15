@@ -9,6 +9,7 @@ use asiba_config::LlmConfig;
 use asiba_core::{
     AuditScope, Credentials, Intervals, ModuleRegistry, ServerId, ServerSpec, SharedState,
 };
+use asiba_llm::InstallTarget;
 use asiba_storage::StorageWriter;
 use asiba_transport::HostKeyPolicy;
 use tokio::sync::{mpsc, watch};
@@ -66,6 +67,7 @@ pub struct EngineDeps {
     pub intervals: Intervals,
     pub llm: LlmConfig,
     pub audits_dir: PathBuf,
+    pub llm_install: InstallTarget,
 }
 
 struct Engine {
@@ -82,6 +84,7 @@ struct Engine {
     alert_settings: watch::Sender<AlertSettings>,
     llm_config: watch::Sender<LlmConfig>,
     audits: mpsc::UnboundedSender<WorkerMessage>,
+    llm_install: InstallTarget,
 }
 
 pub fn spawn(
@@ -123,6 +126,7 @@ pub fn spawn(
         alert_settings,
         llm_config,
         audits: llm::spawn_detached(),
+        llm_install: deps.llm_install,
     };
     runtime.spawn(async move {
         engine.audits = llm::spawn(audit_worker);
@@ -264,6 +268,7 @@ impl Engine {
             Command::UnloadModel => {
                 let _ = self.audits.send(WorkerMessage::Unload);
             }
+            Command::InstallLlm => llm::install(self.llm_install.clone(), self.events.clone()),
         }
     }
 
