@@ -8,7 +8,7 @@ use crate::modules::Tab;
 use crate::text;
 use crate::theme::Palette;
 
-fn kind_label(kind: IncidentKind) -> &'static str {
+pub fn kind_label(kind: IncidentKind) -> &'static str {
     match kind {
         IncidentKind::Alert => text::INCIDENT_ALERT,
         IncidentKind::Anomaly => text::INCIDENT_ANOMALY,
@@ -38,6 +38,7 @@ pub struct IncidentClick {
     pub open_details: bool,
     pub audit: bool,
     pub open_report: bool,
+    pub ignore: bool,
 }
 
 pub fn incident_tab(state: &AppState, incident: &Incident) -> Tab {
@@ -86,6 +87,13 @@ pub fn incident_line(ui: &mut Ui, line: &IncidentLine<'_>) -> IncidentClick {
         }
         if line.can_audit && ui.small_button(text::AUDIT_INCIDENT).clicked() {
             click.audit = true;
+        }
+        if ui
+            .small_button(text::INCIDENT_IGNORE)
+            .on_hover_text(text::INCIDENT_IGNORE_HINT)
+            .clicked()
+        {
+            click.ignore = true;
         }
     });
     click

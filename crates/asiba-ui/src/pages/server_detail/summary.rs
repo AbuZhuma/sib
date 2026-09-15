@@ -1,5 +1,5 @@
 use asiba_config::SummaryLayout;
-use asiba_core::{AppState, AuditScope, AuditTarget, ServerState};
+use asiba_core::{AppState, AuditScope, AuditTarget, IgnoredIncident, ServerState};
 use egui::{Id, RichText, Ui};
 
 use super::{connection, header, modules_table, select_tab};
@@ -134,7 +134,9 @@ fn incidents(ui: &mut Ui, ctx: &SummaryContext<'_>) -> Option<Action> {
                 has_report: has_report(ctx.state, incident),
             };
             let click = incident_line(ui, &line);
-            if click.audit {
+            if click.ignore {
+                action = Some(Action::IgnoreIncident(IgnoredIncident::of(incident)));
+            } else if click.audit {
                 action = Some(Action::Audit {
                     target: AuditTarget::Server(incident.server.clone()),
                     scope: incident_scope(incident),

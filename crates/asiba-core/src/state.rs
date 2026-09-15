@@ -7,7 +7,7 @@ use crate::action::ActionRecord;
 use crate::alert::Alert;
 use crate::audit::{AuditReport, AuditScope, AuditTarget};
 use crate::event::Event;
-use crate::incident::Incident;
+use crate::incident::{IgnoredIncident, Incident, IncidentKind};
 use crate::module::{Availability, ModuleId};
 use crate::series::{Point, Series};
 use crate::server::{Location, ServerId, ServerSpec};
@@ -28,6 +28,7 @@ pub struct AppState {
     pub actions: Vec<ActionRecord>,
     pub alerts: Vec<Alert>,
     pub incidents: Vec<Incident>,
+    pub ignored_incidents: Vec<IgnoredIncident>,
     pub audits: Vec<AuditReport>,
     pub self_location: Option<Location>,
     pub ip_countries: BTreeMap<String, String>,
@@ -87,6 +88,17 @@ impl AppState {
             .iter()
             .rev()
             .find(|a| &a.target == target && &a.scope == scope)
+    }
+
+    pub fn is_incident_ignored(
+        &self,
+        server: &ServerId,
+        kind: IncidentKind,
+        subject: &str,
+    ) -> bool {
+        self.ignored_incidents
+            .iter()
+            .any(|i| i.matches(server, kind, subject))
     }
 
     pub fn active_incidents(&self) -> impl Iterator<Item = &Incident> {

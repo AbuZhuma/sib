@@ -21,7 +21,9 @@ pub use ai_block::{
 pub use badge::{badge, severity_color};
 pub use chip::{chip, chip_value};
 pub use fields::{field, password_field, section_label};
-pub use incidents::{IncidentLine, has_report, incident_line, incident_scope, incident_tab};
+pub use incidents::{
+    IncidentLine, has_report, incident_line, incident_scope, incident_tab, kind_label,
+};
 pub use map::MapState;
 pub use meter::meter;
 pub use nav::nav_item;

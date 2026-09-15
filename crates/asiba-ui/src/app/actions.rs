@@ -103,6 +103,14 @@ impl AsibaApp {
                 is_auto: false,
             }),
             Action::CancelAudit(id) => self.engine.send(Command::CancelAudit(id)),
+            Action::IgnoreIncident(entry) => {
+                self.ignored.add(entry);
+                self.sync_ignored();
+            }
+            Action::RestoreIncident(entry) => {
+                self.ignored.remove(&entry);
+                self.sync_ignored();
+            }
         }
     }
 
@@ -118,6 +126,14 @@ impl AsibaApp {
             None => ServerForm::new(),
         });
         self.page = Page::ServerForm;
+    }
+
+    fn sync_ignored(&mut self) {
+        if let Err(error) = self.ignored.save(&self.paths) {
+            self.notices.push(Notice::new(error.to_string()));
+        }
+        self.engine
+            .send(Command::SetIgnoredIncidents(self.ignored.incidents.clone()));
     }
 
     fn start_query(&mut self, server: ServerId, module: ModuleId, request: QueryRequest) {

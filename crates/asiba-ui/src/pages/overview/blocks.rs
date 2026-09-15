@@ -1,4 +1,4 @@
-use asiba_core::{AppState, AuditTarget, ServerState};
+use asiba_core::{AppState, AuditTarget, IgnoredIncident, ServerState};
 use asiba_modules::anomalies::{self, AnomaliesSnapshot};
 use asiba_modules::deploy::{self, DeployState};
 use asiba_modules::{cpu, disk, memory, network};
@@ -61,7 +61,9 @@ pub fn active_incidents(ui: &mut Ui, state: &AppState, can_audit: bool) -> Optio
                 has_report: has_report(state, incident),
             };
             let click = incident_line(ui, &line);
-            if click.audit {
+            if click.ignore {
+                action = Some(Action::IgnoreIncident(IgnoredIncident::of(incident)));
+            } else if click.audit {
                 action = Some(Action::Audit {
                     target: AuditTarget::Server(incident.server.clone()),
                     scope: incident_scope(incident),

@@ -1,8 +1,10 @@
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 
 use crate::{Severity, server::ServerId};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum IncidentKind {
     Alert,
     Anomaly,
@@ -34,6 +36,27 @@ impl IncidentKind {
             Self::ModuleError => "module_error",
             Self::Clock => "clock",
         }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct IgnoredIncident {
+    pub server: ServerId,
+    pub kind: IncidentKind,
+    pub subject: String,
+}
+
+impl IgnoredIncident {
+    pub fn of(incident: &Incident) -> Self {
+        Self {
+            server: incident.server.clone(),
+            kind: incident.kind,
+            subject: incident.subject.clone(),
+        }
+    }
+
+    pub fn matches(&self, server: &ServerId, kind: IncidentKind, subject: &str) -> bool {
+        &self.server == server && self.kind == kind && self.subject == subject
     }
 }
 

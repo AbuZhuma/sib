@@ -15,7 +15,7 @@ pub use action::{ActionOutcome, ActionRecord, ActionRequest, ActionSpec, Danger}
 pub use alert::{Alert, AlertRule, Condition, METRIC_OFFLINE};
 pub use audit::{AuditReport, AuditScope, AuditStatus, AuditTarget};
 pub use event::{Event, Severity};
-pub use incident::{Incident, IncidentDraft, IncidentKind};
+pub use incident::{IgnoredIncident, Incident, IncidentDraft, IncidentKind};
 pub use module::{
     Availability, Intervals, Module, ModuleError, ModuleId, QueryRequest, QueryResponse,
     SETTING_ENABLED, SETTING_INTERVAL, Schedule,

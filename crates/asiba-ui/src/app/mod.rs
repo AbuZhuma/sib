@@ -6,7 +6,7 @@ mod external;
 use std::sync::Arc;
 use std::time::Duration;
 
-use asiba_config::{AppConfig, LayoutStore, Paths};
+use asiba_config::{AppConfig, IgnoredStore, LayoutStore, Paths};
 use asiba_core::{AppState, AuditStatus, ServerId, SharedState};
 use asiba_engine::{EngineEvent, EngineHandle, RepaintNotifier};
 use egui::{CentralPanel, Frame, Margin, Panel};
@@ -75,6 +75,7 @@ pub struct AsibaApp {
     paused: bool,
     frozen: Option<Arc<AppState>>,
     layouts: LayoutStore,
+    ignored: IgnoredStore,
     inspector: Option<Inspector>,
     next_query_token: u64,
 }
@@ -83,9 +84,11 @@ impl AsibaApp {
     fn new(deps: AppDeps, engine: EngineHandle, ctx: &egui::Context) -> Self {
         let map = MapState::new(ctx, deps.paths.tiles_cache());
         let layouts = LayoutStore::load(&deps.paths);
+        let ignored = IgnoredStore::load(&deps.paths);
         Self {
             map,
             layouts,
+            ignored,
             engine,
             state: deps.state,
             paths: deps.paths,

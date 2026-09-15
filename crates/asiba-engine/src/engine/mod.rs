@@ -7,8 +7,8 @@ use std::sync::{Arc, Mutex};
 
 use asiba_config::AiConfig;
 use asiba_core::{
-    AuditReport, AuditScope, AuditStatus, AuditTarget, Credentials, Intervals, ModuleId,
-    ModuleRegistry, ServerId, ServerSpec, SharedState,
+    AuditReport, AuditScope, AuditStatus, AuditTarget, Credentials, IgnoredIncident, Intervals,
+    ModuleId, ModuleRegistry, ServerId, ServerSpec, SharedState,
 };
 use asiba_storage::StorageWriter;
 use asiba_transport::HostKeyPolicy;
@@ -69,6 +69,7 @@ pub struct EngineDeps {
     pub intervals: Intervals,
     pub ai: AiConfig,
     pub audits_dir: PathBuf,
+    pub ignored: Vec<IgnoredIncident>,
 }
 
 struct Engine {
@@ -110,6 +111,7 @@ pub fn spawn(
         config: ai_receiver.clone(),
         commands: commands.clone(),
     };
+    let deps_state = Arc::clone(&deps.state);
     let cancellations = Cancellations::default();
     let audit_worker = AuditWorker {
         cancellations: cancellations.clone(),
@@ -136,6 +138,9 @@ pub fn spawn(
         audits: ai::spawn_detached(),
         cancellations,
     };
+    if let Ok(mut state) = deps_state.write() {
+        state.ignored_incidents = deps.ignored;
+    }
     runtime.spawn(async move {
         engine.audits = ai::spawn(audit_worker);
         ai::startup::spawn(startup_summary);
@@ -177,6 +182,19 @@ impl Engine {
             is_auto,
         };
         let _ = self.audits.send(Box::new(job));
+    }
+
+    fn set_ignored(&self, ignored: Vec<IgnoredIncident>) {
+        if let Ok(mut state) = self.state.write() {
+            state.ignored_incidents = ignored;
+            let now = Utc::now();
+            let reconciled = asiba_incidents::reconcile(&mut state, now);
+            tracing::info!(
+                resolved = reconciled.resolved.len(),
+                "список игнорируемых инцидентов обновлён"
+            );
+        }
+        (self.notify)();
     }
 
     fn cancel_audit(&self, id: u64) {
@@ -321,6 +339,7 @@ impl Engine {
             } => self.audit(target, scope, is_auto),
             Command::SetAiConfig(config) => self.set_ai_config(config),
             Command::CancelAudit(id) => self.cancel_audit(id),
+            Command::SetIgnoredIncidents(ignored) => self.set_ignored(ignored),
         }
     }
 

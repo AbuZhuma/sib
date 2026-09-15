@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use anyhow::Context;
-use asiba_config::{AppConfig, KeyringSecretStore, Paths, ServerStore};
+use asiba_config::{AppConfig, IgnoredStore, KeyringSecretStore, Paths, ServerStore};
 use asiba_core::AppState;
 use asiba_engine::{AlertSettings, EngineDeps, Persistence};
 use asiba_storage::{Database, spawn_writer};
@@ -43,6 +43,7 @@ fn main() -> anyhow::Result<()> {
         intervals: config.intervals,
         ai: config.ai.clone(),
         audits_dir: paths.audits_dir(),
+        ignored: IgnoredStore::load(&paths).incidents,
     };
     let factory = Box::new(move |notify| asiba_engine::spawn(&handle, engine_deps, notify));
     let deps = AppDeps {

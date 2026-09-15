@@ -3,8 +3,8 @@ use std::time::Duration;
 use asiba_config::AiConfig;
 use asiba_core::{
     ActionRecord, ActionRequest, AuditReport, AuditScope, AuditTarget, Availability, Credentials,
-    Incident, Intervals, ModuleId, QueryRequest, QueryResponse, ServerId, ServerSpec, Snapshot,
-    TransportError,
+    IgnoredIncident, Incident, Intervals, ModuleId, QueryRequest, QueryResponse, ServerId,
+    ServerSpec, Snapshot, TransportError,
 };
 use asiba_transport::HostKeyPolicy;
 use chrono::{DateTime, Utc};
@@ -57,6 +57,7 @@ pub enum Command {
     },
     SetAiConfig(AiConfig),
     CancelAudit(u64),
+    SetIgnoredIncidents(Vec<IgnoredIncident>),
 }
 
 #[derive(Debug, Clone)]

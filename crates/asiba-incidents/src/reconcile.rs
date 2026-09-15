@@ -17,6 +17,7 @@ pub fn reconcile(state: &mut AppState, now: DateTime<Utc>) -> Reconciled {
             let drafts = detectors::detect(server, state)
                 .into_iter()
                 .filter(|d| d.severity >= Severity::Warning)
+                .filter(|d| !state.is_incident_ignored(&server.spec.id, d.kind, &d.subject))
                 .collect();
             (server.spec.id.clone(), drafts)
         })
@@ -113,6 +114,23 @@ mod tests {
             acknowledged: false,
             muted_until: None,
         }
+    }
+
+    #[test]
+    fn ignored_condition_never_opens_and_resolves_existing() {
+        let mut state = state_with_server();
+        state.alerts.push(alert(1, Severity::Critical));
+        let now = Utc::now();
+        let first = reconcile(&mut state, now);
+        assert_eq!(first.opened.len(), 1);
+        state
+            .ignored_incidents
+            .push(asiba_core::IgnoredIncident::of(&first.opened[0]));
+        let second = reconcile(&mut state, now);
+        assert_eq!(second.resolved.len(), 1);
+        assert_eq!(state.active_incidents().count(), 0);
+        let third = reconcile(&mut state, now);
+        assert!(third.opened.is_empty());
     }
 
     #[test]

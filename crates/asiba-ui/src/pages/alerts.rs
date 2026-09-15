@@ -1,11 +1,11 @@
-use asiba_core::{Alert, AppState};
+use asiba_core::{Alert, AppState, IgnoredIncident};
 use chrono::{Duration, Utc};
 use egui::{CursorIcon, Label, RichText, Sense, Ui};
 
 use super::alert_rules::severity_label;
 use super::server_detail::select_tab;
 use super::{Action, Page};
-use crate::components::{Table, badge, page_title, panel, scroll, severity_color};
+use crate::components::{Table, badge, kind_label, page_title, panel, scroll, severity_color};
 use crate::format;
 use crate::modules::Tab;
 use crate::text;
@@ -23,7 +23,34 @@ pub fn show(ui: &mut Ui, state: &AppState) -> Option<Action> {
         if history.is_some() {
             action = history;
         }
+        ui.add_space(GAP);
+        let archive = panel(ui, text::INCIDENTS_ARCHIVE, |ui| archive_list(ui, state));
+        if archive.is_some() {
+            action = archive;
+        }
     });
+    action
+}
+
+fn archive_list(ui: &mut Ui, state: &AppState) -> Option<Action> {
+    let p = Palette::current(ui.ctx());
+    if state.ignored_incidents.is_empty() {
+        ui.label(RichText::new(text::INCIDENTS_ARCHIVE_EMPTY).color(p.text_muted));
+        return None;
+    }
+    let mut action = None;
+    for entry in &state.ignored_incidents {
+        ui.horizontal_wrapped(|ui| {
+            badge(ui, kind_label(entry.kind), p.text_secondary);
+            if ui.link(entry.server.as_str()).clicked() {
+                action = Some(Action::Navigate(Page::ServerDetail(entry.server.clone())));
+            }
+            ui.monospace(&entry.subject);
+            if ui.small_button(text::INCIDENT_RESTORE).clicked() {
+                action = Some(Action::RestoreIncident(IgnoredIncident::clone(entry)));
+            }
+        });
+    }
     action
 }
 

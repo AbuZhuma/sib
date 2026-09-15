@@ -1,7 +1,8 @@
 use std::collections::HashMap;
 
 use asiba_core::{
-    Alert, AlertRule, AppState, ConnectionStatus, METRIC_OFFLINE, ServerId, ServerState, Severity,
+    Alert, AlertRule, AppState, ConnectionStatus, IncidentKind, METRIC_OFFLINE, ServerId,
+    ServerState, Severity,
 };
 use asiba_modules::{anomalies, cpu, logs, network, processes, security};
 use chrono::{DateTime, Utc};
@@ -55,7 +56,7 @@ impl Evaluator {
             let Some(server) = state.servers.get(&server_id) else {
                 continue;
             };
-            let mut checks = self.rule_checks(server);
+            let mut checks = self.rule_checks(server, state);
             checks.extend(self.baseline_checks(server));
             for check in checks {
                 if let Some(alert) = self.settle(state, &server_id, check, now) {
@@ -67,9 +68,12 @@ impl Evaluator {
         Raised(raised)
     }
 
-    fn rule_checks(&self, server: &ServerState) -> Vec<Check> {
+    fn rule_checks(&self, server: &ServerState, state: &AppState) -> Vec<Check> {
         self.rules
             .iter()
+            .filter(|rule| {
+                !state.is_incident_ignored(&server.spec.id, IncidentKind::Alert, &rule.id)
+            })
             .filter_map(|rule| {
                 let value = metric_value(server, &rule.metric)?;
                 Some(Check {
