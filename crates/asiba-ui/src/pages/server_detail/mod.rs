@@ -69,7 +69,9 @@ pub fn show(ui: &mut Ui, ctx: &DetailContext<'_>) -> Option<Action> {
         if next.is_some() {
             action = next;
         }
-        events::show(ui, server);
+        if matches!(tab, Tab::Summary | Tab::Logs) {
+            events::show(ui, server);
+        }
     });
     action
 }
@@ -176,6 +178,7 @@ fn to_action(view_action: ViewAction, server: &ServerState, module: ModuleId) ->
             module,
             request,
         },
+        ViewAction::Backfill => Action::Backfill { server, module },
         ViewAction::Act { spec, request } => Action::AskPerform {
             server,
             spec,
