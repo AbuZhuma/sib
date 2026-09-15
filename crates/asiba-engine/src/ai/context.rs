@@ -1,15 +1,15 @@
 use std::sync::Arc;
 
-use asiba_config::LlmConfig;
+use asiba_ai::{Completion, ContextBuilder, Part, Playbook, SYSTEM_PROMPT, estimate_tokens};
+use asiba_config::AiConfig;
 use asiba_core::{ModuleId, ModuleRegistry, QueryRequest, SharedState, Transport};
 use asiba_docgen::{DocContext, SectionId};
-use asiba_llm::{Completion, ContextBuilder, Part, Playbook, SYSTEM_PROMPT, estimate_tokens};
 
 use super::job::AuditJob;
 
-const ANSWER_TOKENS: usize = 1200;
-const RESERVE_TOKENS: usize = 300;
-const QUERY_TAIL_LINES: usize = 150;
+const ANSWER_TOKENS: usize = 4096;
+const RESERVE_TOKENS: usize = 500;
+const QUERY_TAIL_LINES: usize = 300;
 const PRIORITY_FINDINGS: u8 = 0;
 const PRIORITY_QUERY: u8 = 1;
 const PRIORITY_SECTION_BASE: u8 = 2;
@@ -23,11 +23,11 @@ pub async fn prepare(
     job: &AuditJob,
     state: &SharedState,
     registry: &ModuleRegistry,
-    config: &LlmConfig,
+    config: &AiConfig,
 ) -> Option<Prepared> {
     let playbook = match &job.incident {
-        Some(incident) => asiba_llm::playbook(incident.kind),
-        None => asiba_llm::full_audit(),
+        Some(incident) => asiba_ai::playbook(incident.kind),
+        None => asiba_ai::full_audit(),
     };
     let mut builder = ContextBuilder::new(budget(config, job));
     for part in query_parts(job, registry).await {
@@ -37,7 +37,7 @@ pub async fn prepare(
         builder = builder.part(part);
     }
     let (context, context_tokens) = builder.build();
-    let user = asiba_llm::build_user(&context, playbook.task, job.incident.as_ref());
+    let user = asiba_ai::build_user(&context, playbook.task, job.incident.as_ref());
     Some(Prepared {
         completion: Completion {
             system: SYSTEM_PROMPT.to_owned(),
@@ -48,7 +48,7 @@ pub async fn prepare(
     })
 }
 
-fn budget(config: &LlmConfig, job: &AuditJob) -> usize {
+fn budget(config: &AiConfig, job: &AuditJob) -> usize {
     let incident = job
         .incident
         .as_ref()
@@ -88,7 +88,7 @@ async fn query_parts(job: &AuditJob, registry: &ModuleRegistry) -> Vec<Part> {
         return Vec::new();
     };
     let mut parts = Vec::new();
-    for (module, request) in asiba_llm::queries(incident) {
+    for (module, request) in asiba_ai::queries(incident) {
         if let Some(text) = run_query(registry, Arc::clone(transport), module, &request).await {
             let title = format!("{}.{} {}", module.0, request.kind, request.target);
             parts.push(Part::new(

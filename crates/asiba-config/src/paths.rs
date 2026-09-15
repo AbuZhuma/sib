@@ -50,10 +50,6 @@ impl Paths {
         self.cache_dir.join(TILES_DIR)
     }
 
-    pub fn llm_dir(&self) -> PathBuf {
-        self.data_dir.join("llm")
-    }
-
     pub fn audits_dir(&self) -> PathBuf {
         self.state_dir.join("audits")
     }

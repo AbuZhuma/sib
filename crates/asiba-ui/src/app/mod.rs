@@ -9,7 +9,6 @@ use std::time::Duration;
 use asiba_config::{AppConfig, LayoutStore, Paths};
 use asiba_core::{AppState, AuditStatus, ServerId, SharedState};
 use asiba_engine::{EngineEvent, EngineHandle, RepaintNotifier};
-use asiba_llm::InstallProgress;
 use egui::{CentralPanel, Frame, Margin, Panel};
 
 use crate::components::MapState;
@@ -54,9 +53,6 @@ pub fn run(deps: AppDeps, engine_factory: EngineFactory) -> eframe::Result<()> {
             let engine = engine_factory(notifier);
             let mut app = AsibaApp::new(deps, engine, &cc.egui_ctx);
             app.start_page = devtools::start_page();
-            if devtools::wants_llm_install() {
-                app.apply(Action::InstallLlm, &cc.egui_ctx);
-            }
             Ok(Box::new(app))
         }),
     )
@@ -81,7 +77,6 @@ pub struct AsibaApp {
     layouts: LayoutStore,
     inspector: Option<Inspector>,
     next_query_token: u64,
-    llm_install: Option<InstallProgress>,
 }
 
 impl AsibaApp {
@@ -107,7 +102,6 @@ impl AsibaApp {
             frozen: None,
             inspector: None,
             next_query_token: 1,
-            llm_install: None,
         }
     }
 
@@ -181,8 +175,6 @@ impl AsibaApp {
                     };
                     self.notices.push(Notice::new(message));
                 }
-                EngineEvent::LlmInstallProgress(progress) => self.llm_install = Some(progress),
-                EngineEvent::LlmInstalled(result) => self.finish_install(result),
                 EngineEvent::ServerSaved(_) | EngineEvent::ServerRemoved(_) => {}
                 EngineEvent::Warning(message) => self.notices.push(Notice::new(message)),
             }
@@ -208,7 +200,7 @@ impl AsibaApp {
         let state: &AppState = frozen.as_deref().unwrap_or(&guard);
         match self.page.clone() {
             Page::Overview => {
-                pages::overview::show(ui, state, &mut self.map, self.config.llm.is_ready())
+                pages::overview::show(ui, state, &mut self.map, self.config.ai.is_ready())
             }
             Page::Servers => pages::servers::show(ui, state),
             Page::ServerDetail(id) => match state.servers.get(&id) {
@@ -217,7 +209,7 @@ impl AsibaApp {
                     let detail = DetailContext {
                         server,
                         state,
-                        llm: &self.config.llm,
+                        ai: &self.config.ai,
                         views: &self.views,
                         inspector: self.inspector.as_ref(),
                         layout: &layout,
@@ -244,7 +236,6 @@ impl AsibaApp {
                     paths: &self.paths,
                     config: &self.config,
                     state,
-                    install: self.llm_install,
                 },
             ),
         }

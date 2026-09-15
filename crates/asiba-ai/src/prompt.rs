@@ -5,7 +5,8 @@ server for its administrator. You receive a structured data dump collected by a 
 and a task. Rules: use only the data provided, never invent numbers, names or log lines; when data is \
 missing say what is missing and how to get it; prefer concrete commands and config snippets for the \
 detected distribution; be specific about which line of the data supports each claim; keep the answer \
-compact with Markdown headings and bullet lists; answer in English. Severity words: critical = active \
+compact with Markdown headings and bullet lists; answer in Russian (keep commands, paths, \
+unit and package names as they are). Severity words: critical = active \
 harm or exposure, recommended = should be fixed soon, note = minor.";
 
 pub fn build_user(context: &str, task: &str, incident: Option<&Incident>) -> String {

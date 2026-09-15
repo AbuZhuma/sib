@@ -7,7 +7,7 @@ license.workspace = true
 [dependencies]
 asiba-core.workspace = true
 asiba-engine.workspace = true
-asiba-llm.workspace = true
+asiba-ai.workspace = true
 asiba-alerts.workspace = true
 asiba-modules.workspace = true
 asiba-config.workspace = true

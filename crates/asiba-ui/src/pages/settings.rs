@@ -1,6 +1,5 @@
 use asiba_config::{AppConfig, Paths, ThemeChoice};
 use asiba_core::AppState;
-use asiba_llm::InstallProgress;
 use egui::{Grid, RichText, Ui};
 
 use super::Action;
@@ -12,7 +11,6 @@ pub struct SettingsContext<'a> {
     pub paths: &'a Paths,
     pub config: &'a AppConfig,
     pub state: &'a AppState,
-    pub install: Option<InstallProgress>,
 }
 
 pub fn show(ui: &mut Ui, ctx: &SettingsContext<'_>) -> Option<Action> {
@@ -42,11 +40,11 @@ fn sections(ui: &mut Ui, ctx: &SettingsContext<'_>) -> Option<Action> {
         action = collection;
     }
     ui.add_space(GAP);
-    let llm = panel(ui, text::SETTINGS_SECTION_LLM, |ui| {
-        super::llm_settings::show(ui, config, ctx.state, ctx.install)
+    let ai = panel(ui, text::SETTINGS_SECTION_AI, |ui| {
+        super::ai_settings::show(ui, config, ctx.state)
     });
-    if llm.is_some() {
-        action = llm;
+    if ai.is_some() {
+        action = ai;
     }
     ui.add_space(GAP);
     let rules = panel(ui, text::SETTINGS_SECTION_ALERTS, |ui| {

@@ -11,11 +11,6 @@ use crate::pages::Page;
 const ENV_SCREENSHOT: &str = "ASIBA_SCREENSHOT";
 const ENV_OPEN: &str = "ASIBA_OPEN";
 const ENV_WINDOW: &str = "ASIBA_WINDOW";
-const ENV_LLM_INSTALL: &str = "ASIBA_LLM_INSTALL";
-
-pub fn wants_llm_install() -> bool {
-    std::env::var_os(ENV_LLM_INSTALL).is_some()
-}
 
 pub fn window_size() -> Option<[f32; 2]> {
     let value = std::env::var(ENV_WINDOW).ok()?;

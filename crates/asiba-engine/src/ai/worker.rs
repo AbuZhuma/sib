@@ -3,12 +3,11 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use asiba_config::LlmConfig;
+use asiba_ai::{Backend, Gemini, GeminiConfig};
+use asiba_config::AiConfig;
 use asiba_core::{AuditReport, AuditStatus, ModuleRegistry, SharedState};
-use asiba_llm::{Backend, LlamaConfig, LlamaServer};
 use chrono::Utc;
 use tokio::sync::{mpsc, watch};
-use tokio::time::{MissedTickBehavior, interval};
 
 use super::context;
 use super::job::AuditJob;
@@ -16,45 +15,29 @@ use super::store;
 use crate::command::EngineEvent;
 use crate::engine::RepaintNotifier;
 
-const IDLE_CHECK: Duration = Duration::from_secs(30);
-const MIN_THREADS: usize = 2;
-const RESERVED_THREADS: usize = 2;
-
-pub enum WorkerMessage {
-    Job(Box<AuditJob>),
-    Unload,
-}
-
 pub struct AuditWorker {
     pub state: SharedState,
     pub registry: ModuleRegistry,
-    pub config: watch::Receiver<LlmConfig>,
+    pub config: watch::Receiver<AiConfig>,
     pub audits_dir: PathBuf,
     pub events: mpsc::UnboundedSender<EngineEvent>,
     pub notify: RepaintNotifier,
 }
 
-struct Loaded {
-    backend: Arc<LlamaServer>,
-    last_used: Instant,
-}
-
 struct Runner {
     worker: AuditWorker,
-    loaded: Option<Loaded>,
     cooldowns: HashMap<String, Instant>,
 }
 
-pub fn spawn_detached() -> mpsc::UnboundedSender<WorkerMessage> {
+pub fn spawn_detached() -> mpsc::UnboundedSender<Box<AuditJob>> {
     mpsc::unbounded_channel().0
 }
 
-pub fn spawn(worker: AuditWorker) -> mpsc::UnboundedSender<WorkerMessage> {
+pub fn spawn(worker: AuditWorker) -> mpsc::UnboundedSender<Box<AuditJob>> {
     let (sender, receiver) = mpsc::unbounded_channel();
     tokio::spawn(run(
         Runner {
             worker,
-            loaded: None,
             cooldowns: HashMap::new(),
         },
         receiver,
@@ -62,41 +45,14 @@ pub fn spawn(worker: AuditWorker) -> mpsc::UnboundedSender<WorkerMessage> {
     sender
 }
 
-async fn run(mut runner: Runner, mut receiver: mpsc::UnboundedReceiver<WorkerMessage>) {
-    let mut ticker = interval(IDLE_CHECK);
-    ticker.set_missed_tick_behavior(MissedTickBehavior::Delay);
-    loop {
-        tokio::select! {
-            message = receiver.recv() => match message {
-                None => break,
-                Some(WorkerMessage::Unload) => runner.unload(),
-                Some(WorkerMessage::Job(job)) => runner.handle(*job).await,
-            },
-            _ = ticker.tick() => runner.unload_if_idle(),
-        }
+async fn run(mut runner: Runner, mut receiver: mpsc::UnboundedReceiver<Box<AuditJob>>) {
+    while let Some(job) = receiver.recv().await {
+        runner.handle(*job).await;
     }
 }
 
 impl Runner {
-    fn unload(&mut self) {
-        if self.loaded.take().is_some() {
-            tracing::info!("модель выгружена");
-            (self.worker.notify)();
-        }
-    }
-
-    fn unload_if_idle(&mut self) {
-        let idle = Duration::from_secs(self.worker.config.borrow().idle_unload_secs);
-        if self
-            .loaded
-            .as_ref()
-            .is_some_and(|l| l.last_used.elapsed() > idle)
-        {
-            self.unload();
-        }
-    }
-
-    fn should_skip_auto(&mut self, job: &AuditJob, config: &LlmConfig) -> bool {
+    fn should_skip_auto(&mut self, job: &AuditJob, config: &AiConfig) -> bool {
         if !job.is_auto {
             return false;
         }
@@ -131,22 +87,20 @@ impl Runner {
         if self.should_skip_auto(&job, &config) {
             return;
         }
-        let model = config
-            .model_path
-            .as_ref()
-            .map(|p| asiba_llm::model_name(p))
-            .unwrap_or_default();
-        let report = self.open(&job, model);
+        let report = self.open(&job, config.model.clone());
         let Some(prepared) =
             context::prepare(&job, &self.worker.state, &self.worker.registry, &config).await
         else {
             self.finish(report, Err(NO_DATA.to_owned()));
             return;
         };
-        let backend = match self.ensure_loaded(&config).await {
-            Ok(backend) => backend,
+        let backend = match Gemini::new(GeminiConfig {
+            api_key: config.api_key.clone(),
+            model: config.model.clone(),
+        }) {
+            Ok(backend) => Arc::new(backend),
             Err(error) => {
-                self.finish(report, Err(error));
+                self.finish(report, Err(error.to_string()));
                 return;
             }
         };
@@ -155,32 +109,9 @@ impl Runner {
             .await
             .map_err(|e| e.to_string())
             .and_then(|r| r.map_err(|e| e.to_string()));
-        if let Some(loaded) = &mut self.loaded {
-            loaded.last_used = Instant::now();
-        }
         let mut report = report;
         report.context_tokens = prepared.context_tokens;
         self.finish(report, result);
-    }
-
-    async fn ensure_loaded(&mut self, config: &LlmConfig) -> Result<Arc<LlamaServer>, String> {
-        if let Some(loaded) = &self.loaded {
-            return Ok(Arc::clone(&loaded.backend));
-        }
-        let llama = llama_config(config)?;
-        tracing::info!(model = %llama.model.display(), "запуск llama-server");
-        let started = tokio::task::spawn_blocking(move || LlamaServer::start(&llama))
-            .await
-            .map_err(|e| e.to_string())?
-            .map_err(|e| e.to_string())?;
-        tracing::info!(port = started.port(), "llama-server готов");
-        let backend = Arc::new(started);
-        self.loaded = Some(Loaded {
-            backend: Arc::clone(&backend),
-            last_used: Instant::now(),
-        });
-        (self.worker.notify)();
-        Ok(backend)
     }
 
     fn open(&self, job: &AuditJob, model: String) -> AuditReport {
@@ -226,26 +157,5 @@ impl Runner {
     }
 }
 
-const NOT_READY: &str = "локальная модель выключена или файл модели не найден";
+const NOT_READY: &str = "ИИ-анализ выключен: включите его в настройках и укажите ключ API";
 const NO_DATA: &str = "нет данных сервера для аудита";
-
-fn llama_config(config: &LlmConfig) -> Result<LlamaConfig, String> {
-    let model = config
-        .model_path
-        .clone()
-        .ok_or_else(|| NOT_READY.to_owned())?;
-    let threads = if config.threads == 0 {
-        std::thread::available_parallelism()
-            .map(|n| n.get().saturating_sub(RESERVED_THREADS))
-            .unwrap_or(MIN_THREADS)
-            .max(MIN_THREADS)
-    } else {
-        config.threads
-    };
-    Ok(LlamaConfig {
-        binary: PathBuf::from(&config.server_binary),
-        model,
-        threads,
-        context_tokens: config.context_tokens,
-    })
-}

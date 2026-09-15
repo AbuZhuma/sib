@@ -60,7 +60,7 @@ pub fn statusbar(ui: &mut Ui, ctx: StatusContext<'_>) {
             badge(ui, text::STATUS_ATTACK, p.critical);
         }
         if state.audits.iter().any(|a| a.is_running()) {
-            badge(ui, text::STATUS_LLM_BUSY, p.accent);
+            badge(ui, text::STATUS_AI_BUSY, p.accent);
         }
         for notice in ctx.notices.iter().rev().take(2) {
             ui.separator();

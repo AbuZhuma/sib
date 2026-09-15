@@ -5,21 +5,20 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
-use asiba_config::LlmConfig;
+use asiba_config::AiConfig;
 use asiba_core::{
     AuditScope, Credentials, Intervals, ModuleRegistry, ServerId, ServerSpec, SharedState,
 };
-use asiba_llm::InstallTarget;
 use asiba_storage::StorageWriter;
 use asiba_transport::HostKeyPolicy;
 use tokio::sync::{mpsc, watch};
 use tokio::task::JoinHandle;
 
 use crate::actions;
+use crate::ai::{self, AuditJob, AuditWorker};
 use crate::alerts::{self, AlertLoop, AlertSettings};
 use crate::command::{Command, EngineEvent};
 use crate::geo;
-use crate::llm::{self, AuditJob, AuditWorker, WorkerMessage};
 use crate::peers;
 use crate::persistence::Persistence;
 use crate::worker::TransportSlot;
@@ -65,9 +64,8 @@ pub struct EngineDeps {
     pub geo_cache: Option<PathBuf>,
     pub alert_settings: AlertSettings,
     pub intervals: Intervals,
-    pub llm: LlmConfig,
+    pub ai: AiConfig,
     pub audits_dir: PathBuf,
-    pub llm_install: InstallTarget,
 }
 
 struct Engine {
@@ -82,9 +80,8 @@ struct Engine {
     events: mpsc::UnboundedSender<EngineEvent>,
     workers: HashMap<ServerId, WorkerEntry>,
     alert_settings: watch::Sender<AlertSettings>,
-    llm_config: watch::Sender<LlmConfig>,
-    audits: mpsc::UnboundedSender<WorkerMessage>,
-    llm_install: InstallTarget,
+    ai_config: watch::Sender<AiConfig>,
+    audits: mpsc::UnboundedSender<Box<AuditJob>>,
 }
 
 pub fn spawn(
@@ -95,11 +92,11 @@ pub fn spawn(
     let (commands, mut receiver) = mpsc::unbounded_channel();
     let (events, event_receiver) = mpsc::unbounded_channel();
     let (alert_settings, alert_receiver) = watch::channel(deps.alert_settings);
-    let (llm_config, llm_receiver) = watch::channel(deps.llm);
+    let (ai_config, ai_receiver) = watch::channel(deps.ai);
     let alert_loop = AlertLoop {
         state: Arc::clone(&deps.state),
         settings: alert_receiver,
-        llm: llm_receiver.clone(),
+        ai: ai_receiver.clone(),
         notify: Arc::clone(&notify),
         events: events.clone(),
         commands: commands.clone(),
@@ -107,7 +104,7 @@ pub fn spawn(
     let audit_worker = AuditWorker {
         state: Arc::clone(&deps.state),
         registry: deps.registry.clone(),
-        config: llm_receiver,
+        config: ai_receiver,
         audits_dir: deps.audits_dir,
         events: events.clone(),
         notify: Arc::clone(&notify),
@@ -124,12 +121,11 @@ pub fn spawn(
         events,
         workers: HashMap::new(),
         alert_settings,
-        llm_config,
-        audits: llm::spawn_detached(),
-        llm_install: deps.llm_install,
+        ai_config,
+        audits: ai::spawn_detached(),
     };
     runtime.spawn(async move {
-        engine.audits = llm::spawn(audit_worker);
+        engine.audits = ai::spawn(audit_worker);
         alerts::spawn(alert_loop);
         geo::resolve_self(engine.geo_request());
         peers::spawn(peers::PeerLookup {
@@ -166,7 +162,7 @@ impl Engine {
             incident,
             is_auto,
         };
-        let _ = self.audits.send(WorkerMessage::Job(Box::new(job)));
+        let _ = self.audits.send(Box::new(job));
     }
 
     fn set_intervals(&mut self, intervals: Intervals) {
@@ -262,13 +258,9 @@ impl Engine {
                 scope,
                 is_auto,
             } => self.audit(server, scope, is_auto),
-            Command::SetLlmConfig(config) => {
-                let _ = self.llm_config.send(config);
+            Command::SetAiConfig(config) => {
+                let _ = self.ai_config.send(config);
             }
-            Command::UnloadModel => {
-                let _ = self.audits.send(WorkerMessage::Unload);
-            }
-            Command::InstallLlm => llm::install(self.llm_install.clone(), self.events.clone()),
         }
     }
 

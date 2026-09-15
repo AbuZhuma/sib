@@ -1,12 +1,11 @@
 use std::time::Duration;
 
-use asiba_config::LlmConfig;
+use asiba_config::AiConfig;
 use asiba_core::{
     ActionRecord, ActionRequest, AuditReport, AuditScope, Availability, Credentials, Incident,
     Intervals, ModuleId, QueryRequest, QueryResponse, ServerId, ServerSpec, Snapshot,
     TransportError,
 };
-use asiba_llm::{InstallProgress, Installed};
 use asiba_transport::HostKeyPolicy;
 use chrono::{DateTime, Utc};
 
@@ -52,9 +51,7 @@ pub enum Command {
         scope: AuditScope,
         is_auto: bool,
     },
-    SetLlmConfig(LlmConfig),
-    UnloadModel,
-    InstallLlm,
+    SetAiConfig(AiConfig),
 }
 
 #[derive(Debug, Clone)]
@@ -96,8 +93,6 @@ pub enum EngineEvent {
     ActionFinished(ActionRecord),
     IncidentsOpened(Vec<Incident>),
     AuditFinished(AuditReport),
-    LlmInstallProgress(InstallProgress),
-    LlmInstalled(Result<Installed, String>),
     ServerSaved(ServerId),
     ServerRemoved(ServerId),
     Warning(String),

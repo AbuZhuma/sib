@@ -1,9 +1,9 @@
+pub mod ai_settings;
 pub mod alert_rules;
 pub mod alerts;
 pub mod collection_settings;
 pub mod inspector;
 pub mod journal;
-pub mod llm_settings;
 pub mod map;
 pub mod overview;
 pub mod server_detail;
@@ -11,7 +11,7 @@ pub mod server_form;
 pub mod servers;
 pub mod settings;
 
-use asiba_config::{LlmConfig, Retention, SummaryLayout, ThemeChoice};
+use asiba_config::{AiConfig, Retention, SummaryLayout, ThemeChoice};
 use asiba_core::{
     ActionRequest, ActionSpec, AlertRule, AuditScope, Credentials, Intervals, ModuleId,
     QueryRequest, ServerId, ServerSpec,
@@ -76,9 +76,7 @@ pub enum Action {
         intervals: Intervals,
         retention: Retention,
     },
-    SaveLlmConfig(LlmConfig),
-    UnloadModel,
-    InstallLlm,
+    SaveAiConfig(AiConfig),
     Audit {
         server: ServerId,
         scope: AuditScope,

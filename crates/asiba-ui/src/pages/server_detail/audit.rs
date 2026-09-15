@@ -22,7 +22,7 @@ pub fn show(ui: &mut Ui, ctx: &DetailContext<'_>) -> Option<Action> {
     let running = reports.iter().any(|r| r.is_running());
     let mut action = None;
     ui.horizontal(|ui| {
-        let ready = ctx.llm.is_ready() && !running;
+        let ready = ctx.ai.is_ready() && !running;
         if ui
             .add_enabled(ready, egui::Button::new(text::AUDIT_FULL))
             .clicked()
@@ -32,10 +32,10 @@ pub fn show(ui: &mut Ui, ctx: &DetailContext<'_>) -> Option<Action> {
                 scope: AuditScope::Full,
             });
         }
-        if !ctx.llm.enabled {
+        if !ctx.ai.is_ready() {
             ui.label(RichText::new(text::AUDIT_DISABLED).color(p.text_muted));
         } else if running {
-            ui.label(RichText::new(text::LLM_STATUS_BUSY).color(p.accent));
+            ui.label(RichText::new(text::AI_STATUS_BUSY).color(p.accent));
         }
     });
     ui.add_space(GAP);

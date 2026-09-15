@@ -1,4 +1,5 @@
 mod actions;
+mod ai;
 mod alerts;
 mod backoff;
 mod command;
@@ -6,7 +7,6 @@ mod engine;
 mod geo;
 mod history;
 mod incidents;
-mod llm;
 mod peers;
 mod persistence;
 mod test_connection;

@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use asiba_alerts::Evaluator;
-use asiba_config::LlmConfig;
+use asiba_config::AiConfig;
 use asiba_core::{AlertRule, AuditScope, SharedState};
 use chrono::{DateTime, Utc};
 use tokio::sync::{mpsc, watch};
@@ -31,7 +31,7 @@ impl AlertSettings {
 pub struct AlertLoop {
     pub state: SharedState,
     pub settings: watch::Receiver<AlertSettings>,
-    pub llm: watch::Receiver<LlmConfig>,
+    pub ai: watch::Receiver<AiConfig>,
     pub notify: RepaintNotifier,
     pub events: mpsc::UnboundedSender<EngineEvent>,
     pub commands: mpsc::UnboundedSender<Command>,
@@ -78,8 +78,8 @@ async fn run(mut context: AlertLoop) {
 }
 
 fn request_audits(context: &AlertLoop, opened: &[asiba_core::Incident]) {
-    let config = context.llm.borrow();
-    if !config.enabled || !config.auto_audit {
+    let config = context.ai.borrow();
+    if !config.is_ready() || !config.auto_audit {
         return;
     }
     for incident in opened {

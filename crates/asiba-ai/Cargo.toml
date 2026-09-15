@@ -1,5 +1,5 @@
 [package]
-name = "asiba-llm"
+name = "asiba-ai"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -9,10 +9,8 @@ asiba-core.workspace = true
 asiba-docgen.workspace = true
 asiba-modules.workspace = true
 chrono.workspace = true
-flate2.workspace = true
 serde.workspace = true
 serde_json.workspace = true
-tar.workspace = true
 thiserror.workspace = true
 tracing.workspace = true
 ureq.workspace = true
