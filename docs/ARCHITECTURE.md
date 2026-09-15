@@ -82,7 +82,7 @@ UI → `ViewAction::Act { spec, request }` → `Action::AskPerform` → диал
 
 ## Модули v1
 
-system, cpu, memory, disk, network, processes, services, docker, ports, logs, users, updates, security, anomalies, deploy, gpu. Расписания: Fast (cpu, memory, disk, network, processes, anomalies, gpu), Normal (services, docker, ports, logs, users, security, deploy), Slow (system, updates). Интервалы настраиваются глобально и на сервер.
+system, cpu, memory, disk, network, processes, services, docker, ports, logs, users, updates, security, anomalies, deploy, git, gpu. Расписания: Fast (cpu, memory, disk, network, processes, anomalies, gpu), Normal (services, docker, ports, logs, users, security, deploy, git), Slow (system, updates). Интервалы настраиваются глобально и на сервер.
 
 ## Модуль
 

@@ -41,7 +41,10 @@ pub fn show(ui: &mut Ui, ctx: &DetailContext<'_>) -> Option<Action> {
     if tab_bar(ui, &tabs, &mut tab) {
         select_tab(ui.ctx(), tab);
     }
-    if let Some(inspector) = ctx.inspector.filter(|i| i.server == server.spec.id) {
+    if let Some(inspector) = ctx
+        .inspector
+        .filter(|i| i.is_shown_on(&server.spec.id, tab))
+    {
         panel(ui, text::INSPECTOR_TITLE, |ui| {
             if let Some(next) = inspector::show(ui, inspector) {
                 action = Some(next);

@@ -4,6 +4,7 @@ pub mod cpu;
 pub mod deploy;
 pub mod disk;
 pub mod docker;
+pub mod git;
 pub mod gpu;
 pub mod logs;
 pub mod memory;
@@ -35,5 +36,6 @@ pub fn default_registry() -> ModuleRegistry {
         .register(security::SecurityModule)
         .register(anomalies::AnomaliesModule)
         .register(deploy::DeployModule)
+        .register(git::GitModule)
         .register(gpu::GpuModule)
 }

@@ -1,5 +1,3 @@
-###git
-/srv/shop	main	0	abcdef1234567	Anna	1757851200	fix checkout
 ###events
 1757899000	image	pull	nginx:1.27	shop			
 1757899005	container	create	shop-web-1	shop	web	nginx:1.27	

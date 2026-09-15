@@ -4,6 +4,7 @@ use egui::{Label, RichText, Ui};
 
 use super::Action;
 use crate::components::scroll;
+use crate::modules::Tab;
 use crate::text;
 use crate::theme::{GAP, Palette};
 
@@ -13,11 +14,16 @@ const MAX_HEIGHT: f32 = 320.0;
 pub struct Inspector {
     pub token: u64,
     pub server: ServerId,
+    pub tab: Option<Tab>,
     pub title: String,
     pub result: Option<Result<String, String>>,
 }
 
 impl Inspector {
+    pub fn is_shown_on(&self, server: &ServerId, tab: Tab) -> bool {
+        self.server == *server && self.tab.is_none_or(|own| own == tab)
+    }
+
     pub fn accept(&mut self, token: u64, result: Result<(String, String), String>) {
         if token != self.token {
             return;

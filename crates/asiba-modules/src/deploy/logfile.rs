@@ -96,7 +96,7 @@ fn file_deploy(block: &str, previous: &[Deploy], now: DateTime<Utc>) -> Option<D
     }
     Some(Deploy {
         key,
-        project: super::git::project_name(path.trim_end_matches(".log")),
+        project: project_name(path.trim_end_matches(".log")),
         source: Source::LogFile,
         detail: path.to_owned(),
         started_at,
@@ -163,6 +163,14 @@ fn error_at(lines: &[&str], index: usize) -> DeployError {
         line: lines[index].to_owned(),
         context: lines[start..end].iter().map(|l| (*l).to_owned()).collect(),
     }
+}
+
+fn project_name(path: &str) -> String {
+    path.trim_end_matches('/')
+        .rsplit('/')
+        .next()
+        .unwrap_or(path)
+        .to_owned()
 }
 
 #[cfg(test)]

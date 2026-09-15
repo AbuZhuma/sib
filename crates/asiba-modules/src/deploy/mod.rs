@@ -1,5 +1,4 @@
 mod compose;
-mod git;
 mod logfile;
 mod model;
 mod runner;
@@ -25,7 +24,6 @@ pub const ID: ModuleId = ModuleId("deploy");
 pub const KEY_ACTIVE: &str = "deploy.active";
 pub const KEY_FAILED: &str = "deploy.failed";
 
-const SCAN_DIRS: &str = "/opt /srv /var/www /home/* /root /app /docker /data";
 const INITIAL_EVENTS_WINDOW: Duration = Duration::hours(24);
 const EVENTS_OVERLAP: Duration = Duration::seconds(5);
 
@@ -43,10 +41,6 @@ fn detect_script(log_paths: &[String]) -> String {
         (
             "units",
             "systemctl list-units 'deploy*' --all --plain --no-legend | head -1",
-        ),
-        (
-            "git",
-            "for d in /opt /srv /var/www /home/* /root /app /docker /data; do find \"$d\" -maxdepth 3 -name .git -type d 2>/dev/null; done | head -1",
         ),
         (
             "runner",
@@ -73,13 +67,11 @@ fn collect_script(
     log_paths: &[String],
     runner_dir: Option<&str>,
 ) -> String {
-    let git = git::script(SCAN_DIRS);
     let events = compose::script(since, until);
     let unit_logs = systemd::logs_script();
     let logs = logfile::script(log_paths);
     let runner_log = runner_dir.map(runner::log_script).unwrap_or_default();
     let parts = [
-        ("git", git.as_str()),
         ("events", events.as_str()),
         ("units", systemd::UNITS_SCRIPT),
         ("unitlogs", unit_logs.as_str()),
@@ -108,13 +100,12 @@ impl Module for DeployModule {
     async fn detect(&self, transport: &dyn Transport) -> Result<Availability, ModuleError> {
         let output = transport.exec(&detect_script(&[])).await?;
         let sections = Sections::parse(&output.stdout);
-        let has_source = ["docker", "units", "git", "runner", "logs"]
+        let has_source = ["docker", "units", "runner", "logs"]
             .iter()
             .any(|name| !sections.get_or_empty(name).trim().is_empty());
         if !has_source {
             return Ok(Availability::Unavailable {
-                reason: "нет источников деплоя (docker, git, deploy*.service, CI runner)"
-                    .to_owned(),
+                reason: "нет источников деплоя (docker, deploy*.service, CI runner)".to_owned(),
             });
         }
         Ok(Availability::Available)
@@ -163,8 +154,7 @@ fn build_state(raw: &str, previous: Option<&DeployState>, now: DateTime<Utc>) ->
         compose::events(sections.get_or_empty("events")),
         now,
     );
-    let mut fresh = git::deploys(sections.get_or_empty("git"));
-    fresh.extend(compose::deploys(&compose_events, now));
+    let mut fresh = compose::deploys(&compose_events, now);
     fresh.extend(systemd::deploys(
         sections.get_or_empty("units"),
         sections.get_or_empty("unitlogs"),
@@ -259,7 +249,6 @@ mod tests {
         let raw = include_str!("../../fixtures/deploy/collect.txt");
         let state = build_state(raw, None, now());
         let sources: Vec<Source> = state.snapshot.deploys.iter().map(|d| d.source).collect();
-        assert!(sources.contains(&Source::Git));
         assert!(sources.contains(&Source::Compose));
         assert!(sources.contains(&Source::Systemd));
         assert!(sources.contains(&Source::LogFile));

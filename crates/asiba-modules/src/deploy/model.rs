@@ -5,7 +5,6 @@ pub const ERROR_CONTEXT_LINES: usize = 20;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Source {
-    Git,
     Compose,
     Systemd,
     LogFile,
@@ -15,7 +14,6 @@ pub enum Source {
 impl Source {
     pub fn label(self) -> &'static str {
         match self {
-            Self::Git => "git",
             Self::Compose => "compose",
             Self::Systemd => "systemd",
             Self::LogFile => "лог",

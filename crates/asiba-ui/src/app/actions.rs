@@ -7,6 +7,7 @@ use asiba_engine::{AlertSettings, Command};
 use super::AsibaApp;
 use super::confirm::ConfirmDialog;
 use super::dialogs::DeleteDialog;
+use crate::modules::Tab;
 use crate::pages::inspector::Inspector;
 use crate::pages::server_form::ServerForm;
 use crate::pages::{Action, Page};
@@ -142,6 +143,7 @@ impl AsibaApp {
         self.inspector = Some(Inspector {
             token,
             server: server.clone(),
+            tab: Tab::for_module(module.0),
             title: format!("{} {}", request.kind, request.target),
             result: None,
         });

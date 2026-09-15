@@ -1,0 +1,45 @@
+###version
+git version 2.43.0
+###repos
+@@@repo /srv/api
+@@@branch
+feature/auth
+@@@head
+b257e4b6468a90e43b2fe85870645519af15d049
+@@@remote
+git@github.com:acme/shop.git
+@@@upstream
+@@@status
+A  README
+@@@stash
+0
+@@@branches
+feature/auth
+master
+@@@tags
+@@@log
+b257e4b6468a90e43b2fe85870645519af15d049	Anna	1789480271	HEAD -> feature/auth	start auth
+0cecdd9248aa79d98edec4de7ed915a0a7ebcc1d	Bob	1789480271	origin/master, origin/HEAD, master	fix checkout
+feb3c5a9ea35a00fdad126c9103f0dc91d05bacd	Anna	1789480271		add checkout
+50a3c5ddfa276b4a5efc911de1117c14af9accb4	Anna	1789480271		initial
+@@@repo /srv/shop
+@@@branch
+HEAD
+@@@head
+0cecdd9248aa79d98edec4de7ed915a0a7ebcc1d
+@@@remote
+git@github.com:acme/shop.git
+@@@upstream
+@@@status
+?? untracked.txt
+@@@stash
+0
+@@@branches
+(HEAD detached at 0cecdd9)
+master
+@@@tags
+v1.0
+@@@log
+0cecdd9248aa79d98edec4de7ed915a0a7ebcc1d	Bob	1789480271	HEAD, origin/master	fix checkout
+feb3c5a9ea35a00fdad126c9103f0dc91d05bacd	Anna	1789480271	tag: v1.0	add checkout
+50a3c5ddfa276b4a5efc911de1117c14af9accb4	Anna	1789480271		initial

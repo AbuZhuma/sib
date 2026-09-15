@@ -10,7 +10,6 @@ pub const HEADING_PREFIX: &str = "## ";
 const HISTORY_LINES: usize = 300;
 const JOURNAL_LINES: usize = 200;
 const SUDO_SINCE: &str = "-30d";
-const NOTE: &str = "Результаты команд ОС не записывает - доступны сами команды (история shell, вызовы sudo) и записи журнала от процессов пользователя.";
 
 fn activity_script(user: &str) -> String {
     let quoted = shell_quote(user);
@@ -59,8 +58,6 @@ pub async fn query(transport: &dyn Transport, user: &str) -> Result<QueryRespons
 
 pub fn render(user: &str, sections: &Sections) -> String {
     let mut out = String::new();
-    out.push_str(NOTE);
-    out.push_str("\n\n");
     let bash: Vec<String> = sections
         .get_or_empty("bash")
         .lines()

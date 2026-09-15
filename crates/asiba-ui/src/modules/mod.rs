@@ -3,6 +3,7 @@ mod cpu;
 mod deploy;
 mod disk;
 mod docker;
+mod git;
 mod gpu;
 mod logs;
 mod memory;
@@ -36,12 +37,13 @@ pub enum Tab {
     Security,
     Anomalies,
     Deploy,
+    Git,
     Gpu,
     Audit,
 }
 
 impl Tab {
-    pub const ALL: [Tab; 14] = [
+    pub const ALL: [Tab; 15] = [
         Tab::Summary,
         Tab::Processes,
         Tab::Resources,
@@ -54,6 +56,7 @@ impl Tab {
         Tab::Security,
         Tab::Anomalies,
         Tab::Deploy,
+        Tab::Git,
         Tab::Gpu,
         Tab::Audit,
     ];
@@ -76,6 +79,7 @@ impl Tab {
             Tab::Security => "security",
             Tab::Anomalies => "anomalies",
             Tab::Deploy => "deploy",
+            Tab::Git => "git",
             Tab::Gpu => "gpu",
             Tab::Audit => "audit",
         }
@@ -95,6 +99,7 @@ impl Tab {
             "security" => Tab::Security,
             "anomalies" => Tab::Anomalies,
             "deploy" => Tab::Deploy,
+            "git" => Tab::Git,
             "gpu" => Tab::Gpu,
             _ => return None,
         };
@@ -114,7 +119,7 @@ impl Tab {
             Tab::Anomalies => Some("anomalies"),
             Tab::Deploy => Some("deploy"),
             Tab::Gpu => Some("gpu"),
-            Tab::Summary | Tab::Audit => None,
+            Tab::Summary | Tab::Git | Tab::Audit => None,
         }
     }
 
@@ -137,6 +142,7 @@ impl Tab {
             Tab::Security => text::TAB_SECURITY,
             Tab::Anomalies => text::TAB_ANOMALIES,
             Tab::Deploy => text::TAB_DEPLOY,
+            Tab::Git => text::TAB_GIT,
             Tab::Gpu => text::TAB_GPU,
             Tab::Audit => text::AUDIT_TITLE,
         }
@@ -216,6 +222,7 @@ pub fn all() -> Vec<Box<dyn ModuleView>> {
         Box::new(security::SecurityView),
         Box::new(anomalies::AnomaliesView),
         Box::new(deploy::DeployView),
+        Box::new(git::GitView),
         Box::new(gpu::GpuView),
     ]
 }
@@ -240,6 +247,7 @@ pub fn short_label(id: ModuleId) -> &'static str {
         "security" => "sec",
         "anomalies" => "anm",
         "deploy" => "dpl",
+        "git" => "git",
         "gpu" => "gpu",
         other => other,
     }
