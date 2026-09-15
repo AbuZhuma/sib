@@ -1,7 +1,9 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
+use asiba_ai::{AiError, Completion, RETRY_DELAYS, complete_with_retry};
 use asiba_config::AiConfig;
 use asiba_core::{AuditReport, AuditStatus, ModuleRegistry, SharedState};
 use chrono::Utc;
@@ -93,21 +95,20 @@ impl Runner {
             self.finish(report, Err(NO_DATA.to_owned()));
             return;
         };
-        let backend = match backend::build(&config) {
-            Ok(backend) => backend,
-            Err(error) => {
-                self.finish(report, Err(error.to_string()));
-                return;
-            }
-        };
-        let completion = prepared.completion;
-        let result = tokio::task::spawn_blocking(move || backend.complete(&completion))
-            .await
-            .map_err(|e| e.to_string())
-            .and_then(|r| r.map_err(|e| e.to_string()));
         let mut report = report;
         report.context_tokens = prepared.context_tokens;
-        self.finish(report, result);
+        let completion = Arc::new(prepared.completion);
+        let mut result = complete(&config, &config.model, Arc::clone(&completion)).await;
+        for fallback in config.provider.fallback_models() {
+            let is_transient = result.as_ref().is_err_and(AiError::is_transient);
+            if !is_transient || *fallback == config.model {
+                continue;
+            }
+            tracing::warn!(model = fallback, "модель недоступна, пробуем запасную");
+            report.model = (*fallback).to_owned();
+            result = complete(&config, fallback, Arc::clone(&completion)).await;
+        }
+        self.finish(report, result.map_err(|e| e.to_string()));
     }
 
     fn open(&self, job: &AuditJob, model: String) -> AuditReport {
@@ -151,6 +152,19 @@ impl Runner {
         let _ = self.worker.events.send(EngineEvent::AuditFinished(report));
         (self.worker.notify)();
     }
+}
+
+async fn complete(
+    config: &AiConfig,
+    model: &str,
+    completion: Arc<Completion>,
+) -> Result<String, AiError> {
+    let backend = backend::build(config, model)?;
+    tokio::task::spawn_blocking(move || {
+        complete_with_retry(backend.as_ref(), &completion, &RETRY_DELAYS)
+    })
+    .await
+    .map_err(|e| AiError::Request(e.to_string()))?
 }
 
 const NOT_READY: &str = "ИИ-анализ выключен: включите его в настройках и укажите ключ API";

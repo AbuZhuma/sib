@@ -83,7 +83,7 @@ impl Backend for Anthropic {
             .read_json()
             .map_err(|e| AiError::Response(format!("HTTP {status}: {e}")))?;
         if let Some(error) = parsed.error {
-            return Err(AiError::Api(format!("HTTP {status}: {}", error.message)));
+            return Err(AiError::api(status.as_u16(), error.message));
         }
         let text: String = parsed.content.into_iter().map(|b| b.text).collect();
         let text = text.trim().to_owned();

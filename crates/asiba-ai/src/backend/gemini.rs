@@ -124,7 +124,7 @@ impl Backend for Gemini {
             .read_json()
             .map_err(|e| AiError::Response(format!("HTTP {status}: {e}")))?;
         if let Some(error) = parsed.error {
-            return Err(AiError::Api(format!("HTTP {status}: {}", error.message)));
+            return Err(AiError::api(status.as_u16(), error.message));
         }
         extract_text(parsed)
     }

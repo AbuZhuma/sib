@@ -3,6 +3,7 @@ mod context;
 mod error;
 mod playbook;
 mod prompt;
+mod retry;
 mod tokens;
 
 pub use backend::{
@@ -13,4 +14,5 @@ pub use context::{ContextBuilder, Part};
 pub use error::AiError;
 pub use playbook::{Playbook, fleet_audit, full_audit, playbook, queries, section_audit};
 pub use prompt::{SYSTEM_PROMPT, build_user};
+pub use retry::{RETRY_DELAYS, complete_with_retry};
 pub use tokens::estimate_tokens;

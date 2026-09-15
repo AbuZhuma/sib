@@ -12,6 +12,9 @@ const GEMINI_MODELS: [&str; 7] = [
     "gemini-flash-latest",
     "gemini-pro-latest",
 ];
+const GEMINI_FALLBACKS: [&str; 2] = ["gemini-3.6-flash", "gemini-flash-latest"];
+const OPENAI_FALLBACKS: [&str; 1] = ["gpt-5-mini"];
+const ANTHROPIC_FALLBACKS: [&str; 1] = ["claude-sonnet-5"];
 const OPENAI_MODELS: [&str; 6] = [
     "gpt-5-mini",
     "gpt-5",
@@ -64,6 +67,15 @@ impl AiProvider {
 
     pub fn default_model(self) -> &'static str {
         self.models()[0]
+    }
+
+    pub fn fallback_models(self) -> &'static [&'static str] {
+        match self {
+            Self::Gemini => &GEMINI_FALLBACKS,
+            Self::OpenAi => &OPENAI_FALLBACKS,
+            Self::Anthropic => &ANTHROPIC_FALLBACKS,
+            Self::OpenAiCompatible => &[],
+        }
     }
 
     pub fn needs_base_url(self) -> bool {
