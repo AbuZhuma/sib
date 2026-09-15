@@ -10,7 +10,7 @@ use super::{ModuleView, Tab, ViewAction, ViewShared};
 use crate::components::{Sort, SortColumn, SortKey, sort_header, sort_rows};
 use crate::format;
 use crate::text;
-use crate::theme::{GAP, Palette, ROW_HEIGHT};
+use crate::theme::{GAP, LONG_TABLE_FRACTION, Palette, ROW_HEIGHT};
 
 const SUMMARY_TOP: usize = 8;
 const ACTIONS_WIDTH: f32 = 104.0;
@@ -186,7 +186,7 @@ fn table(
         "",
         text::PROC_COMMAND,
     ];
-    let body_height = ui.available_height();
+    let body_height = ui.available_height() * LONG_TABLE_FRACTION;
     let mut action = None;
     TableBuilder::new(ui)
         .scroll_bar_visibility(ScrollBarVisibility::AlwaysHidden)

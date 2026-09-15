@@ -18,6 +18,7 @@ pub const SUMMARY_SPARKLINE_HEIGHT: f32 = 64.0;
 pub const SUMMARY_RATE_HEIGHT: f32 = 44.0;
 pub const MINI_MAP_HEIGHT: f32 = 260.0;
 pub const EVENTS_HEIGHT: f32 = 800.0;
+pub const LONG_TABLE_FRACTION: f32 = 0.8;
 
 pub fn install(ctx: &egui::Context, choice: ThemeChoice) {
     fonts::install(ctx);

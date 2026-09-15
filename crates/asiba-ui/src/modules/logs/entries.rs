@@ -7,7 +7,7 @@ use super::matches;
 use crate::format;
 use crate::modules::ViewAction;
 use crate::text;
-use crate::theme::{Palette, ROW_HEIGHT};
+use crate::theme::{LONG_TABLE_FRACTION, Palette, ROW_HEIGHT};
 
 const TIME_WIDTH: f32 = 72.0;
 const LEVEL_WIDTH: f32 = 64.0;
@@ -42,7 +42,7 @@ pub fn table(
         text::LOG_SOURCE,
         text::COL_MESSAGE,
     ];
-    let body_height = ui.available_height();
+    let body_height = ui.available_height() * LONG_TABLE_FRACTION;
     let mut is_end_visible = false;
     TableBuilder::new(ui)
         .scroll_bar_visibility(ScrollBarVisibility::AlwaysHidden)

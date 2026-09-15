@@ -62,8 +62,8 @@ pub fn show(ui: &mut Ui, ctx: &DetailContext<'_>) -> Option<Action> {
             ),
             Tab::Audit => audit::show(ui, ctx),
             other => {
-                let page_action = pages_for(ui, ctx, other);
-                section_analysis(ui, ctx, other).or(page_action)
+                let analysis_action = section_analysis(ui, ctx, other);
+                pages_for(ui, ctx, other).or(analysis_action)
             }
         };
         if next.is_some() {
