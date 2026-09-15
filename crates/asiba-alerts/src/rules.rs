@@ -101,11 +101,11 @@ pub fn builtin_rules() -> Vec<AlertRule> {
         rule(
             "brute-force",
             "Брутфорс SSH",
-            security::KEY_ATTACKERS,
+            security::KEY_BRUTE_FORCE,
             Above,
-            20.0,
+            0.5,
             0,
-            Warning,
+            Critical,
         ),
         rule(
             "reboot-required",

@@ -26,6 +26,7 @@ use crate::common::sections;
 pub const ID: ModuleId = ModuleId("security");
 pub const KEY_FAILED_LOGINS: &str = "security.failed_logins";
 pub const KEY_ATTACKERS: &str = "security.attackers";
+pub const KEY_BRUTE_FORCE: &str = "security.brute_force";
 pub const KEY_BANS: &str = "security.bans";
 
 const SSH_LOG_LINES: u32 = 2000;
@@ -149,6 +150,7 @@ impl Module for SecurityModule {
         let samples = vec![
             Sample::new(KEY_FAILED_LOGINS, snapshot.failed_logins as f64),
             Sample::new(KEY_ATTACKERS, snapshot.attackers.len() as f64),
+            Sample::new(KEY_BRUTE_FORCE, snapshot.brute_force_count() as f64),
             Sample::new(KEY_BANS, snapshot.bans.len() as f64),
         ];
         Ok(Snapshot::new(snapshot)
