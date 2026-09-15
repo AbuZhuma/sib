@@ -42,6 +42,10 @@ impl Persistence {
         self.servers.doc_path(id)
     }
 
+    pub fn llm_doc_path(&self, id: &ServerId) -> std::path::PathBuf {
+        self.servers.llm_doc_path(id)
+    }
+
     pub fn remove(&self, id: &ServerId) -> Result<(), ConfigError> {
         self.servers.delete(id)?;
         self.secrets.delete_all(id)

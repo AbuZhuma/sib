@@ -73,7 +73,7 @@ fn record_snapshot(ctx: &LoopContext, snapshot: &Snapshot) {
         state.push_events(events);
     }
     persist_samples(ctx, snapshot);
-    worker.docs.maybe_write(worker, ctx.module.id());
+    worker.docs.maybe_write(worker);
     (worker.notify)();
 }
 

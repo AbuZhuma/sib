@@ -72,7 +72,10 @@ impl Engine {
             notify: Arc::clone(&self.notify),
             storage: self.storage.clone(),
             transport: Arc::clone(&transport),
-            docs: DocWriter::new(self.persistence.doc_path(&spec.id)),
+            docs: DocWriter::new(
+                self.persistence.doc_path(&spec.id),
+                self.persistence.llm_doc_path(&spec.id),
+            ),
         };
         let task = tokio::spawn(worker::run(ctx));
         let prefill = history::Prefill {

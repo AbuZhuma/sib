@@ -19,7 +19,7 @@ asiba-core ◄── asiba-transport ◄──┐
 | `asiba-config` | пути XDG, `config.toml`, `servers/<name>.toml`, keyring, раскладка виджетов | сеть, UI |
 | `asiba-modules` | сборщики данных и их парсеры | как и когда их вызывают |
 | `asiba-storage` | SQLite: история метрик, даунсэмплинг, поток записи | модули, UI |
-| `asiba-docgen` | рендер `servers/<name>.md` из состояния сервера | движок, UI |
+| `asiba-docgen` | секции данных сервера; рендер `servers/<name>.md` (человек) и `servers/<name>.llm.md` (модель) | движок, UI |
 | `asiba-alerts` | встроенные правила, оценка правил и базовой линии над `AppState`, уведомления на рабочий стол | транспорт, UI |
 | `asiba-engine` | воркеры серверов, задачи сбора по модулям, пинг, переподключение, геолокация, алерты, действия, команды от UI | egui |
 | `asiba-ui` | тема, страницы, виджеты модулей | сеть напрямую |
@@ -68,7 +68,7 @@ UI → `ViewAction::Act { spec, request }` → `Action::AskPerform` → диал
 
 ## Файл сервера
 
-`asiba-docgen::render(&ServerState)` собирает markdown; `DocWriter` в воркере пишет `servers/<name>.md` после снимков system/projects/services/docker/ports, не чаще раза в минуту, если тело изменилось, сохраняя блок `<!-- notes:start -->…<!-- notes:end -->`.
+`asiba-docgen` описывает данные сервера как набор секций (`Section` с `SectionId`, по одному файлу в `sections/`): каждая секция умеет `human` (русский markdown) и `llm` (английский, `key: value`, ограниченные списки). `render_human` и `render_llm` собирают все доступные секции, `render_llm_sections` — выбранные (для контекста модели). Секция `findings` собирает выводы самой программы (провалы проверок, алерты, аномалии, упавшие юниты, контейнеры, деплои, диски, память, обновления) и идёт первой. `DocWriter` в воркере после каждого цикла любого модуля, не чаще раза в 10 с и только при изменении тела, пишет `servers/<name>.md` (сохраняя блок `<!-- notes:start -->…<!-- notes:end -->`) и `servers/<name>.llm.md`.
 
 ## Данные для графиков
 

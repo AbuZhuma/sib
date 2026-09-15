@@ -7,6 +7,7 @@ use crate::paths::Paths;
 
 const SPEC_EXTENSION: &str = "toml";
 const DOC_EXTENSION: &str = "md";
+const LLM_DOC_EXTENSION: &str = "llm.md";
 
 #[derive(Debug, Clone)]
 pub struct ServerStore {
@@ -28,6 +29,10 @@ impl ServerStore {
 
     pub fn doc_path(&self, id: &ServerId) -> PathBuf {
         self.dir.join(format!("{id}.{DOC_EXTENSION}"))
+    }
+
+    pub fn llm_doc_path(&self, id: &ServerId) -> PathBuf {
+        self.dir.join(format!("{id}.{LLM_DOC_EXTENSION}"))
     }
 
     pub fn load_all(&self) -> Result<Vec<ServerSpec>, ConfigError> {
