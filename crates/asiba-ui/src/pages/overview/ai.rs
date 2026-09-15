@@ -2,7 +2,9 @@ use asiba_core::{AppState, AuditReport, AuditScope, AuditTarget};
 use egui::{RichText, Ui};
 
 use super::{Action, Page};
-use crate::components::{AiBlock, ai_block, badge, first_section, panel, status_badge};
+use crate::components::{
+    AiBlock, ai_block, badge, cancel_button, first_section, panel, status_badge,
+};
 use crate::format;
 use crate::pages::server_detail::audit::scope_label;
 use crate::text;
@@ -60,6 +62,9 @@ fn queue(ui: &mut Ui, state: &AppState) -> Option<Action> {
                         .small()
                         .color(p.text_muted),
                 );
+                if let Some(cancel) = cancel_button(ui, report) {
+                    action = Some(cancel);
+                }
             });
         }
     });

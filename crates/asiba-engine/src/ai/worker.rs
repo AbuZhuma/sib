@@ -10,6 +10,7 @@ use chrono::Utc;
 use tokio::sync::{mpsc, watch};
 
 use super::backend;
+use super::cancel::Cancellations;
 use super::context;
 use super::job::AuditJob;
 use super::store;
@@ -17,6 +18,7 @@ use crate::command::EngineEvent;
 use crate::engine::RepaintNotifier;
 
 pub struct AuditWorker {
+    pub cancellations: Cancellations,
     pub state: SharedState,
     pub registry: ModuleRegistry,
     pub config: watch::Receiver<AiConfig>,
@@ -89,6 +91,9 @@ impl Runner {
     }
 
     async fn handle(&mut self, job: AuditJob) {
+        if self.worker.cancellations.take(job.report_id) {
+            return;
+        }
         let config = self.worker.config.borrow().clone();
         if !config.is_ready() {
             if job.is_auto {
@@ -112,16 +117,14 @@ impl Runner {
         let mut report = report;
         report.context_tokens = prepared.context_tokens;
         let completion = Arc::new(prepared.completion);
-        let mut result = complete(&config, &config.model, Arc::clone(&completion)).await;
-        for fallback in config.provider.fallback_models() {
-            let is_transient = result.as_ref().is_err_and(AiError::is_transient);
-            if !is_transient || *fallback == config.model {
-                continue;
+        let report_id = report.id;
+        let result = tokio::select! {
+            result = complete_with_fallbacks(&config, completion, &mut report) => result,
+            _ = self.worker.cancellations.wait_for(report_id) => {
+                self.worker.cancellations.take(report_id);
+                return;
             }
-            tracing::warn!(model = fallback, "модель недоступна, пробуем запасную");
-            report.model = (*fallback).to_owned();
-            result = complete(&config, fallback, Arc::clone(&completion)).await;
-        }
+        };
         if let Err(AiError::Api { status, .. }) = &result
             && *status == QUOTA_STATUS
         {
@@ -184,6 +187,24 @@ impl Runner {
         let _ = self.worker.events.send(EngineEvent::AuditFinished(report));
         (self.worker.notify)();
     }
+}
+
+async fn complete_with_fallbacks(
+    config: &AiConfig,
+    completion: Arc<Completion>,
+    report: &mut AuditReport,
+) -> Result<String, AiError> {
+    let mut result = complete(config, &config.model, Arc::clone(&completion)).await;
+    for fallback in config.provider.fallback_models() {
+        let is_transient = result.as_ref().is_err_and(AiError::is_transient);
+        if !is_transient || *fallback == config.model {
+            continue;
+        }
+        tracing::warn!(model = fallback, "модель недоступна, пробуем запасную");
+        report.model = (*fallback).to_owned();
+        result = complete(config, fallback, Arc::clone(&completion)).await;
+    }
+    result
 }
 
 async fn complete(

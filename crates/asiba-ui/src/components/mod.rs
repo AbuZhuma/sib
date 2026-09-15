@@ -16,7 +16,7 @@ mod table;
 mod tile;
 
 pub use ai_block::{
-    AiBlock, ai_block, audit_status_label, first_section, report_body, status_badge,
+    AiBlock, ai_block, audit_status_label, cancel_button, first_section, report_body, status_badge,
 };
 pub use badge::{badge, severity_color};
 pub use chip::{chip, chip_value};

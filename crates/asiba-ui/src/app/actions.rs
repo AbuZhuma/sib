@@ -102,6 +102,7 @@ impl AsibaApp {
                 scope,
                 is_auto: false,
             }),
+            Action::CancelAudit(id) => self.engine.send(Command::CancelAudit(id)),
         }
     }
 

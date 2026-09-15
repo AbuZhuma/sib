@@ -58,6 +58,7 @@ pub enum AuditStatus {
     Running,
     Done,
     Failed(String),
+    Cancelled,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

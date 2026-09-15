@@ -253,6 +253,9 @@ pub const AUDIT_EMPTY: &str = "Отчётов пока нет. Запустит�
 pub const AUDIT_DISABLED: &str =
     "ИИ-анализ выключен - включите его в настройках и укажите ключ API.";
 pub const AUDIT_QUEUED: &str = "в очереди";
+pub const AUDIT_CANCELLED: &str = "отменён";
+pub const AUDIT_CANCEL: &str = "Отменить";
+pub const AUDIT_CANCELLED_BODY: &str = "Анализ отменён.";
 pub const AUDIT_RUNNING: &str = "выполняется";
 pub const AUDIT_DONE: &str = "готов";
 pub const AUDIT_FAILED: &str = "ошибка";

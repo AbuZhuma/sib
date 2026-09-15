@@ -56,6 +56,7 @@ pub enum Command {
         is_auto: bool,
     },
     SetAiConfig(AiConfig),
+    CancelAudit(u64),
 }
 
 #[derive(Debug, Clone)]

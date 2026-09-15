@@ -2,7 +2,9 @@ use asiba_core::{AuditReport, AuditScope, AuditTarget};
 use egui::{Id, RichText, Ui};
 
 use super::DetailContext;
-use crate::components::{audit_status_label, chip, panel, report_body};
+use crate::components::{
+    audit_status_label, cancel_button, chip, panel_with_controls, report_body,
+};
 use crate::format;
 use crate::pages::Action;
 use crate::text;
@@ -45,9 +47,16 @@ pub fn show(ui: &mut Ui, ctx: &DetailContext<'_>) -> Option<Action> {
     }
     let selected = pick(ui, &reports);
     if let Some(report) = reports.iter().find(|r| r.id == selected) {
-        panel(ui, &scope_label(&report.scope), |ui| {
-            report_body(ui, report, &p)
-        });
+        panel_with_controls(
+            ui,
+            &scope_label(&report.scope),
+            |ui| {
+                if let Some(cancel) = cancel_button(ui, report) {
+                    action = Some(cancel);
+                }
+            },
+            |ui| report_body(ui, report, &p),
+        );
     }
     action
 }

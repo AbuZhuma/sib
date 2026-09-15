@@ -30,7 +30,9 @@ pub fn ai_block(ui: &mut Ui, block: &AiBlock<'_>) -> Option<Action> {
             } else {
                 text::AI_ANALYZE
             };
-            if ui
+            if let Some(cancel) = report.and_then(|r| cancel_button(ui, r)) {
+                action = Some(cancel);
+            } else if ui
                 .add_enabled(
                     block.can_audit && !running,
                     egui::Button::new(label).small(),
@@ -83,7 +85,17 @@ pub fn status_badge(ui: &mut Ui, status: &AuditStatus, p: &Palette) {
         AuditStatus::Running => badge(ui, text::AUDIT_RUNNING, p.accent),
         AuditStatus::Done => badge(ui, text::AUDIT_DONE, p.ok),
         AuditStatus::Failed(_) => badge(ui, text::AUDIT_FAILED, p.critical),
+        AuditStatus::Cancelled => badge(ui, text::AUDIT_CANCELLED, p.text_muted),
     }
+}
+
+pub fn cancel_button(ui: &mut Ui, report: &AuditReport) -> Option<Action> {
+    if !report.is_running() {
+        return None;
+    }
+    ui.small_button(text::AUDIT_CANCEL)
+        .clicked()
+        .then_some(Action::CancelAudit(report.id))
 }
 
 pub fn audit_status_label(status: &AuditStatus) -> &'static str {
@@ -92,6 +104,7 @@ pub fn audit_status_label(status: &AuditStatus) -> &'static str {
         AuditStatus::Running => text::AUDIT_RUNNING,
         AuditStatus::Done => text::AUDIT_DONE,
         AuditStatus::Failed(_) => text::AUDIT_FAILED,
+        AuditStatus::Cancelled => text::AUDIT_CANCELLED,
     }
 }
 
@@ -117,6 +130,9 @@ pub fn report_body(ui: &mut Ui, report: &AuditReport, p: &Palette) {
             ui.spinner();
         }
         AuditStatus::Done => markdown_lite(ui, &report.text),
+        AuditStatus::Cancelled => {
+            ui.label(RichText::new(text::AUDIT_CANCELLED_BODY).color(p.text_muted));
+        }
     }
 }
 

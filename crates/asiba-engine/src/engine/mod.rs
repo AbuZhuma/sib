@@ -17,7 +17,7 @@ use tokio::sync::{broadcast, mpsc, watch};
 use tokio::task::JoinHandle;
 
 use crate::actions;
-use crate::ai::{self, AuditJob, AuditWorker, StartupSummary};
+use crate::ai::{self, AuditJob, AuditWorker, Cancellations, StartupSummary};
 use crate::alerts::{self, AlertLoop, AlertSettings};
 use crate::command::{Command, EngineEvent};
 use crate::geo;
@@ -85,6 +85,7 @@ struct Engine {
     alert_settings: watch::Sender<AlertSettings>,
     ai_config: watch::Sender<AiConfig>,
     audits: mpsc::UnboundedSender<Box<AuditJob>>,
+    cancellations: Cancellations,
 }
 
 pub fn spawn(
@@ -109,7 +110,9 @@ pub fn spawn(
         config: ai_receiver.clone(),
         commands: commands.clone(),
     };
+    let cancellations = Cancellations::default();
     let audit_worker = AuditWorker {
+        cancellations: cancellations.clone(),
         state: Arc::clone(&deps.state),
         registry: deps.registry.clone(),
         config: ai_receiver,
@@ -131,6 +134,7 @@ pub fn spawn(
         alert_settings,
         ai_config,
         audits: ai::spawn_detached(),
+        cancellations,
     };
     runtime.spawn(async move {
         engine.audits = ai::spawn(audit_worker);
@@ -173,6 +177,18 @@ impl Engine {
             is_auto,
         };
         let _ = self.audits.send(Box::new(job));
+    }
+
+    fn cancel_audit(&self, id: u64) {
+        if let Ok(mut state) = self.state.write()
+            && let Some(report) = state.audit_mut(id)
+            && report.is_running()
+        {
+            report.status = AuditStatus::Cancelled;
+            report.finished_at = Some(Utc::now());
+            self.cancellations.cancel(id);
+        }
+        (self.notify)();
     }
 
     fn enqueue_report(&self, target: &AuditTarget, scope: &AuditScope) -> u64 {
@@ -304,6 +320,7 @@ impl Engine {
                 is_auto,
             } => self.audit(target, scope, is_auto),
             Command::SetAiConfig(config) => self.set_ai_config(config),
+            Command::CancelAudit(id) => self.cancel_audit(id),
         }
     }
 

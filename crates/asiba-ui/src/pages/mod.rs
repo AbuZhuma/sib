@@ -85,4 +85,5 @@ pub enum Action {
         target: AuditTarget,
         scope: AuditScope,
     },
+    CancelAudit(u64),
 }
