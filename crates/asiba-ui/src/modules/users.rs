@@ -1,8 +1,8 @@
-use asiba_core::{ModuleId, ServerState};
+use asiba_core::{ModuleId, QueryRequest, ServerState};
 use asiba_modules::users::{self, UsersSnapshot};
 use egui::{RichText, Ui};
 
-use super::{ModuleView, Tab, ViewShared};
+use super::{ModuleView, Tab, ViewAction, ViewShared};
 use crate::components::{Table, badge};
 use crate::text;
 use crate::theme::{GAP, Palette};
@@ -56,8 +56,7 @@ impl ModuleView for UsersView {
         ui.add_space(GAP);
         logins(ui, snapshot);
         ui.add_space(GAP);
-        accounts(ui, snapshot);
-        None
+        accounts(ui, snapshot)
     }
 }
 
@@ -100,7 +99,7 @@ fn logins(ui: &mut Ui, snapshot: &UsersSnapshot) {
     });
 }
 
-fn accounts(ui: &mut Ui, snapshot: &UsersSnapshot) {
+fn accounts(ui: &mut Ui, snapshot: &UsersSnapshot) -> Option<ViewAction> {
     let p = Palette::current(ui.ctx());
     title(ui, text::USERS_ACCOUNTS);
     let columns = [
@@ -109,7 +108,9 @@ fn accounts(ui: &mut Ui, snapshot: &UsersSnapshot) {
         text::USERS_SHELL,
         text::USERS_SUDO,
         text::USERS_KEYS,
+        "",
     ];
+    let mut action = None;
     Table::new("users-accounts", &columns).show(ui, |ui| {
         for account in &snapshot.accounts {
             ui.monospace(&account.name);
@@ -127,7 +128,14 @@ fn accounts(ui: &mut Ui, snapshot: &UsersSnapshot) {
                 .map(|(_, c)| *c)
                 .unwrap_or(0);
             ui.monospace(keys.to_string());
+            if ui.small_button(text::USERS_ACTIVITY).clicked() {
+                action = Some(ViewAction::Query(QueryRequest::new(
+                    users::QUERY_ACTIVITY,
+                    &account.name,
+                )));
+            }
             ui.end_row();
         }
     });
+    action
 }

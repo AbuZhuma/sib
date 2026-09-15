@@ -80,6 +80,7 @@ pub const USERS_SINCE: &str = "Начало";
 pub const USERS_SUDO: &str = "sudo";
 pub const USERS_KEYS: &str = "ключей";
 pub const USERS_SHELL: &str = "Shell";
+pub const USERS_ACTIVITY: &str = "действия";
 
 pub const UPD_PENDING: &str = "обновлений";
 pub const UPD_SECURITY: &str = "security";

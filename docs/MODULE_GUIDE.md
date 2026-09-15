@@ -71,7 +71,7 @@
 Первый сбор: `journalctl -p warning -o json --no-pager -q --since -1h -n 300`, далее `--after-cursor=<cursor последней записи>`. Подгрузка истории (прокрутка вниз в UI): `journalctl -p warning -o json --no-pager -q --until=@<секунды.микросекунды самой старой записи минус 1 мкс> -n 300`. Детект: `command -v journalctl`, пробный `journalctl -q -n 1 --system`.
 
 ### users
-`who`, `last -F -n 30 -w`, `getent passwd`, `getent group sudo wheel admin`, подсчёт строк в `/root/.ssh/authorized_keys` и `/home/*/.ssh/authorized_keys`.
+`who`, `last -F -n 30 -w`, `getent passwd`, `getent group sudo wheel admin`, подсчёт строк в `/root/.ssh/authorized_keys` и `/home/*/.ssh/authorized_keys`. Запрос `activity <user>` (через sudo, если настроен): `getent passwd <user>`, `tail -n 300 ~<user>/.bash_history` и `.zsh_history`, `journalctl -t sudo -o short-iso --since -30d | grep ' <user> : '`, `journalctl _UID=<uid> -n 200 -o short-iso`. Результаты команд ОС не хранит - показываются только команды и записи журнала.
 
 ### updates
 Детект: `apt-get`/`dnf`/`yum`/`pacman`/`zypper`/`apk`. `apt-get -s upgrade | grep ^Inst`, `dnf -q check-update`, `yum -q check-update`, `pacman -Qu`, `zypper -q lu`, `apk version -l '<'`; перезагрузка: `/var/run/reboot-required`, `needs-restarting -r`.

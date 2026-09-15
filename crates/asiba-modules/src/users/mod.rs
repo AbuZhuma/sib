@@ -1,12 +1,14 @@
+mod activity;
 mod model;
 mod parse;
 
 use asiba_core::{
-    Availability, CollectContext, Event, Module, ModuleError, ModuleId, Sample, Schedule, Severity,
-    Snapshot, Transport,
+    Availability, CollectContext, Event, Module, ModuleError, ModuleId, QueryRequest,
+    QueryResponse, Sample, Schedule, Severity, Snapshot, Transport,
 };
 use async_trait::async_trait;
 
+pub use activity::{COMMAND_PREFIX, HEADING_PREFIX, QUERY_ACTIVITY};
 pub use model::{Account, LoginRecord, Session, UsersSnapshot};
 
 use crate::common::sections;
@@ -60,6 +62,17 @@ impl Module for UsersModule {
         Ok(Snapshot::new(snapshot)
             .with_samples(samples)
             .with_events(events))
+    }
+
+    async fn query(
+        &self,
+        transport: &dyn Transport,
+        request: &QueryRequest,
+    ) -> Result<QueryResponse, ModuleError> {
+        if request.kind != QUERY_ACTIVITY {
+            return Err(ModuleError::UnsupportedQuery(request.kind.clone()));
+        }
+        activity::query(transport, &request.target).await
     }
 }
 

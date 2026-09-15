@@ -1,5 +1,6 @@
 use asiba_core::ServerId;
-use egui::{RichText, TextEdit, Ui};
+use asiba_modules::users::{COMMAND_PREFIX, HEADING_PREFIX};
+use egui::{Label, RichText, Ui};
 
 use super::Action;
 use crate::components::scroll;
@@ -52,14 +53,27 @@ pub fn show(ui: &mut Ui, inspector: &Inspector) -> Option<Action> {
         }
         Some(Ok(body)) => {
             scroll::vertical().max_height(MAX_HEIGHT).show(ui, |ui| {
-                let mut text = body.as_str();
-                ui.add(
-                    TextEdit::multiline(&mut text)
-                        .font(egui::TextStyle::Monospace)
-                        .desired_width(f32::INFINITY),
-                );
+                ui.set_min_width(ui.available_width());
+                ui.spacing_mut().item_spacing.y = 0.0;
+                for line in body.lines() {
+                    ui.add(Label::new(styled_line(line, &p)).wrap());
+                }
             });
         }
     }
     action
+}
+
+fn styled_line(line: &str, p: &Palette) -> RichText {
+    if let Some(command) = line.strip_prefix(COMMAND_PREFIX) {
+        return RichText::new(format!("{COMMAND_PREFIX}{command}"))
+            .monospace()
+            .color(p.accent);
+    }
+    if let Some(heading) = line.strip_prefix(HEADING_PREFIX) {
+        return RichText::new(heading.to_uppercase())
+            .small()
+            .color(p.text_secondary);
+    }
+    RichText::new(line).monospace().color(p.text)
 }
