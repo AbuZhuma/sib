@@ -15,7 +15,8 @@ pub const SERIES_KEY: &str = "ping.rtt_ms";
 pub async fn run(ctx: Arc<WorkerContext>) {
     let mut lost_in_row = 0;
     loop {
-        let rtt_ms = measure(&ctx.spec.host, ctx.spec.port).await;
+        let (host, port) = asiba_transport::effective_address(&ctx.spec.host, ctx.spec.port);
+        let rtt_ms = measure(&host, port).await;
         lost_in_row = if rtt_ms.is_some() { 0 } else { lost_in_row + 1 };
         record(&ctx, rtt_ms, lost_in_row);
         sleep(PING_INTERVAL).await;

@@ -5,4 +5,4 @@ mod sudo;
 
 pub use connect::{HostKeyPolicy, connect};
 pub use local::LocalTransport;
-pub use ssh::SshTransport;
+pub use ssh::{SshTransport, effective_address};

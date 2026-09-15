@@ -4,6 +4,8 @@ mod handler;
 mod session;
 mod ssh_config;
 
+pub use ssh_config::effective_address;
+
 use asiba_core::{CommandOutput, Credentials, ServerSpec, SudoMode, Transport, TransportError};
 use async_trait::async_trait;
 use russh::client::Handle;

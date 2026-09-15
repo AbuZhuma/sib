@@ -86,11 +86,11 @@ fn store_server(state: &SharedState, id: &ServerId, location: Option<Location>) 
 }
 
 fn lookup_key(spec: &ServerSpec) -> Option<String> {
-    let ip = spec
-        .host
+    let (host, port) = asiba_transport::effective_address(&spec.host, spec.port);
+    let ip = host
         .parse::<IpAddr>()
         .ok()
-        .or_else(|| resolve_host(&spec.host, spec.port))?;
+        .or_else(|| resolve_host(&host, port))?;
     if is_private(ip) {
         return Some(SELF_KEY.to_owned());
     }

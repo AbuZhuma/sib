@@ -10,6 +10,11 @@ pub struct ResolvedHost {
     pub identity_files: Vec<PathBuf>,
 }
 
+pub fn effective_address(host: &str, port: u16) -> (String, u16) {
+    let resolved = resolve(host);
+    (resolved.host_name.unwrap_or_else(|| host.to_owned()), port)
+}
+
 pub fn resolve(host: &str) -> ResolvedHost {
     let rules = ParseRule::ALLOW_UNKNOWN_FIELDS | ParseRule::ALLOW_UNSUPPORTED_FIELDS;
     let Ok(config) = SshConfig::parse_default_file(rules) else {
