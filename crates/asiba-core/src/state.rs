@@ -14,7 +14,7 @@ use crate::snapshot::{ModuleData, Sample, Snapshot};
 const MAX_EVENTS: usize = 500;
 const MAX_ACTIONS: usize = 200;
 const MAX_RESOLVED_ALERTS: usize = 300;
-const MAX_SERVER_EVENTS: usize = 100;
+const MAX_SERVER_EVENTS: usize = 500;
 
 pub type SharedState = Arc<RwLock<AppState>>;
 
