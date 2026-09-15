@@ -9,6 +9,8 @@ use crate::text;
 use crate::theme::{GAP, Palette, SECONDARY_PLOT_HEIGHT};
 
 const ATTACK_SIZE: f32 = 18.0;
+const COUNTER_PAIR_WIDTH: f32 = 230.0;
+const COUNTER_PAIRS_MAX: usize = 3;
 
 pub struct AnomaliesView;
 
@@ -149,14 +151,15 @@ fn counters(ui: &mut Ui, snapshot: &AnomaliesSnapshot) {
     if let Some((count, max)) = snapshot.conntrack {
         rows.push((text::ANOM_CONNTRACK, format!("{count} / {max}")));
     }
+    let pairs = ((ui.available_width() / COUNTER_PAIR_WIDTH) as usize).clamp(1, COUNTER_PAIRS_MAX);
     egui::Grid::new("anomalies-counters")
-        .num_columns(6)
+        .num_columns(pairs * 2)
         .spacing([16.0, 2.0])
         .show(ui, |ui| {
             for (index, (label, value)) in rows.iter().enumerate() {
                 ui.label(RichText::new(*label).color(p.text_secondary));
                 ui.monospace(value);
-                if index % 3 == 2 {
+                if index % pairs == pairs - 1 {
                     ui.end_row();
                 }
             }

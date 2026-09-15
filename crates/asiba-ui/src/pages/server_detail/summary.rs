@@ -2,8 +2,8 @@ use asiba_config::SummaryLayout;
 use asiba_core::ServerState;
 use egui::{Id, RichText, Ui};
 
-use super::{connection, header, modules_table};
-use crate::components::{panel, panel_with_controls};
+use super::{connection, header, modules_table, select_tab};
+use crate::components::{panel, panel_link, panel_with_controls};
 use crate::modules::{ModuleView, has_data};
 use crate::pages::Action;
 use crate::text;
@@ -51,7 +51,10 @@ pub fn show(ui: &mut Ui, ctx: &SummaryContext<'_>) -> Option<Action> {
                     |ui| view.summary(ui, server),
                 );
             } else {
-                panel(column, view.title(), |ui| view.summary(ui, server));
+                let (_, clicked) = panel_link(column, view.title(), |ui| view.summary(ui, server));
+                if clicked {
+                    select_tab(column.ctx(), view.tab());
+                }
             }
             column.add_space(GAP);
         }

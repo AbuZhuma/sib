@@ -1,39 +1,64 @@
-use egui::{Frame, Margin, RichText, Stroke, Ui};
+use egui::{Color32, CursorIcon, Frame, Margin, RichText, Sense, Stroke, Ui, UiBuilder};
 
 use crate::theme::{GAP, GAP_SMALL, Palette};
 
-pub fn panel<R>(ui: &mut Ui, title: &str, add_contents: impl FnOnce(&mut Ui) -> R) -> R {
+fn framed<R>(ui: &mut Ui, stroke: Color32, add_contents: impl FnOnce(&mut Ui) -> R) -> R {
     let p = Palette::current(ui.ctx());
     Frame::new()
         .fill(p.bg_panel)
-        .stroke(Stroke::new(1.0, p.border))
+        .stroke(Stroke::new(1.0, stroke))
         .inner_margin(Margin::same(GAP as i8))
         .show(ui, |ui| {
             ui.set_min_width(ui.available_width());
             ui.set_max_width(ui.available_width());
-            ui.label(
-                RichText::new(title.to_uppercase())
-                    .small()
-                    .color(p.text_secondary),
-            );
-            ui.add_space(GAP_SMALL);
             add_contents(ui)
         })
         .inner
 }
 
+fn title_label(ui: &mut Ui, title: &str) {
+    let p = Palette::current(ui.ctx());
+    ui.label(
+        RichText::new(title.to_uppercase())
+            .small()
+            .color(p.text_secondary),
+    );
+}
+
+pub fn panel<R>(ui: &mut Ui, title: &str, add_contents: impl FnOnce(&mut Ui) -> R) -> R {
+    let p = Palette::current(ui.ctx());
+    framed(ui, p.border, |ui| {
+        title_label(ui, title);
+        ui.add_space(GAP_SMALL);
+        add_contents(ui)
+    })
+}
+
 pub fn panel_plain<R>(ui: &mut Ui, add_contents: impl FnOnce(&mut Ui) -> R) -> R {
     let p = Palette::current(ui.ctx());
-    Frame::new()
-        .fill(p.bg_panel)
-        .stroke(Stroke::new(1.0, p.border))
-        .inner_margin(Margin::same(GAP as i8))
-        .show(ui, |ui| {
-            ui.set_min_width(ui.available_width());
-            ui.set_max_width(ui.available_width());
+    framed(ui, p.border, add_contents)
+}
+
+pub fn panel_link<R>(
+    ui: &mut Ui,
+    title: &str,
+    add_contents: impl FnOnce(&mut Ui) -> R,
+) -> (R, bool) {
+    let p = Palette::current(ui.ctx());
+    let builder = UiBuilder::new().id_salt(title).sense(Sense::click());
+    let scoped = ui.scope_builder(builder, |ui| {
+        let hovered = ui.response().hovered();
+        let stroke = if hovered { p.border_active } else { p.border };
+        if hovered {
+            ui.ctx().set_cursor_icon(CursorIcon::PointingHand);
+        }
+        framed(ui, stroke, |ui| {
+            title_label(ui, title);
+            ui.add_space(GAP_SMALL);
             add_contents(ui)
         })
-        .inner
+    });
+    (scoped.inner, scoped.response.clicked())
 }
 
 pub fn panel_with_controls<R>(
@@ -43,25 +68,14 @@ pub fn panel_with_controls<R>(
     add_contents: impl FnOnce(&mut Ui) -> R,
 ) -> R {
     let p = Palette::current(ui.ctx());
-    Frame::new()
-        .fill(p.bg_panel)
-        .stroke(Stroke::new(1.0, p.border))
-        .inner_margin(Margin::same(GAP as i8))
-        .show(ui, |ui| {
-            ui.set_min_width(ui.available_width());
-            ui.set_max_width(ui.available_width());
-            ui.horizontal(|ui| {
-                ui.label(
-                    RichText::new(title.to_uppercase())
-                        .small()
-                        .color(p.text_secondary),
-                );
-                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), controls);
-            });
-            ui.add_space(GAP_SMALL);
-            add_contents(ui)
-        })
-        .inner
+    framed(ui, p.border, |ui| {
+        ui.horizontal(|ui| {
+            title_label(ui, title);
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), controls);
+        });
+        ui.add_space(GAP_SMALL);
+        add_contents(ui)
+    })
 }
 
 pub fn page_title(ui: &mut Ui, title: &str) {

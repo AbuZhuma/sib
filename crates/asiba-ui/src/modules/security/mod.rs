@@ -2,7 +2,7 @@ mod tables;
 
 use asiba_core::{ModuleId, ServerState};
 use asiba_modules::security::{self, Category, CheckStatus, Grade, SecuritySnapshot, Weight};
-use egui::{RichText, Ui};
+use egui::{Label, RichText, Ui};
 
 use super::{ModuleView, Tab, ViewAction, ViewShared};
 use crate::components::{badge, status_dot};
@@ -149,7 +149,7 @@ fn check_line(ui: &mut Ui, check: &security::Check, p: &Palette) {
         if check.weight == Weight::High && check.is_problem() {
             badge(ui, text::SEC_HIGH, p.critical);
         }
-        ui.label(RichText::new(&check.detail).color(p.text_secondary));
+        ui.add(Label::new(RichText::new(&check.detail).color(p.text_secondary)).truncate());
     });
 }
 
