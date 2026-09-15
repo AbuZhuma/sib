@@ -1,6 +1,6 @@
 use asiba_core::{ModuleId, ServerState, Snapshot};
 use asiba_modules::system::{self, SystemInfo};
-use egui::{Grid, RichText, Ui};
+use egui::{Grid, Label, RichText, Ui};
 
 use super::{ModuleView, Tab};
 use crate::format;
@@ -43,7 +43,7 @@ fn grid(ui: &mut Ui, id: &str, info: &SystemInfo) {
         .show(ui, |ui| {
             for (key, value) in rows(info) {
                 ui.label(RichText::new(key).color(p.text_secondary));
-                ui.monospace(value);
+                ui.add(Label::new(RichText::new(value).monospace()).truncate());
                 ui.end_row();
             }
         });

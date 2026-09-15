@@ -10,6 +10,13 @@ use crate::pages::Page;
 
 const ENV_SCREENSHOT: &str = "ASIBA_SCREENSHOT";
 const ENV_OPEN: &str = "ASIBA_OPEN";
+const ENV_WINDOW: &str = "ASIBA_WINDOW";
+
+pub fn window_size() -> Option<[f32; 2]> {
+    let value = std::env::var(ENV_WINDOW).ok()?;
+    let (width, height) = value.split_once('x')?;
+    Some([width.trim().parse().ok()?, height.trim().parse().ok()?])
+}
 const ENV_SCREENSHOT_DELAY: &str = "ASIBA_SCREENSHOT_DELAY";
 const DEFAULT_DELAY: Duration = Duration::from_secs(4);
 

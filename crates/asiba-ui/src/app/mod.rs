@@ -38,7 +38,7 @@ pub fn run(deps: AppDeps, engine_factory: EngineFactory) -> eframe::Result<()> {
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
             .with_title(text::APP_NAME)
-            .with_inner_size(WINDOW_SIZE)
+            .with_inner_size(devtools::window_size().unwrap_or(WINDOW_SIZE))
             .with_min_inner_size(MIN_WINDOW_SIZE),
         ..Default::default()
     };

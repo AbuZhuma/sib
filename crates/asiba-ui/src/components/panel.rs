@@ -10,6 +10,7 @@ pub fn panel<R>(ui: &mut Ui, title: &str, add_contents: impl FnOnce(&mut Ui) -> 
         .inner_margin(Margin::same(GAP as i8))
         .show(ui, |ui| {
             ui.set_min_width(ui.available_width());
+            ui.set_max_width(ui.available_width());
             ui.label(
                 RichText::new(title.to_uppercase())
                     .small()
@@ -29,6 +30,7 @@ pub fn panel_plain<R>(ui: &mut Ui, add_contents: impl FnOnce(&mut Ui) -> R) -> R
         .inner_margin(Margin::same(GAP as i8))
         .show(ui, |ui| {
             ui.set_min_width(ui.available_width());
+            ui.set_max_width(ui.available_width());
             add_contents(ui)
         })
         .inner
@@ -47,6 +49,7 @@ pub fn panel_with_controls<R>(
         .inner_margin(Margin::same(GAP as i8))
         .show(ui, |ui| {
             ui.set_min_width(ui.available_width());
+            ui.set_max_width(ui.available_width());
             ui.horizontal(|ui| {
                 ui.label(
                     RichText::new(title.to_uppercase())

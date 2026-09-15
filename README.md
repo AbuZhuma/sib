@@ -93,6 +93,6 @@ enabled = "true"               # "false" выключает модуль на э
 
 - `cargo run -p asiba-modules --example dump <модуль>` — снимок модуля с локальной машины.
 - `cargo test -p asiba-modules --test live_local -- --ignored` — прогон всех модулей на localhost.
-- `ASIBA_SCREENSHOT=/tmp/shot.png ASIBA_SCREENSHOT_DELAY=10 ASIBA_OPEN=<сервер>[/<вкладка>]|overview|servers|alerts|map|settings cargo run -p asiba-app` — снимок экрана нужной страницы и выход.
+- `ASIBA_SCREENSHOT=/tmp/shot.png ASIBA_SCREENSHOT_DELAY=10 ASIBA_OPEN=<сервер>[/<вкладка>]|overview|servers|alerts|map|settings ASIBA_WINDOW=940x700 cargo run -p asiba-app` — снимок экрана нужной страницы при заданном размере окна и выход.
 
 Документы: `docs/TZ-v1.md` (ТЗ), `docs/ARCHITECTURE.md`, `docs/MODULE_GUIDE.md` (как добавить модуль, реестр команд), `docs/DECISIONS.md` (журнал решений).
