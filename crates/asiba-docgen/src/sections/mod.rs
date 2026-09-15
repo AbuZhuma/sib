@@ -10,7 +10,6 @@ mod gpu;
 mod logs;
 mod ports;
 mod processes;
-mod projects;
 mod resources;
 mod security;
 mod services;
@@ -26,7 +25,6 @@ pub fn by_id(id: SectionId) -> Option<Box<dyn Section>> {
         SectionId::System => Box::new(system::SystemSection),
         SectionId::Resources => Box::new(resources::ResourcesSection),
         SectionId::Processes => Box::new(processes::ProcessesSection),
-        SectionId::Projects => Box::new(projects::ProjectsSection),
         SectionId::Services => Box::new(services::ServicesSection),
         SectionId::Docker => Box::new(docker::DockerSection),
         SectionId::Ports => Box::new(ports::PortsSection),

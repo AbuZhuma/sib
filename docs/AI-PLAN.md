@@ -13,7 +13,7 @@
 
 ## Что отправляется
 
-Только текст, собранный из секций `<имя>.llm.md` по плейбуку инцидента (или все секции для полного аудита), плюс вывод запросов к серверу (`docker logs`, `journalctl -u`). Пароли и ключи в этих данных не участвуют. Список секций: findings, description, system, resources, alerts, security, anomalies, services, docker, deploy, projects, processes, ports, users, updates, logs, gpu, actions, events.
+Только текст, собранный из секций `<имя>.llm.md` по плейбуку инцидента (или все секции для полного аудита), плюс вывод запросов к серверу (`docker logs`, `journalctl -u`). Пароли и ключи в этих данных не участвуют. Список секций: findings, description, system, resources, alerts, security, anomalies, services, docker, deploy, processes, ports, users, updates, logs, gpu, actions, events.
 
 ## Провайдеры
 
@@ -25,14 +25,14 @@
 
 - **Сводка по парку** (`AuditTarget::Fleet`, при запуске и по кнопке на главной): для каждого сервера findings + description + system + alerts, серверы с критичными инцидентами первыми. Формат: Общее состояние / Требуют внимания (по срочности) / Первые шаги.
 - **Инцидент** (автоматически при открытии, с уровня из настроек, кулдаун 30 мин): секции по виду инцидента плюс `docker logs` / `journalctl -u`. Формат: Причина / Доказательства / Что сделать сейчас / Как предотвратить.
-- **Раздел** (`AuditScope::Section`, при первом открытии вкладки сервера и по кнопке «Обновить»): findings + секция вкладки + смежные (например, processes + resources + projects). Формат: Состояние / Что настораживает / Рекомендации.
+- **Раздел** (`AuditScope::Section`, при первом открытии вкладки сервера и по кнопке «Обновить»): findings + секция вкладки + смежные (например, processes + resources). Формат: Состояние / Что настораживает / Рекомендации.
 - **Полный аудит** (по кнопке): все секции. Формат: Итог / Критично / Рекомендуется / Замечания.
 
 ## Плейбуки
 
-- контейнер упал / unhealthy → `docker logs`, секции docker, projects, resources, deploy, events;
-- юнит упал → `journalctl -u`, секции services, logs, resources, projects, events;
-- деплой упал → deploy (с хвостом лога), projects, docker, services, logs;
+- контейнер упал / unhealthy → `docker logs`, секции docker, resources, deploy, events;
+- юнит упал → `journalctl -u`, секции services, logs, resources, events;
+- деплой упал → deploy (с хвостом лога), docker, services, logs;
 - аномалия / брутфорс → anomalies, security, ports, resources, events;
 - проверка безопасности / обновления → security, users, ports, updates;
 - ресурсы (алерты, диск, память, часы, ошибки модуля) → resources, processes, docker, services, logs;

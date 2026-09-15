@@ -7,7 +7,6 @@ const CONTAINER: Playbook = Playbook {
     sections: &[
         SectionId::Findings,
         SectionId::Docker,
-        SectionId::Projects,
         SectionId::Resources,
         SectionId::Deploy,
         SectionId::Events,
@@ -26,7 +25,6 @@ const UNIT: Playbook = Playbook {
         SectionId::Services,
         SectionId::Logs,
         SectionId::Resources,
-        SectionId::Projects,
         SectionId::Events,
     ],
     task: "Юнит systemd «{subject}» в состоянии failed. По его журналу (раздел с journal, если он есть), \
@@ -40,7 +38,6 @@ const DEPLOY: Playbook = Playbook {
     sections: &[
         SectionId::Findings,
         SectionId::Deploy,
-        SectionId::Projects,
         SectionId::Docker,
         SectionId::Services,
         SectionId::Logs,

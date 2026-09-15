@@ -7,7 +7,6 @@ pub enum SectionId {
     System,
     Resources,
     Processes,
-    Projects,
     Services,
     Docker,
     Ports,
@@ -25,7 +24,7 @@ pub enum SectionId {
 }
 
 impl SectionId {
-    pub const ALL: [SectionId; 19] = [
+    pub const ALL: [SectionId; 18] = [
         SectionId::Findings,
         SectionId::Description,
         SectionId::System,
@@ -36,7 +35,6 @@ impl SectionId {
         SectionId::Services,
         SectionId::Docker,
         SectionId::Deploy,
-        SectionId::Projects,
         SectionId::Processes,
         SectionId::Ports,
         SectionId::Users,
@@ -53,7 +51,6 @@ impl SectionId {
             Self::System => "system",
             Self::Resources => "resources",
             Self::Processes => "processes",
-            Self::Projects => "projects",
             Self::Services => "services",
             Self::Docker => "docker",
             Self::Ports => "ports",

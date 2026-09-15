@@ -10,7 +10,6 @@ pub mod memory;
 pub mod network;
 pub mod ports;
 pub mod processes;
-pub mod projects;
 pub mod security;
 pub mod services;
 pub mod system;
@@ -33,7 +32,6 @@ pub fn default_registry() -> ModuleRegistry {
         .register(logs::LogsModule)
         .register(users::UsersModule)
         .register(updates::UpdatesModule)
-        .register(projects::ProjectsModule)
         .register(security::SecurityModule)
         .register(anomalies::AnomaliesModule)
         .register(deploy::DeployModule)

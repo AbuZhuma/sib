@@ -15,7 +15,7 @@
 
 - `detect` обязан вернуть `Unavailable { reason }`, если данных на сервере нет. Проверяй наличие бинарника (`command -v docker`) и прав.
 - Сбор — одна команда через `common::sections::script(&[(name, cmd), ...])`, ответ — `Sections::parse`. Не делай десять `exec` подряд.
-- Данные модуля не тянут другие модули напрямую. Если нужна связь (порты ↔ процессы), она делается на уровне модели в `projects` или в UI.
+- Данные модуля не тянут другие модули напрямую. Если нужна связь (порты ↔ процессы), она делается в UI.
 - Расписание: `Fast` — только для живых метрик (cpu, memory, network, processes, docker stats); `Normal` — списки и состояния; `Slow` — редко меняющееся.
 - Действия — `Module::actions()` (список `ActionSpec` константами модуля: `SPEC_BAN`, `SPEC_KILL`, …) и `Module::perform(transport, &ActionRequest)`. Это единственные команды записи; каждая перечислена в реестре ниже с пометкой **действие**. Цель действия модуль валидирует сам. UI возвращает `ViewAction::Act { spec, request }`, приложение показывает подтверждение, движок выполняет и пишет в журнал (`actions` в SQLite).
 - Запросы по требованию — `Module::query(transport, QueryRequest { kind, target })` → `QueryResponse { title, text }`. UI-представление возвращает `ViewAction::Query`, движок выполняет запрос на живой сессии сервера и отдаёт результат в панель «Просмотр». Так сделаны логи контейнера и журнал юнита.
@@ -75,9 +75,6 @@
 
 ### updates
 Детект: `apt-get`/`dnf`/`yum`/`pacman`/`zypper`/`apk`. `apt-get -s upgrade | grep ^Inst`, `dnf -q check-update`, `yum -q check-update`, `pacman -Qu`, `zypper -q lu`, `apk version -l '<'`; перезагрузка: `/var/run/reboot-required`, `needs-restarting -r`.
-
-### projects
-`find` по `/opt /srv /var/www /home/* /root /app /docker /data` (глубина 3) маркеров `.git`, `compose*.yml`, `package.json`, `Cargo.toml`, `pyproject.toml`, `go.mod`, `Dockerfile`, `ecosystem.config.js`; `git -C <repo> rev-parse --abbrev-ref HEAD`, `git log -1`, `git status --porcelain | wc -l`; `systemctl show '*.service' -p Id -p WorkingDirectory -p MainPID -p ActiveState`; `readlink /proc/[pid]/cwd` + `/proc/[pid]/comm`; `docker inspect --format` (имя, compose-проект, working_dir); `ss -tlnpH`. Выполняется через sudo, если он настроен (cwd чужих процессов).
 
 ### security
 Выполняется через sudo, если он настроен (иначе `Partial`). `id -un`, `systemctl is-active` для `firewalld ufw nftables iptables netfilter-persistent fail2ban`, `command -v fail2ban-client nft iptables ufw`, `journalctl -q -o short-iso --since -24h -t sshd -t sshd-session -n 2000` (без journald — `grep sshd /var/log/auth.log /var/log/secure`), то же для `-t sudo -n 500`, `fail2ban-client status` и `fail2ban-client status <jail>` по каждому джейлу, `sshd -T` (fallback — `grep` по `/etc/ssh/sshd_config` и `sshd_config.d/*.conf`), `sha256sum /etc/passwd /etc/group /etc/sudoers /etc/sudoers.d/*`, `nft list set inet asiba bans|bans6`, `iptables -S ASIBA`, `ip6tables -S ASIBA`, `ufw status | grep DENY`. Проверки защищённости: `sysctl` по ключам из `security/hardening.rs`, `getenforce`, `aa-status --enabled`, `timedatectl show -p NTPSynchronized --value`, `awk` по `/etc/passwd` (UID 0) и `/etc/shadow` (пустые пароли, root), `grep -r NOPASSWD /etc/sudoers /etc/sudoers.d`, `find … authorized_keys -perm /go+w`, `find /etc -maxdepth 2 -type f -perm -o+w`, `ss -tlnH` по портам 21/23/512-514/2375/2376/6379/27017/9200, `systemctl is-active auditd unattended-upgrades dnf-automatic.timer`.

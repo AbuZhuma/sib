@@ -117,7 +117,6 @@ fn section_key(tab: Tab) -> Option<&'static str> {
         Tab::Ports => Some("ports"),
         Tab::Docker => Some("docker"),
         Tab::Services => Some("services"),
-        Tab::Projects => Some("projects"),
         Tab::Logs => Some("logs"),
         Tab::Users => Some("users"),
         Tab::Security => Some("security"),

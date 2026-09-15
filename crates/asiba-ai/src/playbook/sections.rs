@@ -7,11 +7,10 @@ const PROCESSES: Playbook = Playbook {
         SectionId::Findings,
         SectionId::Processes,
         SectionId::Resources,
-        SectionId::Projects,
     ],
     task: "Проанализируй процессы сервера: кто съедает CPU и память, есть ли зомби, подозрительные или \
-лишние процессы (майнеры, неизвестные бинарники из /tmp, дубликаты), процессы вне проектов, которые \
-стоило бы отнести к проекту или убрать. Сопоставь с загрузкой из раздела Resources.",
+лишние процессы (майнеры, неизвестные бинарники из /tmp, дубликаты). Сопоставь с загрузкой из раздела \
+Resources.",
     format: FORMAT_SECTION,
 };
 
@@ -44,7 +43,6 @@ const DOCKER: Playbook = Playbook {
     sections: &[
         SectionId::Findings,
         SectionId::Docker,
-        SectionId::Projects,
         SectionId::Resources,
     ],
     task: "Проанализируй контейнеры: остановленные с ненулевым кодом, рестарты, unhealthy, контейнеры без \
@@ -58,24 +56,9 @@ const SERVICES: Playbook = Playbook {
         SectionId::Findings,
         SectionId::Services,
         SectionId::Logs,
-        SectionId::Projects,
     ],
     task: "Проанализируй сервисы systemd: упавшие, с частыми рестартами, пользовательские юниты и их \
-состояние, сервисы, которые давно активны, но проект не использует. Сопоставь с ошибками в журнале.",
-    format: FORMAT_SECTION,
-};
-
-const PROJECTS: Playbook = Playbook {
-    sections: &[
-        SectionId::Findings,
-        SectionId::Projects,
-        SectionId::Docker,
-        SectionId::Services,
-        SectionId::Deploy,
-    ],
-    task: "Проанализируй проекты на сервере: что запущено и как (контейнеры, юниты, процессы), \
-незакоммиченные изменения в рабочих копиях на сервере, давно не обновлявшиеся ветки, проекты без \
-запущенных процессов, конфликты портов между проектами.",
+состояние. Сопоставь с ошибками в журнале.",
     format: FORMAT_SECTION,
 };
 
@@ -131,7 +114,6 @@ const DEPLOY: Playbook = Playbook {
     sections: &[
         SectionId::Findings,
         SectionId::Deploy,
-        SectionId::Projects,
         SectionId::Docker,
     ],
     task: "Проанализируй деплои: частота, длительность, ошибки, незавершённые, события compose. \
@@ -153,7 +135,6 @@ pub fn section_audit(key: &str) -> Option<Playbook> {
         "ports" => PORTS,
         "docker" => DOCKER,
         "services" => SERVICES,
-        "projects" => PROJECTS,
         "logs" => LOGS,
         "users" => USERS,
         "security" => SECURITY,

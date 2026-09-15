@@ -12,7 +12,6 @@ pub const TAB_PROCESSES: &str = "Процессы";
 pub const TAB_PORTS: &str = "Порты";
 pub const TAB_DOCKER: &str = "Docker";
 pub const TAB_SERVICES: &str = "Сервисы";
-pub const TAB_PROJECTS: &str = "Проекты";
 pub const TAB_LOGS: &str = "Логи";
 pub const TAB_USERS: &str = "Пользователи";
 
@@ -22,7 +21,6 @@ pub const MODULE_PORTS: &str = "Порты";
 pub const MODULE_LOGS: &str = "Журнал";
 pub const MODULE_USERS: &str = "Пользователи";
 pub const MODULE_UPDATES: &str = "Обновления";
-pub const MODULE_PROJECTS: &str = "Проекты";
 
 pub const SVC_ACTIVE: &str = "активных";
 pub const SVC_FAILED: &str = "упавших";
@@ -88,18 +86,6 @@ pub const UPD_SECURITY: &str = "security";
 pub const UPD_REBOOT: &str = "требуется перезагрузка";
 pub const UPD_NONE: &str = "система обновлена";
 
-pub const PROJ_PATH: &str = "Путь";
-pub const PROJ_CONTAINERS: &str = "Контейнеры";
-pub const PROJ_UNITS: &str = "Сервисы";
-pub const PROJ_PROCESSES: &str = "Процессы";
-pub const PROJ_PORTS: &str = "Порты";
-pub const PROJ_DIRTY: &str = "незакоммиченных";
-pub const PROJ_BRANCH: &str = "Ветка";
-pub const PROJ_COMMIT: &str = "Коммит";
-pub const PROJ_ACTIVE: &str = "работает";
-pub const PROJ_IDLE: &str = "не запущен";
-pub const PROJ_UNASSIGNED: &str = "Не отнесённые процессы";
-pub const PROJ_NONE: &str = "проекты не обнаружены";
 
 pub const CPU_CORES: &str = "ядер";
 pub const CPU_TOTAL: &str = "всего";

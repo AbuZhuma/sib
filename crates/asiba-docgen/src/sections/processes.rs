@@ -1,13 +1,11 @@
 use asiba_modules::processes::{self, Process, ProcessSnapshot};
-use asiba_modules::projects::{self, ProjectsSnapshot};
 
 use crate::section::{DocContext, Section, SectionId};
-use crate::write::{blank, bytes, field, heading, list, more, subheading, table, truncate};
+use crate::write::{blank, bytes, field, heading, list, subheading, table, truncate};
 
 pub struct ProcessesSection;
 
 const TOP: usize = 10;
-const MAX_UNASSIGNED: usize = 40;
 const COMMAND_CHARS: usize = 80;
 
 fn snapshot<'a>(ctx: &'a DocContext<'_>) -> Option<&'a ProcessSnapshot> {
@@ -39,24 +37,6 @@ fn counts(snapshot: &ProcessSnapshot) -> (usize, usize, usize) {
     )
 }
 
-fn project_rows(snapshot: &ProjectsSnapshot) -> (Vec<Vec<String>>, usize) {
-    let mut rows = Vec::new();
-    for project in snapshot.active() {
-        for (pid, comm) in &project.processes {
-            rows.push(vec![pid.to_string(), comm.clone(), project.name.clone()]);
-        }
-    }
-    for process in snapshot.unassigned.iter().take(MAX_UNASSIGNED) {
-        rows.push(vec![
-            process.pid.to_string(),
-            process.comm.clone(),
-            format!("unassigned ({})", process.cwd),
-        ]);
-    }
-    let hidden = snapshot.unassigned.len().saturating_sub(MAX_UNASSIGNED);
-    (rows, hidden)
-}
-
 impl Section for ProcessesSection {
     fn id(&self) -> SectionId {
         SectionId::Processes
@@ -84,12 +64,6 @@ impl Section for ProcessesSection {
         );
         subheading(out, "Топ по памяти");
         table(out, &headers, &top_by(snapshot, |p| p.rss_bytes as f64));
-        if let Some(projects) = ctx.server.data::<ProjectsSnapshot>(projects::ID) {
-            let (rows, hidden) = project_rows(projects);
-            subheading(out, "Принадлежность проектам");
-            table(out, &["PID", "Процесс", "Проект"], &rows);
-            more(out, hidden, "не отнесённых процессов");
-        }
     }
 
     fn llm(&self, out: &mut String, ctx: &DocContext<'_>) {
@@ -113,12 +87,6 @@ impl Section for ProcessesSection {
             "pid | user | cpu_pct | rss | state | command",
         );
         list(out, "", &top_by(snapshot, |p| p.rss_bytes as f64));
-        if let Some(projects) = ctx.server.data::<ProjectsSnapshot>(projects::ID) {
-            let (rows, hidden) = project_rows(projects);
-            field(out, "by_project", "pid | process | project");
-            list(out, "", &rows);
-            more(out, hidden, "unassigned");
-        }
         blank(out);
     }
 }

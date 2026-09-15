@@ -9,7 +9,6 @@ mod memory;
 mod network;
 mod ports;
 mod processes;
-mod projects;
 mod security;
 mod services;
 mod system;
@@ -32,7 +31,6 @@ pub enum Tab {
     Ports,
     Docker,
     Services,
-    Projects,
     Logs,
     Users,
     Security,
@@ -43,7 +41,7 @@ pub enum Tab {
 }
 
 impl Tab {
-    pub const ALL: [Tab; 15] = [
+    pub const ALL: [Tab; 14] = [
         Tab::Summary,
         Tab::Processes,
         Tab::Resources,
@@ -51,7 +49,6 @@ impl Tab {
         Tab::Ports,
         Tab::Docker,
         Tab::Services,
-        Tab::Projects,
         Tab::Logs,
         Tab::Users,
         Tab::Security,
@@ -74,7 +71,6 @@ impl Tab {
             Tab::Ports => "ports",
             Tab::Docker => "docker",
             Tab::Services => "services",
-            Tab::Projects => "projects",
             Tab::Logs => "logs",
             Tab::Users => "users",
             Tab::Security => "security",
@@ -94,7 +90,6 @@ impl Tab {
             Tab::Ports => text::TAB_PORTS,
             Tab::Docker => text::TAB_DOCKER,
             Tab::Services => text::TAB_SERVICES,
-            Tab::Projects => text::TAB_PROJECTS,
             Tab::Logs => text::TAB_LOGS,
             Tab::Users => text::TAB_USERS,
             Tab::Security => text::TAB_SECURITY,
@@ -173,7 +168,6 @@ pub fn all() -> Vec<Box<dyn ModuleView>> {
         Box::new(ports::PortsView),
         Box::new(docker::DockerView),
         Box::new(services::ServicesView),
-        Box::new(projects::ProjectsView),
         Box::new(logs::LogsView),
         Box::new(users::UsersView),
         Box::new(updates::UpdatesView),
@@ -201,7 +195,6 @@ pub fn short_label(id: ModuleId) -> &'static str {
         "logs" => "log",
         "users" => "usr",
         "updates" => "upd",
-        "projects" => "prj",
         "security" => "sec",
         "anomalies" => "anm",
         "deploy" => "dpl",

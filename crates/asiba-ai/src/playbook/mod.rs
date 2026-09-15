@@ -99,7 +99,6 @@ mod tests {
             "ports",
             "docker",
             "services",
-            "projects",
             "logs",
             "users",
             "security",
