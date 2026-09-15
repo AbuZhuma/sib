@@ -67,7 +67,7 @@ pub fn incident_line(ui: &mut Ui, line: &IncidentLine<'_>) -> IncidentClick {
 
 pub fn has_report(state: &AppState, incident: &Incident) -> bool {
     state.audits.iter().any(|a| {
-        a.server == incident.server
+        a.is_for(&incident.server)
             && matches!(&a.scope, AuditScope::Incident { incident_id, .. } if *incident_id == incident.id)
     })
 }

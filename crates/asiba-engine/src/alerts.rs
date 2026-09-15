@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use asiba_alerts::Evaluator;
 use asiba_config::AiConfig;
-use asiba_core::{AlertRule, AuditScope, SharedState};
+use asiba_core::{AlertRule, AuditScope, AuditTarget, SharedState};
 use chrono::{DateTime, Utc};
 use tokio::sync::{mpsc, watch};
 use tokio::time::{MissedTickBehavior, interval};
@@ -84,7 +84,7 @@ fn request_audits(context: &AlertLoop, opened: &[asiba_core::Incident]) {
     }
     for incident in opened {
         let _ = context.commands.send(Command::Audit {
-            server: incident.server.clone(),
+            target: AuditTarget::Server(incident.server.clone()),
             scope: AuditScope::Incident {
                 incident_id: incident.id,
                 kind: incident.kind,

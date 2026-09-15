@@ -1,25 +1,15 @@
-use std::time::Duration;
-
 use serde::{Deserialize, Serialize};
 use ureq::Agent;
 
-use super::{Backend, Completion};
+use super::{Backend, Completion, ProviderConfig, agent, require_key};
 use crate::error::AiError;
 
-pub const DEFAULT_MODEL: &str = "gemini-2.5-flash";
 const ENDPOINT: &str = "https://generativelanguage.googleapis.com/v1beta/models";
 const KEY_HEADER: &str = "x-goog-api-key";
-const REQUEST_TIMEOUT: Duration = Duration::from_secs(180);
 const TEMPERATURE: f64 = 0.2;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct GeminiConfig {
-    pub api_key: String,
-    pub model: String,
-}
-
 pub struct Gemini {
-    config: GeminiConfig,
+    config: ProviderConfig,
     agent: Agent,
 }
 
@@ -83,16 +73,12 @@ struct ApiError {
 }
 
 impl Gemini {
-    pub fn new(config: GeminiConfig) -> Result<Self, AiError> {
-        if config.api_key.trim().is_empty() {
-            return Err(AiError::MissingKey);
-        }
-        let agent: Agent = Agent::config_builder()
-            .timeout_global(Some(REQUEST_TIMEOUT))
-            .http_status_as_error(false)
-            .build()
-            .into();
-        Ok(Self { config, agent })
+    pub fn new(config: ProviderConfig) -> Result<Self, AiError> {
+        require_key(&config)?;
+        Ok(Self {
+            config,
+            agent: agent(),
+        })
     }
 
     fn url(&self) -> String {
@@ -173,9 +159,10 @@ mod tests {
 
     #[test]
     fn new_without_key_fails() {
-        let config = GeminiConfig {
+        let config = ProviderConfig {
             api_key: " ".into(),
-            model: DEFAULT_MODEL.into(),
+            model: "m".into(),
+            base_url: String::new(),
         };
         assert!(matches!(Gemini::new(config), Err(AiError::MissingKey)));
     }

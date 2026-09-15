@@ -1,14 +1,13 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
-use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use asiba_ai::{Backend, Gemini, GeminiConfig};
 use asiba_config::AiConfig;
 use asiba_core::{AuditReport, AuditStatus, ModuleRegistry, SharedState};
 use chrono::Utc;
 use tokio::sync::{mpsc, watch};
 
+use super::backend;
 use super::context;
 use super::job::AuditJob;
 use super::store;
@@ -59,8 +58,8 @@ impl Runner {
         let severity_ok = job
             .incident
             .as_ref()
-            .is_some_and(|i| i.severity >= config.auto_audit_min_severity);
-        if !config.auto_audit || !severity_ok {
+            .is_none_or(|i| i.severity >= config.auto_audit_min_severity);
+        if job.scope.is_incident() && (!config.auto_audit || !severity_ok) {
             return true;
         }
         let cooldown = Duration::from_secs(config.cooldown_secs);
@@ -94,11 +93,8 @@ impl Runner {
             self.finish(report, Err(NO_DATA.to_owned()));
             return;
         };
-        let backend = match Gemini::new(GeminiConfig {
-            api_key: config.api_key.clone(),
-            model: config.model.clone(),
-        }) {
-            Ok(backend) => Arc::new(backend),
+        let backend = match backend::build(&config) {
+            Ok(backend) => backend,
             Err(error) => {
                 self.finish(report, Err(error.to_string()));
                 return;
@@ -117,7 +113,7 @@ impl Runner {
     fn open(&self, job: &AuditJob, model: String) -> AuditReport {
         let mut report = AuditReport {
             id: 0,
-            server: job.server.clone(),
+            target: job.target.clone(),
             scope: job.scope.clone(),
             started_at: Utc::now(),
             finished_at: None,
@@ -143,7 +139,7 @@ impl Runner {
                 store::write_report(&self.worker.audits_dir, &report);
             }
             Err(error) => {
-                tracing::warn!(server = %report.server, "аудит не выполнен: {error}");
+                tracing::warn!(target = %report.target.key(), "аудит не выполнен: {error}");
                 report.status = AuditStatus::Failed(error);
             }
         }

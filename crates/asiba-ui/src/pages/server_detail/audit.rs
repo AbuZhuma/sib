@@ -1,12 +1,12 @@
-use asiba_core::{AuditReport, AuditScope, AuditStatus};
-use egui::{Id, Label, RichText, Ui};
+use asiba_core::{AuditReport, AuditScope, AuditTarget};
+use egui::{Id, RichText, Ui};
 
 use super::DetailContext;
-use crate::components::{badge, chip, panel};
+use crate::components::{chip, panel, report_body};
 use crate::format;
 use crate::pages::Action;
 use crate::text;
-use crate::theme::{GAP, GAP_SMALL, Palette};
+use crate::theme::{GAP, Palette};
 
 const SELECTED_KEY: &str = "audit-selected";
 
@@ -17,7 +17,7 @@ pub fn show(ui: &mut Ui, ctx: &DetailContext<'_>) -> Option<Action> {
         .audits
         .iter()
         .rev()
-        .filter(|a| a.server == ctx.server.spec.id)
+        .filter(|a| a.is_for(&ctx.server.spec.id))
         .collect();
     let running = reports.iter().any(|r| r.is_running());
     let mut action = None;
@@ -28,7 +28,7 @@ pub fn show(ui: &mut Ui, ctx: &DetailContext<'_>) -> Option<Action> {
             .clicked()
         {
             action = Some(Action::Audit {
-                server: ctx.server.spec.id.clone(),
+                target: AuditTarget::Server(ctx.server.spec.id.clone()),
                 scope: AuditScope::Full,
             });
         }
@@ -45,7 +45,9 @@ pub fn show(ui: &mut Ui, ctx: &DetailContext<'_>) -> Option<Action> {
     }
     let selected = pick(ui, &reports);
     if let Some(report) = reports.iter().find(|r| r.id == selected) {
-        report_panel(ui, report);
+        panel(ui, &scope_label(&report.scope), |ui| {
+            report_body(ui, report, &p)
+        });
     }
     action
 }
@@ -73,83 +75,10 @@ fn pick(ui: &mut Ui, reports: &[&AuditReport]) -> u64 {
     selected
 }
 
-fn scope_label(scope: &AuditScope) -> String {
+pub fn scope_label(scope: &AuditScope) -> String {
     match scope {
         AuditScope::Full => text::AUDIT_FULL.to_lowercase(),
         AuditScope::Incident { subject, .. } => subject.clone(),
+        AuditScope::Section { key } => format!("{} {key}", text::AUDIT_SECTION),
     }
-}
-
-fn report_panel(ui: &mut Ui, report: &AuditReport) {
-    let p = Palette::current(ui.ctx());
-    panel(ui, &scope_label(&report.scope), |ui| {
-        ui.horizontal_wrapped(|ui| {
-            match &report.status {
-                AuditStatus::Running => badge(ui, text::AUDIT_RUNNING, p.accent),
-                AuditStatus::Done => badge(ui, text::AUDIT_DONE, p.ok),
-                AuditStatus::Failed(_) => badge(ui, text::AUDIT_FAILED, p.critical),
-            }
-            ui.label(RichText::new(&report.model).color(p.text_secondary));
-            ui.label(
-                RichText::new(format!("{} {}", report.context_tokens, text::AUDIT_TOKENS))
-                    .small()
-                    .color(p.text_muted),
-            );
-            if let Some(finished) = report.finished_at {
-                let secs = (finished - report.started_at).num_seconds().max(0) as f64;
-                ui.label(
-                    RichText::new(format::duration_short(secs))
-                        .small()
-                        .color(p.text_muted),
-                );
-            }
-        });
-        ui.add_space(GAP_SMALL);
-        match &report.status {
-            AuditStatus::Failed(error) => {
-                ui.label(RichText::new(error).color(p.critical));
-            }
-            AuditStatus::Running => {
-                ui.spinner();
-            }
-            AuditStatus::Done => markdown_lite(ui, &report.text),
-        }
-    });
-}
-
-fn markdown_lite(ui: &mut Ui, text: &str) {
-    let p = Palette::current(ui.ctx());
-    let mut in_code = false;
-    for line in text.lines() {
-        if line.trim_start().starts_with("```") {
-            in_code = !in_code;
-            continue;
-        }
-        if in_code {
-            ui.add(Label::new(RichText::new(line).monospace()).wrap());
-            continue;
-        }
-        let trimmed = line.trim_start();
-        if let Some(heading) = trimmed.strip_prefix('#') {
-            ui.add_space(GAP_SMALL);
-            ui.label(RichText::new(heading.trim_start_matches('#').trim()).strong());
-            continue;
-        }
-        if let Some(item) = trimmed
-            .strip_prefix("- ")
-            .or_else(|| trimmed.strip_prefix("* "))
-        {
-            ui.add(Label::new(format!("• {}", strip_marks(item))).wrap());
-            continue;
-        }
-        if trimmed.is_empty() {
-            ui.add_space(GAP_SMALL);
-            continue;
-        }
-        ui.add(Label::new(RichText::new(strip_marks(trimmed)).color(p.text)).wrap());
-    }
-}
-
-fn strip_marks(text: &str) -> String {
-    text.replace("**", "").replace('`', "")
 }

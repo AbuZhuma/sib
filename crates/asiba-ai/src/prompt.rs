@@ -1,18 +1,22 @@
 use asiba_core::Incident;
 
-pub const SYSTEM_PROMPT: &str = "You are a senior Linux operations and security engineer reviewing a \
-server for its administrator. You receive a structured data dump collected by a monitoring tool (Asiba) \
-and a task. Rules: use only the data provided, never invent numbers, names or log lines; when data is \
-missing say what is missing and how to get it; prefer concrete commands and config snippets for the \
-detected distribution; be specific about which line of the data supports each claim; keep the answer \
-compact with Markdown headings and bullet lists; answer in Russian (keep commands, paths, \
-unit and package names as they are). Severity words: critical = active \
-harm or exposure, recommended = should be fixed soon, note = minor.";
+use crate::playbook::Playbook;
 
-pub fn build_user(context: &str, task: &str, incident: Option<&Incident>) -> String {
+pub const SYSTEM_PROMPT: &str = "Ты — старший инженер по эксплуатации и безопасности Linux-серверов. \
+Тебе дают структурированный дамп данных, собранный программой мониторинга Asiba, и задачу. Правила: \
+опирайся только на данные из дампа, не выдумывай числа, имена, строки логов и команды, которых там нет; \
+если данных не хватает — скажи, чего именно, и как их получить; давай конкретные команды и фрагменты \
+конфигурации под дистрибутив из раздела System (dnf/apt, systemctl, firewalld/ufw/nftables — то, что \
+есть на сервере); у каждого вывода указывай, на какой строке данных он основан; отличай причину от \
+следствия; не давай общих советов вроде «обновите систему», если данные не показывают проблему; будь \
+кратким — это текст для экрана, не статья. Отвечай по-русски, названия команд, путей, юнитов, пакетов \
+и метрик оставляй как есть. Уровни: критично — активный вред или открытая уязвимость; рекомендуется — \
+исправить в ближайшие дни; замечание — мелочь.";
+
+pub fn build_user(context: &str, playbook: &Playbook, incident: Option<&Incident>) -> String {
     let mut out = String::new();
     if let Some(incident) = incident {
-        out.push_str("## Incident\n\n");
+        out.push_str("## Инцидент\n\n");
         out.push_str(&format!("kind: {}\n", incident.kind.key()));
         out.push_str(&format!("severity: {:?}\n", incident.severity).to_lowercase());
         out.push_str(&format!("subject: {}\n", incident.subject));
@@ -26,13 +30,15 @@ pub fn build_user(context: &str, task: &str, incident: Option<&Incident>) -> Str
         }
         out.push('\n');
     }
-    out.push_str("## Server data\n\n");
+    out.push_str("## Данные\n\n");
     out.push_str(context);
-    out.push_str("\n\n## Task\n\n");
-    out.push_str(&task.replace(
+    out.push_str("\n\n## Задача\n\n");
+    out.push_str(&playbook.task.replace(
         "{subject}",
         incident.map(|i| i.subject.as_str()).unwrap_or("server"),
     ));
+    out.push_str("\n\n");
+    out.push_str(playbook.format);
     out
 }
 
@@ -42,6 +48,7 @@ mod tests {
     use chrono::Utc;
 
     use super::*;
+    use crate::playbook;
 
     #[test]
     fn build_user_substitutes_subject_and_lists_evidence() {
@@ -53,10 +60,15 @@ mod tests {
         )
         .evidence(["exit code 137".to_owned()]);
         let incident = Incident::open(1, ServerId::parse("neo").expect("id"), draft, Utc::now());
-        let text = build_user("data", "Fix '{subject}'.", Some(&incident));
+        let text = build_user(
+            "data",
+            &playbook::playbook(IncidentKind::ContainerDown),
+            Some(&incident),
+        );
         assert!(text.contains("kind: container_down"));
         assert!(text.contains("severity: critical"));
         assert!(text.contains("evidence: exit code 137"));
-        assert!(text.ends_with("Fix 'web'."));
+        assert!(text.contains("Контейнер «web»"));
+        assert!(text.ends_with(playbook::FORMAT_INCIDENT));
     }
 }

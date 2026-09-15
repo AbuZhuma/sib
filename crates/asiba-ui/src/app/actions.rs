@@ -94,8 +94,8 @@ impl AsibaApp {
                     self.notices.push(Notice::new(error.to_string()));
                 }
             }
-            Action::Audit { server, scope } => self.engine.send(Command::Audit {
-                server,
+            Action::Audit { target, scope } => self.engine.send(Command::Audit {
+                target,
                 scope,
                 is_auto: false,
             }),

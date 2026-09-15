@@ -2,8 +2,8 @@ use std::time::Duration;
 
 use asiba_config::AiConfig;
 use asiba_core::{
-    ActionRecord, ActionRequest, AuditReport, AuditScope, Availability, Credentials, Incident,
-    Intervals, ModuleId, QueryRequest, QueryResponse, ServerId, ServerSpec, Snapshot,
+    ActionRecord, ActionRequest, AuditReport, AuditScope, AuditTarget, Availability, Credentials,
+    Incident, Intervals, ModuleId, QueryRequest, QueryResponse, ServerId, ServerSpec, Snapshot,
     TransportError,
 };
 use asiba_transport::HostKeyPolicy;
@@ -47,7 +47,7 @@ pub enum Command {
     SetAlertSettings(AlertSettings),
     SetIntervals(Intervals),
     Audit {
-        server: ServerId,
+        target: AuditTarget,
         scope: AuditScope,
         is_auto: bool,
     },

@@ -164,12 +164,16 @@ impl AsibaApp {
                 EngineEvent::AuditFinished(report) => {
                     let message = match &report.status {
                         AuditStatus::Failed(error) => {
-                            format!("{} {}: {error}", text::AUDIT_NOTICE_FAILED, report.server)
+                            format!(
+                                "{} {}: {error}",
+                                text::AUDIT_NOTICE_FAILED,
+                                report.target.key()
+                            )
                         }
                         _ => format!(
                             "{} {}: {}",
                             text::AUDIT_NOTICE_DONE,
-                            report.server,
+                            report.target.key(),
                             report.scope.key()
                         ),
                     };
@@ -199,9 +203,15 @@ impl AsibaApp {
         };
         let state: &AppState = frozen.as_deref().unwrap_or(&guard);
         match self.page.clone() {
-            Page::Overview => {
-                pages::overview::show(ui, state, &mut self.map, self.config.ai.is_ready())
-            }
+            Page::Overview => pages::overview::show(
+                ui,
+                pages::overview::OverviewContext {
+                    state,
+                    map: &mut self.map,
+                    ai_consent: self.config.ai.consent,
+                    can_audit: self.config.ai.is_ready(),
+                },
+            ),
             Page::Servers => pages::servers::show(ui, state),
             Page::ServerDetail(id) => match state.servers.get(&id) {
                 Some(server) => {

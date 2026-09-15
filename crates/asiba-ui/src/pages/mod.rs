@@ -13,8 +13,8 @@ pub mod settings;
 
 use asiba_config::{AiConfig, Retention, SummaryLayout, ThemeChoice};
 use asiba_core::{
-    ActionRequest, ActionSpec, AlertRule, AuditScope, Credentials, Intervals, ModuleId,
-    QueryRequest, ServerId, ServerSpec,
+    ActionRequest, ActionSpec, AlertRule, AuditScope, AuditTarget, Credentials, Intervals,
+    ModuleId, QueryRequest, ServerId, ServerSpec,
 };
 use asiba_engine::TestRequest;
 use chrono::{DateTime, Utc};
@@ -78,7 +78,7 @@ pub enum Action {
     },
     SaveAiConfig(AiConfig),
     Audit {
-        server: ServerId,
+        target: AuditTarget,
         scope: AuditScope,
     },
 }

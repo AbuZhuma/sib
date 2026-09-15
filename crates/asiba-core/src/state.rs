@@ -5,7 +5,7 @@ use chrono::{DateTime, Utc};
 
 use crate::action::ActionRecord;
 use crate::alert::Alert;
-use crate::audit::AuditReport;
+use crate::audit::{AuditReport, AuditScope, AuditTarget};
 use crate::event::Event;
 use crate::incident::Incident;
 use crate::module::{Availability, ModuleId};
@@ -80,6 +80,13 @@ impl AppState {
 
     pub fn audit_mut(&mut self, id: u64) -> Option<&mut AuditReport> {
         self.audits.iter_mut().find(|a| a.id == id)
+    }
+
+    pub fn latest_audit(&self, target: &AuditTarget, scope: &AuditScope) -> Option<&AuditReport> {
+        self.audits
+            .iter()
+            .rev()
+            .find(|a| &a.target == target && &a.scope == scope)
     }
 
     pub fn active_incidents(&self) -> impl Iterator<Item = &Incident> {

@@ -1,10 +1,11 @@
 use asiba_config::SummaryLayout;
-use asiba_core::{AppState, ServerState};
+use asiba_core::{AppState, AuditScope, AuditTarget, ServerState};
 use egui::{Id, RichText, Ui};
 
 use super::{connection, header, modules_table, select_tab};
 use crate::components::{
-    IncidentLine, has_report, incident_line, incident_scope, panel, panel_with_controls,
+    AiBlock, IncidentLine, ai_block, has_report, incident_line, incident_scope, panel,
+    panel_with_controls,
 };
 use crate::modules::{ModuleView, Tab, has_data};
 use crate::pages::Action;
@@ -29,6 +30,28 @@ pub fn show(ui: &mut Ui, ctx: &SummaryContext<'_>) -> Option<Action> {
     ui.add_space(GAP);
     if let Some(next) = incidents(ui, ctx) {
         action = Some(next);
+    }
+    if ctx.can_audit
+        || ctx
+            .state
+            .latest_audit(
+                &AuditTarget::Server(server.spec.id.clone()),
+                &AuditScope::Full,
+            )
+            .is_some()
+    {
+        let block = AiBlock {
+            state: ctx.state,
+            target: AuditTarget::Server(server.spec.id.clone()),
+            scope: AuditScope::Full,
+            title: text::AI_BLOCK_TITLE,
+            can_audit: ctx.can_audit,
+            auto_request: false,
+        };
+        if let Some(next) = ai_block(ui, &block) {
+            action = Some(next);
+        }
+        ui.add_space(GAP);
     }
     let editing = edit_toggle(ui);
     let available: Vec<&dyn ModuleView> = ctx
@@ -113,7 +136,7 @@ fn incidents(ui: &mut Ui, ctx: &SummaryContext<'_>) -> Option<Action> {
             let click = incident_line(ui, &line);
             if click.audit {
                 action = Some(Action::Audit {
-                    server: incident.server.clone(),
+                    target: AuditTarget::Server(incident.server.clone()),
                     scope: incident_scope(incident),
                 });
             } else if click.open_report {

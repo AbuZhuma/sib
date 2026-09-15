@@ -1,10 +1,10 @@
 use std::sync::Arc;
 
-use asiba_core::{AuditScope, Incident, ServerId, Transport};
+use asiba_core::{AuditScope, AuditTarget, Incident, Transport};
 
 #[derive(Clone)]
 pub struct AuditJob {
-    pub server: ServerId,
+    pub target: AuditTarget,
     pub scope: AuditScope,
     pub incident: Option<Incident>,
     pub transport: Option<Arc<dyn Transport>>,
@@ -13,6 +13,6 @@ pub struct AuditJob {
 
 impl AuditJob {
     pub fn cooldown_key(&self) -> String {
-        format!("{}:{}", self.server, self.scope.key())
+        format!("{}:{}", self.target.key(), self.scope.key())
     }
 }

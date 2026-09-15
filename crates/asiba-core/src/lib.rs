@@ -13,7 +13,7 @@ pub mod transport;
 
 pub use action::{ActionOutcome, ActionRecord, ActionRequest, ActionSpec, Danger};
 pub use alert::{Alert, AlertRule, Condition, METRIC_OFFLINE};
-pub use audit::{AuditReport, AuditScope, AuditStatus};
+pub use audit::{AuditReport, AuditScope, AuditStatus, AuditTarget};
 pub use event::{Event, Severity};
 pub use incident::{Incident, IncidentDraft, IncidentKind};
 pub use module::{

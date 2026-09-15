@@ -1,4 +1,4 @@
-use asiba_config::{AiConfig, AppConfig};
+use asiba_config::{AiConfig, AiProvider, AppConfig};
 use asiba_core::{AppState, Severity};
 use egui::{Grid, Id, RichText, TextEdit, Ui};
 
@@ -16,8 +16,10 @@ const SECONDS_PER_MINUTE: u64 = 60;
 #[derive(Clone, Debug, PartialEq, Eq)]
 struct Draft {
     consent: bool,
+    provider: AiProvider,
     api_key: String,
     model: String,
+    base_url: String,
     context_tokens: String,
     auto_audit: bool,
     min_severity: Severity,
@@ -28,8 +30,10 @@ impl Draft {
     fn from_config(config: &AiConfig) -> Self {
         Self {
             consent: config.consent,
+            provider: config.provider,
             api_key: config.api_key.clone(),
             model: config.model.clone(),
+            base_url: config.base_url.clone(),
             context_tokens: config.context_tokens.to_string(),
             auto_audit: config.auto_audit,
             min_severity: config.auto_audit_min_severity,
@@ -44,8 +48,10 @@ impl Draft {
         }
         Some(AiConfig {
             consent: self.consent,
+            provider: self.provider,
             api_key: self.api_key.trim().to_owned(),
             model: model.to_owned(),
+            base_url: self.base_url.trim().to_owned(),
             context_tokens: self.context_tokens.trim().parse().ok()?,
             auto_audit: self.auto_audit,
             auto_audit_min_severity: self.min_severity,
@@ -67,6 +73,7 @@ pub fn show(ui: &mut Ui, config: &AppConfig, state: &AppState) -> Option<Action>
     ui.add_space(GAP);
     ui.checkbox(&mut draft.consent, text::AI_CONSENT);
     ui.add_space(GAP);
+    provider_picker(ui, &mut draft, &p);
     Grid::new("ai-grid")
         .num_columns(2)
         .spacing([12.0, 4.0])
@@ -98,6 +105,20 @@ pub fn show(ui: &mut Ui, config: &AppConfig, state: &AppState) -> Option<Action>
     action
 }
 
+fn provider_picker(ui: &mut Ui, draft: &mut Draft, p: &Palette) {
+    ui.horizontal_wrapped(|ui| {
+        ui.label(RichText::new(text::AI_PROVIDER).color(p.text_secondary));
+        let previous = draft.provider;
+        for provider in AiProvider::ALL {
+            chip_value(ui, &mut draft.provider, provider, provider.label());
+        }
+        let was_default = draft.model.trim() == previous.default_model();
+        if draft.provider != previous && (was_default || draft.model.trim().is_empty()) {
+            draft.model = draft.provider.default_model().to_owned();
+        }
+    });
+}
+
 fn fields(ui: &mut Ui, draft: &mut Draft) {
     let p = Palette::current(ui.ctx());
     ui.label(RichText::new(text::AI_API_KEY).color(p.text_secondary));
@@ -113,6 +134,9 @@ fn fields(ui: &mut Ui, draft: &mut Draft) {
         ui.end_row();
     };
     text_row(text::AI_MODEL, &mut draft.model, MODEL_FIELD);
+    if draft.provider.needs_base_url() {
+        text_row(text::AI_BASE_URL, &mut draft.base_url, KEY_FIELD);
+    }
     text_row(text::AI_CONTEXT, &mut draft.context_tokens, NUMBER_FIELD);
     text_row(text::AI_COOLDOWN, &mut draft.cooldown_minutes, NUMBER_FIELD);
 }

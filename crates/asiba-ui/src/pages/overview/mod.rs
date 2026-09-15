@@ -1,3 +1,4 @@
+mod ai;
 mod blocks;
 mod tiles;
 
@@ -18,7 +19,15 @@ use crate::theme::{GAP, MINI_MAP_HEIGHT, Palette};
 const EVENTS_SHOWN: usize = 40;
 const EVENT_FILTER_KEY: &str = "overview-event-filter";
 
-pub fn show(ui: &mut Ui, state: &AppState, map: &mut MapState, can_audit: bool) -> Option<Action> {
+pub struct OverviewContext<'a> {
+    pub state: &'a AppState,
+    pub map: &'a mut MapState,
+    pub ai_consent: bool,
+    pub can_audit: bool,
+}
+
+pub fn show(ui: &mut Ui, ctx: OverviewContext<'_>) -> Option<Action> {
+    let (state, map, can_audit) = (ctx.state, ctx.map, ctx.can_audit);
     page_title(ui, text::OVERVIEW_TITLE);
     tiles::show(ui, state);
     ui.add_space(GAP);
@@ -30,6 +39,7 @@ pub fn show(ui: &mut Ui, state: &AppState, map: &mut MapState, can_audit: bool) 
             }
         };
         set(blocks::active_incidents(ui, state, can_audit));
+        set(ai::show(ui, state, ctx.ai_consent, can_audit));
         set(blocks::active_deploys(ui, state));
         set(blocks::active_anomalies(ui, state));
         set(panel(ui, text::SECTION_SERVERS, |ui| {

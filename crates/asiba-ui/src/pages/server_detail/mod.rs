@@ -6,11 +6,11 @@ mod modules_table;
 mod summary;
 
 use asiba_config::{AiConfig, SummaryLayout};
-use asiba_core::{AppState, ModuleId, ServerState};
+use asiba_core::{AppState, AuditScope, AuditTarget, ModuleId, ServerState};
 use egui::{Id, RichText, Ui};
 
 use super::Action;
-use crate::components::{chip, panel, panel_plain, scroll};
+use crate::components::{AiBlock, ai_block, chip, panel, panel_plain, scroll};
 use crate::modules::{ModuleView, Tab, ViewAction, ViewShared, has_data};
 use crate::pages::inspector::{self, Inspector};
 use crate::text;
@@ -61,7 +61,10 @@ pub fn show(ui: &mut Ui, ctx: &DetailContext<'_>) -> Option<Action> {
                 },
             ),
             Tab::Audit => audit::show(ui, ctx),
-            other => pages_for(ui, ctx, other),
+            other => {
+                let page_action = pages_for(ui, ctx, other);
+                section_analysis(ui, ctx, other).or(page_action)
+            }
         };
         if next.is_some() {
             action = next;
@@ -103,6 +106,44 @@ fn tab_bar(ui: &mut Ui, tabs: &[Tab], current: &mut Tab) -> bool {
     });
     ui.add_space(GAP);
     changed
+}
+
+fn section_key(tab: Tab) -> Option<&'static str> {
+    match tab {
+        Tab::Processes => Some("processes"),
+        Tab::Resources | Tab::Network => Some("resources"),
+        Tab::Ports => Some("ports"),
+        Tab::Docker => Some("docker"),
+        Tab::Services => Some("services"),
+        Tab::Projects => Some("projects"),
+        Tab::Logs => Some("logs"),
+        Tab::Users => Some("users"),
+        Tab::Security => Some("security"),
+        Tab::Anomalies => Some("anomalies"),
+        Tab::Deploy => Some("deploy"),
+        Tab::Gpu => Some("gpu"),
+        Tab::Summary | Tab::Audit => None,
+    }
+}
+
+fn section_analysis(ui: &mut Ui, ctx: &DetailContext<'_>, tab: Tab) -> Option<Action> {
+    if !ctx.ai.consent {
+        return None;
+    }
+    let key = section_key(tab)?;
+    let block = AiBlock {
+        state: ctx.state,
+        target: AuditTarget::Server(ctx.server.spec.id.clone()),
+        scope: AuditScope::Section {
+            key: key.to_owned(),
+        },
+        title: text::AI_BLOCK_SECTION,
+        can_audit: ctx.ai.is_ready(),
+        auto_request: true,
+    };
+    let action = ai_block(ui, &block);
+    ui.add_space(GAP);
+    action
 }
 
 fn pages_for(ui: &mut Ui, ctx: &DetailContext<'_>, tab: Tab) -> Option<Action> {

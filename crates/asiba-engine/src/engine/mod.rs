@@ -7,7 +7,8 @@ use std::sync::{Arc, Mutex};
 
 use asiba_config::AiConfig;
 use asiba_core::{
-    AuditScope, Credentials, Intervals, ModuleRegistry, ServerId, ServerSpec, SharedState,
+    AuditScope, AuditTarget, Credentials, Intervals, ModuleRegistry, ServerId, ServerSpec,
+    SharedState,
 };
 use asiba_storage::StorageWriter;
 use asiba_transport::HostKeyPolicy;
@@ -15,7 +16,7 @@ use tokio::sync::{mpsc, watch};
 use tokio::task::JoinHandle;
 
 use crate::actions;
-use crate::ai::{self, AuditJob, AuditWorker};
+use crate::ai::{self, AuditJob, AuditWorker, StartupSummary};
 use crate::alerts::{self, AlertLoop, AlertSettings};
 use crate::command::{Command, EngineEvent};
 use crate::geo;
@@ -101,6 +102,11 @@ pub fn spawn(
         events: events.clone(),
         commands: commands.clone(),
     };
+    let startup_summary = StartupSummary {
+        state: Arc::clone(&deps.state),
+        config: ai_receiver.clone(),
+        commands: commands.clone(),
+    };
     let audit_worker = AuditWorker {
         state: Arc::clone(&deps.state),
         registry: deps.registry.clone(),
@@ -126,6 +132,7 @@ pub fn spawn(
     };
     runtime.spawn(async move {
         engine.audits = ai::spawn(audit_worker);
+        ai::startup::spawn(startup_summary);
         alerts::spawn(alert_loop);
         geo::resolve_self(engine.geo_request());
         peers::spawn(peers::PeerLookup {
@@ -146,23 +153,36 @@ pub fn spawn(
 }
 
 impl Engine {
-    fn audit(&self, server: ServerId, scope: AuditScope, is_auto: bool) {
+    fn audit(&self, target: AuditTarget, scope: AuditScope, is_auto: bool) {
         let incident = match &scope {
             AuditScope::Incident { incident_id, .. } => self
                 .state
                 .read()
                 .ok()
                 .and_then(|s| s.incidents.iter().find(|i| i.id == *incident_id).cloned()),
-            AuditScope::Full => None,
+            AuditScope::Full | AuditScope::Section { .. } => None,
         };
         let job = AuditJob {
-            transport: self.transport_of(&server),
-            server,
+            transport: target.server().and_then(|id| self.transport_of(id)),
+            target,
             scope,
             incident,
             is_auto,
         };
         let _ = self.audits.send(Box::new(job));
+    }
+
+    fn set_ai_config(&mut self, config: AiConfig) {
+        let became_ready = config.is_ready() && !self.ai_config.borrow().is_ready();
+        let _ = self.ai_config.send(config);
+        let has_summary = self
+            .state
+            .read()
+            .ok()
+            .is_some_and(|s| s.audits.iter().any(|a| a.target == AuditTarget::Fleet));
+        if became_ready && !has_summary {
+            self.audit(AuditTarget::Fleet, AuditScope::Full, true);
+        }
     }
 
     fn set_intervals(&mut self, intervals: Intervals) {
@@ -254,13 +274,11 @@ impl Engine {
             }
             Command::SetIntervals(intervals) => self.set_intervals(intervals),
             Command::Audit {
-                server,
+                target,
                 scope,
                 is_auto,
-            } => self.audit(server, scope, is_auto),
-            Command::SetAiConfig(config) => {
-                let _ = self.ai_config.send(config);
-            }
+            } => self.audit(target, scope, is_auto),
+            Command::SetAiConfig(config) => self.set_ai_config(config),
         }
     }
 
