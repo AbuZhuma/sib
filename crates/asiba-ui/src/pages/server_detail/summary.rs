@@ -60,18 +60,21 @@ pub fn show(ui: &mut Ui, ctx: &SummaryContext<'_>) -> Option<Action> {
             }
             column.add_space(GAP);
         }
+        let short = shorter_column(columns);
+        panel(&mut columns[short], text::DETAIL_SECTION_MODULES, |ui| {
+            modules_table::show(ui, server)
+        });
+        columns[short].add_space(GAP);
+        let short = shorter_column(columns);
+        panel(
+            &mut columns[short],
+            text::DETAIL_SECTION_DESCRIPTION,
+            |ui| header::description(ui, server),
+        );
     });
     if editing {
         changed |= hidden_list(ui, &mut layout, &available);
     }
-    ui.columns(2, |columns| {
-        panel(&mut columns[0], text::DETAIL_SECTION_MODULES, |ui| {
-            modules_table::show(ui, server)
-        });
-        panel(&mut columns[1], text::DETAIL_SECTION_DESCRIPTION, |ui| {
-            header::description(ui, server)
-        });
-    });
     if changed {
         action = Some(Action::SaveLayout {
             server: server.spec.id.clone(),
@@ -79,6 +82,12 @@ pub fn show(ui: &mut Ui, ctx: &SummaryContext<'_>) -> Option<Action> {
         });
     }
     action
+}
+
+fn shorter_column(columns: &[Ui]) -> usize {
+    let left = columns.first().map(|c| c.cursor().top()).unwrap_or(0.0);
+    let right = columns.get(1).map(|c| c.cursor().top()).unwrap_or(0.0);
+    usize::from(right < left)
 }
 
 fn open_button(ui: &mut Ui, tab: Tab) {

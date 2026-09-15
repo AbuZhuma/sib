@@ -6,10 +6,13 @@ use super::AsibaApp;
 use crate::shell::Notice;
 use crate::text;
 
-const TERMINALS: [(&str, &[&str]); 8] = [
+const TERMINALS: [(&str, &[&str]); 11] = [
     ("x-terminal-emulator", &["-e"]),
+    ("ptyxis", &["--new-window", "--"]),
     ("gnome-terminal", &["--"]),
     ("konsole", &["-e"]),
+    ("tilix", &["-e"]),
+    ("wezterm", &["start", "--"]),
     ("xfce4-terminal", &["-x"]),
     ("alacritty", &["-e"]),
     ("kitty", &[]),

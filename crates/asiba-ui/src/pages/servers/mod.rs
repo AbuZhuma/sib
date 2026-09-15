@@ -45,30 +45,35 @@ pub fn show(ui: &mut Ui, state: &AppState) -> Option<Action> {
         return action;
     }
     scroll::vertical().show(ui, |ui| {
-        let clicked = match filter.view {
+        let next = match filter.view {
             ViewMode::Grid => cards(ui, &servers, state),
-            ViewMode::Table => table::show(ui, &servers, state),
+            ViewMode::Table => {
+                table::show(ui, &servers, state).map(|id| Action::Navigate(Page::ServerDetail(id)))
+            }
         };
-        if let Some(id) = clicked {
-            action = Some(Action::Navigate(Page::ServerDetail(id)));
+        if next.is_some() {
+            action = next;
         }
     });
     action
 }
 
-fn cards(ui: &mut Ui, servers: &[&ServerState], state: &AppState) -> Option<asiba_core::ServerId> {
+fn cards(ui: &mut Ui, servers: &[&ServerState], state: &AppState) -> Option<Action> {
     let per_row = card::cards_per_row(ui.available_width());
-    let mut clicked = None;
+    let mut action = None;
     for row in servers.chunks(per_row) {
         ui.horizontal(|ui| {
             ui.spacing_mut().item_spacing = Vec2::splat(GAP);
             for server in row {
-                if card::show(ui, server, state).clicked() {
-                    clicked = Some(server.spec.id.clone());
+                let response = card::show(ui, server, state);
+                if response.terminal {
+                    action = Some(Action::OpenTerminal(server.spec.id.clone()));
+                } else if response.opened {
+                    action = Some(Action::Navigate(Page::ServerDetail(server.spec.id.clone())));
                 }
             }
         });
         ui.add_space(GAP);
     }
-    clicked
+    action
 }

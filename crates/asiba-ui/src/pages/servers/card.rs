@@ -1,7 +1,7 @@
 use asiba_core::{AppState, Environment, ServerState};
 use asiba_modules::system::{self, SystemInfo};
 use asiba_modules::{cpu, disk, memory, network};
-use egui::{Frame, Label, Margin, RichText, Sense, Stroke, Ui, Vec2};
+use egui::{Frame, Label, Margin, RichText, Sense, Stroke, Ui, UiBuilder, Vec2};
 
 use crate::components::{badge, sparkline, status_label};
 use crate::format;
@@ -27,47 +27,56 @@ pub fn environment_label(environment: Environment) -> &'static str {
     }
 }
 
-pub fn show(ui: &mut Ui, server: &ServerState, state: &AppState) -> egui::Response {
-    let p = Palette::current(ui.ctx());
-    let response = Frame::new()
-        .fill(p.bg_panel)
-        .stroke(Stroke::new(1.0, p.border))
-        .inner_margin(Margin::same(GAP as i8))
-        .show(ui, |ui| {
-            ui.set_min_size(Vec2::new(CARD_WIDTH, CARD_HEIGHT));
-            ui.set_max_width(CARD_WIDTH);
-            ui.vertical(|ui| {
-                ui.set_width(CARD_WIDTH);
-                header(ui, server, state);
-                let address = format!(
-                    "{}@{}:{}",
-                    server.spec.user, server.spec.host, server.spec.port
-                );
-                ui.add(
-                    Label::new(RichText::new(address).monospace().color(p.text_secondary))
-                        .truncate(),
-                );
-                tags(ui, server);
-                ui.add_space(GAP);
-                body(ui, server);
-                modules_row(ui, server);
-            });
-        })
-        .response;
-    let hover = response.interact(Sense::click());
-    if hover.hovered() {
-        ui.painter().rect_stroke(
-            response.rect,
-            0.0,
-            Stroke::new(1.0, p.border_active),
-            egui::StrokeKind::Inside,
-        );
-    }
-    hover
+pub struct CardResponse {
+    pub opened: bool,
+    pub terminal: bool,
 }
 
-fn header(ui: &mut Ui, server: &ServerState, state: &AppState) {
+pub fn show(ui: &mut Ui, server: &ServerState, state: &AppState) -> CardResponse {
     let p = Palette::current(ui.ctx());
+    let mut terminal = false;
+    let builder = UiBuilder::new()
+        .id_salt(("server-card", server.spec.id.as_str()))
+        .sense(Sense::click());
+    let scoped = ui.scope_builder(builder, |ui| {
+        let hovered = ui.response().hovered();
+        let stroke = if hovered { p.border_active } else { p.border };
+        Frame::new()
+            .fill(p.bg_panel)
+            .stroke(Stroke::new(1.0, stroke))
+            .inner_margin(Margin::same(GAP as i8))
+            .show(ui, |ui| {
+                ui.set_min_size(Vec2::new(CARD_WIDTH, CARD_HEIGHT));
+                ui.set_max_width(CARD_WIDTH);
+                ui.vertical(|ui| {
+                    ui.set_width(CARD_WIDTH);
+                    terminal = header(ui, server, state);
+                    address_line(ui, server);
+                    tags(ui, server);
+                    ui.add_space(GAP);
+                    body(ui, server);
+                    modules_row(ui, server);
+                });
+            });
+    });
+    CardResponse {
+        opened: scoped.response.clicked(),
+        terminal,
+    }
+}
+
+fn address_line(ui: &mut Ui, server: &ServerState) {
+    let p = Palette::current(ui.ctx());
+    let address = format!(
+        "{}@{}:{}",
+        server.spec.user, server.spec.host, server.spec.port
+    );
+    ui.add(Label::new(RichText::new(address).monospace().color(p.text_secondary)).truncate());
+}
+
+fn header(ui: &mut Ui, server: &ServerState, state: &AppState) -> bool {
+    let p = Palette::current(ui.ctx());
+    let mut terminal = false;
     ui.horizontal(|ui| {
         ui.label(RichText::new(server.spec.id.as_str()).heading());
         badge(
@@ -76,6 +85,10 @@ fn header(ui: &mut Ui, server: &ServerState, state: &AppState) {
             p.text_secondary,
         );
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+            terminal = ui
+                .small_button(text::BTN_TERMINAL_SHORT)
+                .on_hover_text(text::BTN_TERMINAL_HINT)
+                .clicked();
             status_label(ui, &server.connection);
             attack_badge(ui, server);
             if state.active_alerts().any(|a| a.server == server.spec.id) {
@@ -83,6 +96,7 @@ fn header(ui: &mut Ui, server: &ServerState, state: &AppState) {
             }
         });
     });
+    terminal
 }
 
 fn tags(ui: &mut Ui, server: &ServerState) {
