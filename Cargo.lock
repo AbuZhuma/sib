@@ -412,6 +412,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "asiba-llm"
+version = "0.1.0"
+dependencies = [
+ "asiba-core",
+ "asiba-docgen",
+ "asiba-modules",
+ "chrono",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.20",
+ "tracing",
+ "ureq",
+]
+
+[[package]]
 name = "asiba-modules"
 version = "0.1.0"
 dependencies = [

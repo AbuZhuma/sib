@@ -5,6 +5,7 @@ use chrono::{DateTime, Utc};
 
 use crate::action::ActionRecord;
 use crate::alert::Alert;
+use crate::audit::AuditReport;
 use crate::event::Event;
 use crate::incident::Incident;
 use crate::module::{Availability, ModuleId};
@@ -27,6 +28,7 @@ pub struct AppState {
     pub actions: Vec<ActionRecord>,
     pub alerts: Vec<Alert>,
     pub incidents: Vec<Incident>,
+    pub audits: Vec<AuditReport>,
     pub self_location: Option<Location>,
     pub ip_countries: BTreeMap<String, String>,
 }
@@ -74,6 +76,10 @@ impl AppState {
             overflow -= 1;
             false
         });
+    }
+
+    pub fn audit_mut(&mut self, id: u64) -> Option<&mut AuditReport> {
+        self.audits.iter_mut().find(|a| a.id == id)
     }
 
     pub fn active_incidents(&self) -> impl Iterator<Item = &Incident> {
