@@ -5,8 +5,8 @@ mod runner;
 mod systemd;
 
 use asiba_core::{
-    Availability, CollectContext, Event, Module, ModuleError, ModuleId, Sample, Schedule, Severity,
-    Snapshot, Transport,
+    Availability, CollectContext, Event, Module, ModuleError, ModuleId, ModuleSettings, Sample,
+    Schedule, Severity, Snapshot, Transport,
 };
 use async_trait::async_trait;
 use chrono::{DateTime, Duration, Utc};
@@ -97,8 +97,13 @@ impl Module for DeployModule {
         Schedule::Normal
     }
 
-    async fn detect(&self, transport: &dyn Transport) -> Result<Availability, ModuleError> {
-        let output = transport.exec(&detect_script(&[])).await?;
+    async fn detect(
+        &self,
+        transport: &dyn Transport,
+        settings: &ModuleSettings,
+    ) -> Result<Availability, ModuleError> {
+        let log_paths = logfile::configured_paths(settings.get(SETTING_LOGS));
+        let output = transport.exec(&detect_script(&log_paths)).await?;
         let sections = Sections::parse(&output.stdout);
         let has_source = ["docker", "units", "runner", "logs"]
             .iter()

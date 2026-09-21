@@ -7,7 +7,7 @@ mod parse;
 
 use asiba_core::{
     ActionOutcome, ActionRequest, ActionSpec, Availability, CollectContext, Module, ModuleError,
-    ModuleId, Sample, Schedule, Snapshot, SudoMode, Transport,
+    ModuleId, ModuleSettings, Sample, Schedule, Snapshot, SudoMode, Transport,
 };
 use async_trait::async_trait;
 use chrono::Utc;
@@ -119,7 +119,11 @@ impl Module for SecurityModule {
         Schedule::Normal
     }
 
-    async fn detect(&self, transport: &dyn Transport) -> Result<Availability, ModuleError> {
+    async fn detect(
+        &self,
+        transport: &dyn Transport,
+        _settings: &ModuleSettings,
+    ) -> Result<Availability, ModuleError> {
         if transport.sudo_mode() == SudoMode::None {
             let whoami = transport.exec("id -un").await?;
             if whoami.stdout.trim() != "root" {

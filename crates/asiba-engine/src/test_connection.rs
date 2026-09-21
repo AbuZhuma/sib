@@ -2,7 +2,8 @@ use std::sync::Arc;
 use std::time::Instant;
 
 use asiba_core::{
-    Availability, CollectContext, Module, ModuleError, ModuleRegistry, Transport, TransportError,
+    Availability, CollectContext, Module, ModuleError, ModuleRegistry, ModuleSettings, ServerSpec,
+    Transport, TransportError,
 };
 use asiba_transport::connect;
 use tokio::task::JoinSet;
@@ -24,7 +25,7 @@ async fn probe(
     registry: &ModuleRegistry,
 ) -> Result<TestSuccess, TransportError> {
     let transport = connect(&request.spec, &request.credentials, request.policy.clone()).await?;
-    let modules = detect_all(&transport, registry).await?;
+    let modules = detect_all(&transport, registry, &request.spec).await?;
     let context = CollectContext {
         previous: None,
         host: request.spec.host.clone(),
@@ -44,12 +45,17 @@ async fn probe(
 pub async fn detect_all(
     transport: &Arc<dyn Transport>,
     registry: &ModuleRegistry,
+    spec: &ServerSpec,
 ) -> Result<Vec<ModuleDetection>, TransportError> {
     let mut tasks = JoinSet::new();
     for (index, module) in registry.all().iter().enumerate() {
         let module = Arc::clone(module);
         let transport = Arc::clone(transport);
-        tasks.spawn(async move { (index, detect_one(module.as_ref(), transport.as_ref()).await) });
+        let settings = spec.module_settings(module.id().0);
+        tasks.spawn(async move {
+            let detection = detect_one(module.as_ref(), transport.as_ref(), &settings).await;
+            (index, detection)
+        });
     }
     let mut detections: Vec<Option<ModuleDetection>> = (0..registry.len()).map(|_| None).collect();
     while let Some(Ok((index, detection))) = tasks.join_next().await {
@@ -61,8 +67,9 @@ pub async fn detect_all(
 async fn detect_one(
     module: &dyn Module,
     transport: &dyn Transport,
+    settings: &ModuleSettings,
 ) -> Result<ModuleDetection, TransportError> {
-    let availability = match module.detect(transport).await {
+    let availability = match module.detect(transport, settings).await {
         Ok(availability) => availability,
         Err(ModuleError::Transport(TransportError::Disconnected(reason))) => {
             return Err(TransportError::Disconnected(reason));

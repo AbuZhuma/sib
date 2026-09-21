@@ -5,8 +5,8 @@ mod parse;
 use asiba_core::transport::shell_quote;
 use asiba_core::{
     ActionOutcome, ActionRequest, ActionSpec, Availability, CollectContext, Event, Module,
-    ModuleError, ModuleId, QueryRequest, QueryResponse, Sample, Schedule, Severity, Snapshot,
-    Transport,
+    ModuleError, ModuleId, ModuleSettings, QueryRequest, QueryResponse, Sample, Schedule, Severity,
+    Snapshot, Transport,
 };
 use async_trait::async_trait;
 
@@ -69,7 +69,11 @@ impl Module for DockerModule {
         Schedule::Normal
     }
 
-    async fn detect(&self, transport: &dyn Transport) -> Result<Availability, ModuleError> {
+    async fn detect(
+        &self,
+        transport: &dyn Transport,
+        _settings: &ModuleSettings,
+    ) -> Result<Availability, ModuleError> {
         let probe = format!("{BINARY}; [ -n \"$D\" ] || exit 3; $D ps -q >/dev/null");
         let output = transport.exec(&probe).await?;
         match output.exit_code {

@@ -3,8 +3,8 @@ mod parse;
 
 use asiba_core::transport::shell_quote;
 use asiba_core::{
-    Availability, CollectContext, Event, Module, ModuleError, ModuleId, Sample, Schedule, Severity,
-    Snapshot, Transport,
+    Availability, CollectContext, Event, Module, ModuleError, ModuleId, ModuleSettings, Sample,
+    Schedule, Severity, Snapshot, Transport,
 };
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
@@ -62,7 +62,11 @@ impl Module for LogsModule {
         Schedule::Normal
     }
 
-    async fn detect(&self, transport: &dyn Transport) -> Result<Availability, ModuleError> {
+    async fn detect(
+        &self,
+        transport: &dyn Transport,
+        _settings: &ModuleSettings,
+    ) -> Result<Availability, ModuleError> {
         let probe = detect::require(transport, "command -v journalctl", "нет journalctl").await?;
         if !probe.is_usable() {
             return Ok(probe);

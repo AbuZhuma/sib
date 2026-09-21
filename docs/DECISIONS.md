@@ -205,3 +205,15 @@
 Варианты: оставить два слоя и склеивать в UI; перенести всё в модуль security (нельзя - модули не видят чужие снимки); один реестр в `asiba-incidents`.
 Выбор: `audit/pattern.rs` - тип `Pattern` (данные + `fn`-указатель `evaluate`), `audit/patterns/<область>.rs` - `static PATTERNS`, `system_audit` прогоняет их все; оценка (`score.rs`) считается по областям `is_security()`; `Evidence` описывает, где смотреть подтверждение. Модуль `security` лишился `checks/` и `score`, но получил новые поля `sshd -T` и 11 новых ключей sysctl. Добавлены паттерны: LoginGraceTime, MaxStartups, AllowTcpForwarding, ClientAliveInterval, входы root по паролю, вход с атакующего адреса (≥5 неудачных попыток с того же IP до входа), отказы sudo, «SSH с паролями без защиты» (порт открыт наружу + пароли + нет fail2ban), kptr_restrict, dmesg_restrict, ptrace_scope, sysrq, unprivileged_bpf, perf_event_paranoid, protected_symlinks/hardlinks, log_martians, accept_source_route, ip_forward без Docker.
 Причина: одна структура данных для UI, docgen, инцидентов и ИИ; добавить проверку - одна запись в массиве, без правок в четырёх крейтах; `fn`-указатели вместо трейт-объектов, чтобы реестр был `static` и проверялся тестом на уникальность id.
+
+## 2026-09-21 — `Module::detect` получает настройки модуля
+
+Контекст: `deploy` объявлял лог-файлы из `[modules.deploy] logs` источником деплоя, но `detect` не видел настроек и на сервере без docker, `deploy*`-юнитов и раннера возвращал `Unavailable`.
+Варианты: включать модуль в движке в обход `detect`, если секция настроек не пуста; передавать настройки в `detect`.
+Выбор: `async fn detect(&self, transport, settings: &ModuleSettings)`; `detect_all` берёт настройки из `ServerSpec` для каждого модуля.
+Причина: правило «модуль сам отвечает за доступность» важнее неизменности сигнатуры; обход в движке размазал бы логику по двум крейтам.
+
+## 2026-09-21 — `Retention` живёт в `asiba-core`
+
+Контекст: одинаковая структура была в `asiba-config` и `asiba-storage`, `asiba-app` копировал поля вручную; смена сроков в настройках не доходила до потока записи.
+Выбор: один тип рядом с `Intervals` в core; `Command::SetRetention` → `StorageWriter::set_retention`, обслуживание базы запускается сразу при старте потока и при смене сроков.

@@ -5,7 +5,7 @@ mod script;
 
 use asiba_core::{
     ActionOutcome, ActionRequest, ActionSpec, Availability, CollectContext, Module, ModuleError,
-    ModuleId, QueryRequest, QueryResponse, Schedule, Snapshot, Transport,
+    ModuleId, ModuleSettings, QueryRequest, QueryResponse, Schedule, Snapshot, Transport,
 };
 use async_trait::async_trait;
 
@@ -47,7 +47,11 @@ impl Module for FilesModule {
         Schedule::OnDemand
     }
 
-    async fn detect(&self, transport: &dyn Transport) -> Result<Availability, ModuleError> {
+    async fn detect(
+        &self,
+        transport: &dyn Transport,
+        _settings: &ModuleSettings,
+    ) -> Result<Availability, ModuleError> {
         detect::require(transport, script::DETECT, "нужны GNU find и stat").await
     }
 

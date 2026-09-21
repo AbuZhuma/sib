@@ -4,8 +4,8 @@ mod parse;
 mod reachability;
 
 use asiba_core::{
-    Availability, CollectContext, Event, Module, ModuleError, ModuleId, Sample, Schedule, Severity,
-    Snapshot, SudoMode, Transport,
+    Availability, CollectContext, Event, Module, ModuleError, ModuleId, ModuleSettings, Sample,
+    Schedule, Severity, Snapshot, SudoMode, Transport,
 };
 use async_trait::async_trait;
 
@@ -45,7 +45,11 @@ impl Module for PortsModule {
         Schedule::Normal
     }
 
-    async fn detect(&self, transport: &dyn Transport) -> Result<Availability, ModuleError> {
+    async fn detect(
+        &self,
+        transport: &dyn Transport,
+        _settings: &ModuleSettings,
+    ) -> Result<Availability, ModuleError> {
         let probe = detect::require(transport, "command -v ss", "нет ss (iproute2)").await?;
         if !probe.is_usable() {
             return Ok(probe);

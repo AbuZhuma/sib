@@ -5,6 +5,7 @@ use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
 use crate::action::{ActionOutcome, ActionRequest, ActionSpec};
+use crate::server::ModuleSettings;
 use crate::snapshot::{CollectContext, Snapshot};
 use crate::transport::{Transport, TransportError};
 
@@ -163,7 +164,11 @@ pub trait Module: Send + Sync {
 
     fn schedule(&self) -> Schedule;
 
-    async fn detect(&self, transport: &dyn Transport) -> Result<Availability, ModuleError>;
+    async fn detect(
+        &self,
+        transport: &dyn Transport,
+        settings: &ModuleSettings,
+    ) -> Result<Availability, ModuleError>;
 
     async fn collect(
         &self,

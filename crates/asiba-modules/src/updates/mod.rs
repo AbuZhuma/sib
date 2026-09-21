@@ -2,8 +2,8 @@ mod model;
 mod parse;
 
 use asiba_core::{
-    Availability, CollectContext, Module, ModuleError, ModuleId, Sample, Schedule, Snapshot,
-    Transport,
+    Availability, CollectContext, Module, ModuleError, ModuleId, ModuleSettings, Sample, Schedule,
+    Snapshot, Transport,
 };
 use async_trait::async_trait;
 
@@ -52,7 +52,11 @@ impl Module for UpdatesModule {
         Schedule::Slow
     }
 
-    async fn detect(&self, transport: &dyn Transport) -> Result<Availability, ModuleError> {
+    async fn detect(
+        &self,
+        transport: &dyn Transport,
+        _settings: &ModuleSettings,
+    ) -> Result<Availability, ModuleError> {
         detect::require(transport, DETECT, "пакетный менеджер не найден").await
     }
 

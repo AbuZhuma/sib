@@ -131,7 +131,7 @@ async fn spawn_collectors(
     transport: &Arc<dyn Transport>,
     lost: watch::Sender<Option<String>>,
 ) -> Result<JoinSet<()>, TransportError> {
-    let detections = detect_all(transport, &ctx.registry).await?;
+    let detections = detect_all(transport, &ctx.registry, &ctx.spec).await?;
     status::set_detections(ctx, &detections);
     let mut tasks = JoinSet::new();
     for detection in detections

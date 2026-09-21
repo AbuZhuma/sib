@@ -2,8 +2,8 @@ mod model;
 mod parse;
 
 use asiba_core::{
-    Availability, CollectContext, Event, Module, ModuleError, ModuleId, Sample, Schedule, Severity,
-    Snapshot, Transport,
+    Availability, CollectContext, Event, Module, ModuleError, ModuleId, ModuleSettings, Sample,
+    Schedule, Severity, Snapshot, Transport,
 };
 use async_trait::async_trait;
 
@@ -48,7 +48,11 @@ impl Module for GpuModule {
         Schedule::Fast
     }
 
-    async fn detect(&self, transport: &dyn Transport) -> Result<Availability, ModuleError> {
+    async fn detect(
+        &self,
+        transport: &dyn Transport,
+        _settings: &ModuleSettings,
+    ) -> Result<Availability, ModuleError> {
         detect::require(
             transport,
             "command -v nvidia-smi || ls /sys/class/drm/card*/device/gpu_busy_percent",

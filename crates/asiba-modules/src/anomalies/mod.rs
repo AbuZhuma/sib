@@ -3,8 +3,8 @@ mod parse;
 mod signs;
 
 use asiba_core::{
-    Availability, CollectContext, Event, Module, ModuleError, ModuleId, Sample, Schedule, Snapshot,
-    Transport,
+    Availability, CollectContext, Event, Module, ModuleError, ModuleId, ModuleSettings, Sample,
+    Schedule, Snapshot, Transport,
 };
 use async_trait::async_trait;
 
@@ -49,7 +49,11 @@ impl Module for AnomaliesModule {
         Schedule::Fast
     }
 
-    async fn detect(&self, transport: &dyn Transport) -> Result<Availability, ModuleError> {
+    async fn detect(
+        &self,
+        transport: &dyn Transport,
+        _settings: &ModuleSettings,
+    ) -> Result<Availability, ModuleError> {
         let probe = detect::require(
             transport,
             "command -v ss && test -r /proc/net/snmp",

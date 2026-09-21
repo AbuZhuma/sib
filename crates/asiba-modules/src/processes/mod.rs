@@ -4,7 +4,7 @@ mod parse;
 
 use asiba_core::{
     ActionOutcome, ActionRequest, ActionSpec, Availability, CollectContext, Module, ModuleError,
-    ModuleId, Sample, Schedule, Snapshot, Transport,
+    ModuleId, ModuleSettings, Sample, Schedule, Snapshot, Transport,
 };
 use async_trait::async_trait;
 
@@ -51,7 +51,11 @@ impl Module for ProcessesModule {
         Schedule::Fast
     }
 
-    async fn detect(&self, _transport: &dyn Transport) -> Result<Availability, ModuleError> {
+    async fn detect(
+        &self,
+        _transport: &dyn Transport,
+        _settings: &ModuleSettings,
+    ) -> Result<Availability, ModuleError> {
         Ok(Availability::Available)
     }
 

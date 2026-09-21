@@ -3,8 +3,8 @@ mod parse;
 mod script;
 
 use asiba_core::{
-    Availability, CollectContext, Event, Module, ModuleError, ModuleId, QueryRequest,
-    QueryResponse, Sample, Schedule, Severity, Snapshot, Transport,
+    Availability, CollectContext, Event, Module, ModuleError, ModuleId, ModuleSettings,
+    QueryRequest, QueryResponse, Sample, Schedule, Severity, Snapshot, Transport,
 };
 use async_trait::async_trait;
 
@@ -37,7 +37,11 @@ impl Module for GitModule {
         Schedule::Normal
     }
 
-    async fn detect(&self, transport: &dyn Transport) -> Result<Availability, ModuleError> {
+    async fn detect(
+        &self,
+        transport: &dyn Transport,
+        _settings: &ModuleSettings,
+    ) -> Result<Availability, ModuleError> {
         let parts = [
             ("version", VERSION_COMMAND),
             (
