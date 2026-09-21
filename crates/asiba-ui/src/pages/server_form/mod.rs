@@ -84,91 +84,21 @@ impl ServerForm {
     }
 
     fn connection_fields(&mut self, ui: &mut Ui) {
-        let f = &mut self.fields;
-        Grid::new("form-connection")
-            .num_columns(2)
-            .spacing([16.0, 6.0])
-            .show(ui, |ui| {
-                field(ui, text::FORM_NAME, &mut f.name, text::FORM_NAME_HINT);
-                field(ui, text::FORM_HOST, &mut f.host, "");
-                field(ui, text::FORM_PORT, &mut f.port, "22");
-                field(ui, text::FORM_USER, &mut f.user, "");
-            });
-        section_label(ui, text::FORM_SECTION_AUTH);
-        ui.horizontal(|ui| {
-            chip_value(ui, &mut f.auth, AuthChoice::Auto, text::FORM_AUTH_AUTO);
-            chip_value(ui, &mut f.auth, AuthChoice::KeyFile, text::FORM_AUTH_KEY);
-            chip_value(
-                ui,
-                &mut f.auth,
-                AuthChoice::Password,
-                text::FORM_AUTH_PASSWORD,
-            );
-        });
         let secret_hint = if self.editing.is_some() {
             text::FORM_SECRETS_KEPT
         } else {
             ""
         };
-        Grid::new("form-auth")
-            .num_columns(2)
-            .spacing([16.0, 6.0])
-            .show(ui, |ui| match f.auth {
-                AuthChoice::Auto => {}
-                AuthChoice::KeyFile => {
-                    field(
-                        ui,
-                        text::FORM_KEY_PATH,
-                        &mut f.key_path,
-                        "~/.ssh/id_ed25519",
-                    );
-                    password_field(ui, text::FORM_PASSPHRASE, &mut f.passphrase, secret_hint);
-                }
-                AuthChoice::Password => {
-                    password_field(ui, text::FORM_PASSWORD, &mut f.password, secret_hint)
-                }
-            });
-        section_label(ui, text::FORM_SECTION_SUDO);
-        ui.horizontal(|ui| {
-            chip_value(ui, &mut f.sudo, SudoMode::None, text::FORM_SUDO_NONE);
-            chip_value(
-                ui,
-                &mut f.sudo,
-                SudoMode::Passwordless,
-                text::FORM_SUDO_PASSWORDLESS,
-            );
-            chip_value(
-                ui,
-                &mut f.sudo,
-                SudoMode::WithPassword,
-                text::FORM_SUDO_PASSWORD,
-            );
+        let f = &mut self.fields;
+        form_grid("form-connection", ui, |ui| {
+            field(ui, text::FORM_NAME, &mut f.name, text::FORM_NAME_HINT);
+            field(ui, text::FORM_HOST, &mut f.host, "");
+            field(ui, text::FORM_PORT, &mut f.port, "22");
+            field(ui, text::FORM_USER, &mut f.user, "");
         });
-        if f.sudo == SudoMode::WithPassword {
-            Grid::new("form-sudo")
-                .num_columns(2)
-                .spacing([16.0, 6.0])
-                .show(ui, |ui| {
-                    password_field(
-                        ui,
-                        text::FORM_SUDO_PASSWORD_FIELD,
-                        &mut f.sudo_password,
-                        secret_hint,
-                    );
-                });
-        }
-        section_label(ui, text::FORM_SECTION_JUMP);
-        ui.checkbox(&mut f.jump_enabled, text::FORM_JUMP_ENABLE);
-        if f.jump_enabled {
-            Grid::new("form-jump")
-                .num_columns(2)
-                .spacing([16.0, 6.0])
-                .show(ui, |ui| {
-                    field(ui, text::FORM_HOST, &mut f.jump_host, "");
-                    field(ui, text::FORM_PORT, &mut f.jump_port, "22");
-                    field(ui, text::FORM_USER, &mut f.jump_user, "");
-                });
-        }
+        auth_fields(ui, f, secret_hint);
+        sudo_fields(ui, f, secret_hint);
+        jump_fields(ui, f);
     }
 
     fn description_fields(&mut self, ui: &mut Ui) {
@@ -282,4 +212,83 @@ fn environment_picker(ui: &mut Ui, value: &mut Environment) {
                 chip_value(ui, value, option, environment_label(option));
             }
         });
+}
+
+fn form_grid(id: &str, ui: &mut Ui, add_contents: impl FnOnce(&mut Ui)) {
+    Grid::new(id)
+        .num_columns(2)
+        .spacing([16.0, 6.0])
+        .show(ui, add_contents);
+}
+
+fn auth_fields(ui: &mut Ui, f: &mut FormFields, secret_hint: &str) {
+    section_label(ui, text::FORM_SECTION_AUTH);
+    ui.horizontal(|ui| {
+        chip_value(ui, &mut f.auth, AuthChoice::Auto, text::FORM_AUTH_AUTO);
+        chip_value(ui, &mut f.auth, AuthChoice::KeyFile, text::FORM_AUTH_KEY);
+        chip_value(
+            ui,
+            &mut f.auth,
+            AuthChoice::Password,
+            text::FORM_AUTH_PASSWORD,
+        );
+    });
+    form_grid("form-auth", ui, |ui| match f.auth {
+        AuthChoice::Auto => {}
+        AuthChoice::KeyFile => {
+            field(
+                ui,
+                text::FORM_KEY_PATH,
+                &mut f.key_path,
+                "~/.ssh/id_ed25519",
+            );
+            password_field(ui, text::FORM_PASSPHRASE, &mut f.passphrase, secret_hint);
+        }
+        AuthChoice::Password => {
+            password_field(ui, text::FORM_PASSWORD, &mut f.password, secret_hint)
+        }
+    });
+}
+
+fn sudo_fields(ui: &mut Ui, f: &mut FormFields, secret_hint: &str) {
+    section_label(ui, text::FORM_SECTION_SUDO);
+    ui.horizontal(|ui| {
+        chip_value(ui, &mut f.sudo, SudoMode::None, text::FORM_SUDO_NONE);
+        chip_value(
+            ui,
+            &mut f.sudo,
+            SudoMode::Passwordless,
+            text::FORM_SUDO_PASSWORDLESS,
+        );
+        chip_value(
+            ui,
+            &mut f.sudo,
+            SudoMode::WithPassword,
+            text::FORM_SUDO_PASSWORD,
+        );
+    });
+    if f.sudo != SudoMode::WithPassword {
+        return;
+    }
+    form_grid("form-sudo", ui, |ui| {
+        password_field(
+            ui,
+            text::FORM_SUDO_PASSWORD_FIELD,
+            &mut f.sudo_password,
+            secret_hint,
+        );
+    });
+}
+
+fn jump_fields(ui: &mut Ui, f: &mut FormFields) {
+    section_label(ui, text::FORM_SECTION_JUMP);
+    ui.checkbox(&mut f.jump_enabled, text::FORM_JUMP_ENABLE);
+    if !f.jump_enabled {
+        return;
+    }
+    form_grid("form-jump", ui, |ui| {
+        field(ui, text::FORM_HOST, &mut f.jump_host, "");
+        field(ui, text::FORM_PORT, &mut f.jump_port, "22");
+        field(ui, text::FORM_USER, &mut f.jump_user, "");
+    });
 }
