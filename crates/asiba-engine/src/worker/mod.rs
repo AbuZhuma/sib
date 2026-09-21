@@ -71,8 +71,7 @@ pub async fn run(ctx: WorkerContext) {
     let mut backoff = Backoff::default();
     loop {
         status::set(&ctx, ConnectionStatus::Connecting);
-        let outcome = connect(&ctx.spec, &ctx.credentials, ctx.policy.clone()).await;
-        let reason = match outcome {
+        let reason = match connect(&ctx.spec, &ctx.credentials, ctx.policy.clone()).await {
             Ok(transport) => {
                 backoff.reset();
                 share_transport(&ctx, Some(Arc::clone(&transport)));
@@ -81,27 +80,13 @@ pub async fn run(ctx: WorkerContext) {
                 share_transport(&ctx, None);
                 reason
             }
-            Err(TransportError::UnknownHostKey { fingerprint }) => {
-                status::set(
-                    &ctx,
-                    ConnectionStatus::UntrustedHostKey {
-                        fingerprint,
-                        changed: false,
-                    },
-                );
-                return;
+            Err(error) => {
+                if let Some(untrusted) = untrusted_host_key(&error) {
+                    status::set(&ctx, untrusted);
+                    return;
+                }
+                error.to_string()
             }
-            Err(TransportError::HostKeyChanged { fingerprint }) => {
-                status::set(
-                    &ctx,
-                    ConnectionStatus::UntrustedHostKey {
-                        fingerprint,
-                        changed: true,
-                    },
-                );
-                return;
-            }
-            Err(error) => error.to_string(),
         };
         let delay = backoff.next();
         status::go_offline(&ctx, reason, delay);
@@ -109,10 +94,25 @@ pub async fn run(ctx: WorkerContext) {
     }
 }
 
+fn untrusted_host_key(error: &TransportError) -> Option<ConnectionStatus> {
+    let (fingerprint, changed) = match error {
+        TransportError::UnknownHostKey { fingerprint } => (fingerprint, false),
+        TransportError::HostKeyChanged { fingerprint } => (fingerprint, true),
+        _ => return None,
+    };
+    Some(ConnectionStatus::UntrustedHostKey {
+        fingerprint: fingerprint.clone(),
+        changed,
+    })
+}
+
 async fn serve(ctx: &Arc<WorkerContext>, transport: Arc<dyn Transport>) -> String {
     loop {
         let (lost_sender, mut lost) = watch::channel(None::<String>);
-        let mut tasks = spawn_collectors(ctx, &transport, lost_sender).await;
+        let mut tasks = match spawn_collectors(ctx, &transport, lost_sender).await {
+            Ok(tasks) => tasks,
+            Err(error) => return error.to_string(),
+        };
         tokio::select! {
             _ = sleep(REDETECT_INTERVAL) => {
                 tasks.abort_all();
@@ -130,8 +130,8 @@ async fn spawn_collectors(
     ctx: &Arc<WorkerContext>,
     transport: &Arc<dyn Transport>,
     lost: watch::Sender<Option<String>>,
-) -> JoinSet<()> {
-    let detections = detect_all(transport.as_ref(), &ctx.registry).await;
+) -> Result<JoinSet<()>, TransportError> {
+    let detections = detect_all(transport, &ctx.registry).await?;
     status::set_detections(ctx, &detections);
     let mut tasks = JoinSet::new();
     for detection in detections
@@ -160,5 +160,5 @@ async fn spawn_collectors(
         };
         tasks.spawn(collect::run(loop_ctx));
     }
-    tasks
+    Ok(tasks)
 }
