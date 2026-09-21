@@ -68,7 +68,7 @@ async fn fetch(
 ) -> Result<Snapshot, ModuleError> {
     let context = CollectContext {
         previous,
-        host: ctx.worker.spec.host.clone(),
+        host: ctx.worker.spec.external_host(),
         settings: ctx.worker.spec.module_settings(ctx.module.id().0),
     };
     if is_backfill {

@@ -113,6 +113,13 @@ impl ServerSpec {
     pub fn is_local(&self) -> bool {
         matches!(self.host.as_str(), "localhost" | "127.0.0.1" | "::1")
     }
+
+    pub fn external_host(&self) -> String {
+        if self.is_local() {
+            return String::new();
+        }
+        self.host.clone()
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -211,6 +218,25 @@ mod tests {
         let merged = fresh.fill_missing_from(&saved);
         assert_eq!(merged.password.as_deref(), Some("old"));
         assert_eq!(merged.passphrase.as_deref(), Some("pp"));
+    }
+
+    #[test]
+    fn external_host_is_empty_for_local_machine() {
+        let mut spec = ServerSpec {
+            id: ServerId::parse("neo").expect("id"),
+            host: "localhost".into(),
+            port: 22,
+            user: "u".into(),
+            auth: AuthMethod::Auto,
+            jump: None,
+            sudo: SudoMode::None,
+            description: ServerDescription::default(),
+            location: None,
+            modules: Default::default(),
+        };
+        assert_eq!(spec.external_host(), "");
+        spec.host = "neo.example".into();
+        assert_eq!(spec.external_host(), "neo.example");
     }
 
     #[test]

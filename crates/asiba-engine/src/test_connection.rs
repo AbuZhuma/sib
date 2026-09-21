@@ -28,7 +28,7 @@ async fn probe(
     let modules = detect_all(&transport, registry, &request.spec).await?;
     let context = CollectContext {
         previous: None,
-        host: request.spec.host.clone(),
+        host: request.spec.external_host(),
         settings: request.spec.module_settings(request.probe_module.0),
     };
     let probe = match registry.get(request.probe_module) {
