@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use anyhow::Context;
 use asiba_config::{AppConfig, IgnoredStore, KeyringSecretStore, Paths, ServerStore};
-use asiba_core::AppState;
+use asiba_core::{AppState, Retention};
 use asiba_engine::{AlertSettings, EngineDeps, Persistence};
 use asiba_storage::{Database, spawn_writer};
 use asiba_ui::AppDeps;
@@ -23,12 +23,7 @@ fn main() -> anyhow::Result<()> {
         .context("tokio runtime")?;
     let handle = runtime.handle().clone();
     let engine_state = Arc::clone(&state);
-    let retention = asiba_storage::Retention {
-        raw_hours: config.retention.raw_hours,
-        minute_days: config.retention.minute_days,
-        hour_days: config.retention.hour_days,
-    };
-    let storage = open_storage(&paths, retention);
+    let storage = open_storage(&paths, config.retention);
     let history_path = storage.is_some().then(|| paths.history_db());
     let alert_settings =
         AlertSettings::from_custom(&config.alert_rules, config.desktop_notifications);
@@ -56,10 +51,7 @@ fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-fn open_storage(
-    paths: &Paths,
-    retention: asiba_storage::Retention,
-) -> Option<asiba_storage::StorageWriter> {
+fn open_storage(paths: &Paths, retention: Retention) -> Option<asiba_storage::StorageWriter> {
     match Database::open(&paths.history_db()) {
         Ok(database) => Some(spawn_writer(database, retention)),
         Err(error) => {

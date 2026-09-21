@@ -54,6 +54,24 @@ impl Intervals {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct Retention {
+    pub raw_hours: u32,
+    pub minute_days: u32,
+    pub hour_days: u32,
+}
+
+impl Default for Retention {
+    fn default() -> Self {
+        Self {
+            raw_hours: 48,
+            minute_days: 30,
+            hour_days: 365,
+        }
+    }
+}
+
 pub const SETTING_ENABLED: &str = "enabled";
 pub const SETTING_INTERVAL: &str = "interval";
 

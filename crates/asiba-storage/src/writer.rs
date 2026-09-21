@@ -1,13 +1,11 @@
 use std::sync::mpsc::{self, RecvTimeoutError, Sender};
 use std::time::{Duration, Instant};
 
+use asiba_core::{ActionRecord, Retention};
 use chrono::Utc;
-
-use asiba_core::ActionRecord;
 
 use crate::database::Database;
 use crate::error::StorageError;
-use crate::maintenance::Retention;
 use crate::sample::StoredSample;
 
 const FLUSH_INTERVAL: Duration = Duration::from_secs(5);
@@ -17,6 +15,8 @@ const MAX_BATCH: usize = 5000;
 enum WriteRequest {
     Sample(StoredSample),
     Action(ActionRecord),
+    DeleteServer(String),
+    Retention(Retention),
 }
 
 #[derive(Clone)]
@@ -32,8 +32,20 @@ impl StorageWriter {
     }
 
     pub fn write_action(&self, record: ActionRecord) -> Result<(), StorageError> {
+        self.send(WriteRequest::Action(record))
+    }
+
+    pub fn delete_server(&self, server: &str) -> Result<(), StorageError> {
+        self.send(WriteRequest::DeleteServer(server.to_owned()))
+    }
+
+    pub fn set_retention(&self, retention: Retention) -> Result<(), StorageError> {
+        self.send(WriteRequest::Retention(retention))
+    }
+
+    fn send(&self, request: WriteRequest) -> Result<(), StorageError> {
         self.sender
-            .send(WriteRequest::Action(record))
+            .send(request)
             .map_err(|_| StorageError::WriterStopped)
     }
 }
@@ -43,13 +55,24 @@ pub fn spawn_writer(mut database: Database, retention: Retention) -> StorageWrit
     std::thread::Builder::new()
         .name("asiba-storage".to_owned())
         .spawn(move || {
+            let mut retention = retention;
             let mut batch = Vec::new();
             let mut last_flush = Instant::now();
+            maintain(&mut database, &retention);
             let mut last_maintenance = Instant::now();
             loop {
                 match receiver.recv_timeout(FLUSH_INTERVAL) {
                     Ok(WriteRequest::Sample(sample)) => batch.push(sample),
                     Ok(WriteRequest::Action(record)) => record_action(&database, &record),
+                    Ok(WriteRequest::DeleteServer(server)) => {
+                        flush(&mut database, &mut batch);
+                        delete_server(&database, &server);
+                    }
+                    Ok(WriteRequest::Retention(next)) => {
+                        retention = next;
+                        maintain(&mut database, &retention);
+                        last_maintenance = Instant::now();
+                    }
                     Err(RecvTimeoutError::Timeout) => {}
                     Err(RecvTimeoutError::Disconnected) => break,
                 }
@@ -79,6 +102,12 @@ fn flush(database: &mut Database, batch: &mut Vec<StoredSample>) {
 fn record_action(database: &Database, record: &ActionRecord) {
     if let Err(error) = database.insert_action(record) {
         tracing::error!(%error, "не удалось записать действие в журнал");
+    }
+}
+
+fn delete_server(database: &Database, server: &str) {
+    if let Err(error) = database.delete_server(server) {
+        tracing::error!(%error, server, "история сервера не удалена");
     }
 }
 

@@ -17,7 +17,7 @@ pub use audit::{AuditReport, AuditScope, AuditStatus, AuditTarget};
 pub use event::{Event, Severity};
 pub use incident::{IgnoredIncident, Incident, IncidentDraft, IncidentKind};
 pub use module::{
-    Availability, Intervals, Module, ModuleError, ModuleId, QueryRequest, QueryResponse,
+    Availability, Intervals, Module, ModuleError, ModuleId, QueryRequest, QueryResponse, Retention,
     SETTING_ENABLED, SETTING_INTERVAL, Schedule,
 };
 pub use registry::ModuleRegistry;

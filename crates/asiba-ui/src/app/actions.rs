@@ -82,6 +82,7 @@ impl AsibaApp {
                 self.config.intervals = intervals;
                 self.config.retention = retention;
                 self.engine.send(Command::SetIntervals(intervals));
+                self.engine.send(Command::SetRetention(retention));
                 if let Err(error) = self.config.save(&self.paths) {
                     self.notices.push(Notice::new(error.to_string()));
                 }

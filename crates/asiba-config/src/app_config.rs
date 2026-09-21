@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use asiba_core::{AlertRule, Intervals};
+use asiba_core::{AlertRule, Intervals, Retention};
 use serde::{Deserialize, Serialize};
 
 use crate::ai_config::AiConfig;
@@ -25,24 +25,6 @@ pub struct AppConfig {
     pub intervals: Intervals,
     pub retention: Retention,
     pub ai: AiConfig,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(default)]
-pub struct Retention {
-    pub raw_hours: u32,
-    pub minute_days: u32,
-    pub hour_days: u32,
-}
-
-impl Default for Retention {
-    fn default() -> Self {
-        Self {
-            raw_hours: 48,
-            minute_days: 30,
-            hour_days: 365,
-        }
-    }
 }
 
 impl Default for AppConfig {

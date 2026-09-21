@@ -1,5 +1,5 @@
-use asiba_config::{AppConfig, Retention};
-use asiba_core::Intervals;
+use asiba_config::AppConfig;
+use asiba_core::{Intervals, Retention};
 use egui::{Grid, Id, RichText, TextEdit, Ui};
 
 use super::Action;

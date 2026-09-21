@@ -31,6 +31,9 @@ impl Engine {
         if let Ok(mut state) = self.state.write() {
             state.servers.remove(&id);
         }
+        if let Some(storage) = &self.storage {
+            let _ = storage.delete_server(id.as_str());
+        }
         let persistence = self.persistence.clone();
         let id_copy = id.clone();
         let removed = tokio::task::spawn_blocking(move || persistence.remove(&id_copy)).await;

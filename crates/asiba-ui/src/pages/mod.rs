@@ -11,10 +11,10 @@ pub mod server_form;
 pub mod servers;
 pub mod settings;
 
-use asiba_config::{AiConfig, Retention, SummaryLayout, ThemeChoice};
+use asiba_config::{AiConfig, SummaryLayout, ThemeChoice};
 use asiba_core::{
     ActionRequest, ActionSpec, AlertRule, AuditScope, AuditTarget, Credentials, IgnoredIncident,
-    Intervals, ModuleId, QueryRequest, ServerId, ServerSpec,
+    Intervals, ModuleId, QueryRequest, Retention, ServerId, ServerSpec,
 };
 use asiba_engine::TestRequest;
 use chrono::{DateTime, Utc};

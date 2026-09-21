@@ -9,7 +9,6 @@ mod writer;
 
 pub use database::Database;
 pub use error::StorageError;
-pub use maintenance::Retention;
 pub use reader::HistoryReader;
 pub use sample::StoredSample;
 pub use writer::{StorageWriter, spawn_writer};

@@ -8,7 +8,7 @@ mod secrets;
 mod server_store;
 
 pub use ai_config::{AiConfig, AiProvider, SECTION_KEYS};
-pub use app_config::{AppConfig, Retention, ThemeChoice};
+pub use app_config::{AppConfig, ThemeChoice};
 pub use error::ConfigError;
 pub use ignored::IgnoredStore;
 pub use layout::{LayoutStore, SummaryLayout};

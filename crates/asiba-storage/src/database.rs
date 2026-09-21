@@ -8,7 +8,9 @@ use asiba_core::ActionRecord;
 
 use crate::actions;
 use crate::error::StorageError;
-use crate::maintenance::{self, Retention};
+use asiba_core::Retention;
+
+use crate::maintenance;
 use crate::sample::StoredSample;
 use crate::schema;
 
@@ -94,6 +96,14 @@ impl Database {
         maintenance::run(&mut self.connection, now, retention)
     }
 
+    pub fn delete_server(&self, server: &str) -> Result<(), StorageError> {
+        for table in ["samples", "samples_1m", "samples_1h", "actions"] {
+            let query = format!("DELETE FROM {table} WHERE server = ?1");
+            self.connection.execute(&query, params![server])?;
+        }
+        Ok(())
+    }
+
     pub fn count(&self, table: &str) -> Result<i64, StorageError> {
         let query = format!("SELECT COUNT(*) FROM {table}");
         Ok(self.connection.query_row(&query, [], |row| row.get(0))?)
@@ -147,6 +157,17 @@ mod tests {
         let kinds: Vec<&str> = recent.iter().map(|r| r.kind.as_str()).collect();
         assert_eq!(kinds, vec!["unban", "ban"]);
         assert_eq!(recent[0].server.as_str(), "neo");
+    }
+
+    #[test]
+    fn delete_server_removes_its_rows_only() {
+        let mut db = Database::in_memory().expect("db");
+        let now = Utc::now();
+        let mut other = sample(now, 2.0);
+        other.server = "other".into();
+        db.insert_batch(&[sample(now, 1.0), other]).expect("insert");
+        db.delete_server("neo").expect("delete");
+        assert_eq!(db.count("samples").expect("count"), 1);
     }
 
     #[test]

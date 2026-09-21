@@ -194,6 +194,13 @@ impl Engine {
                 let _ = self.alert_settings.send(settings);
             }
             Command::SetIntervals(intervals) => self.set_intervals(intervals),
+            Command::SetRetention(retention) => {
+                if let Some(storage) = &self.storage
+                    && storage.set_retention(retention).is_err()
+                {
+                    self.warn("хранилище остановлено, сроки хранения не применены".to_owned());
+                }
+            }
             Command::Audit {
                 target,
                 scope,
