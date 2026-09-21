@@ -4,11 +4,10 @@ mod audit_list;
 mod problem;
 mod state;
 
-use asiba_incidents::system_audit;
 use egui::{RichText, Ui};
 
 use super::{DetailContext, audit as ai_audit, section_analysis};
-use crate::components::{chip, panel, panel_plain};
+use crate::components::{cached_audit, chip, panel, panel_plain};
 use crate::modules::Tab;
 use crate::pages::Action;
 use crate::text;
@@ -20,7 +19,7 @@ pub fn show(ui: &mut Ui, ctx: &DetailContext<'_>) -> Option<Action> {
     let server = &ctx.server.spec.id;
     let mut subpage = state::load(ui.ctx(), server);
     let analysis_action = section_analysis(ui, ctx, Tab::Security);
-    let audit = system_audit(ctx.server, ctx.state);
+    let audit = cached_audit(ui.ctx(), ctx.server, ctx.state);
     let page_action = panel_plain(ui, |ui| {
         subpage_bar(ui, &mut subpage);
         ui.add_space(GAP);

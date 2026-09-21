@@ -2,12 +2,12 @@ mod filter;
 pub mod tables;
 
 use asiba_core::{ModuleId, ServerState};
-use asiba_incidents::{AuditCheck, Grade, Outcome, SystemAudit, security_score, system_audit};
+use asiba_incidents::{AuditCheck, Grade, Outcome, SystemAudit, security_score};
 use asiba_modules::security::{self, SecuritySnapshot};
 use egui::{Label, RichText, Ui};
 
 use super::{ModuleView, Tab, ViewShared};
-use crate::components::status_dot;
+use crate::components::{cached_audit, status_dot};
 use crate::text;
 use crate::theme::{GAP, GAP_SMALL, Palette};
 
@@ -35,7 +35,7 @@ impl ModuleView for SecurityView {
         let Some(snapshot) = server.data::<SecuritySnapshot>(security::ID) else {
             return;
         };
-        let audit = system_audit(server, shared.state);
+        let audit = cached_audit(ui.ctx(), server, shared.state);
         score_line(ui, snapshot, &audit);
         ui.add_space(GAP);
         problems_short(ui, &audit);
