@@ -48,7 +48,16 @@ pub fn security_snapshot(raw: &str, now: DateTime<Utc>) -> Result<SecuritySnapsh
         ban_backend: ban_backend(&tools),
         is_root_view: sections.get_or_empty("whoami").trim() == "root",
         hardening: hardening::parse(&sections, units),
+        slow_collected_at: now,
     })
+}
+
+pub fn carry_slow_part(snapshot: &mut SecuritySnapshot, previous: &SecuritySnapshot) {
+    snapshot.sshd = previous.sshd.clone();
+    snapshot.file_hashes = previous.file_hashes.clone();
+    snapshot.ban_backend = previous.ban_backend;
+    snapshot.hardening = previous.hardening.clone();
+    snapshot.slow_collected_at = previous.slow_collected_at;
 }
 
 fn unit_active(units: &str, unit: &str) -> bool {
@@ -297,6 +306,19 @@ mod tests {
         assert_eq!(snapshot.ban_backend, Some(BanBackend::Ufw));
         assert_eq!(snapshot.bans[0].ip, "203.0.113.9");
         assert!(!snapshot.is_root_view);
+    }
+
+    #[test]
+    fn carry_slow_part_keeps_hardening_from_previous_snapshot() {
+        let raw = include_str!("../../fixtures/security/server.txt");
+        let previous = security_snapshot(raw, now()).expect("previous");
+        let fast_only: String = raw.split("###sshd").next().expect("prefix").to_owned();
+        let mut fresh = security_snapshot(&fast_only, now()).expect("fresh");
+        assert!(!fresh.sshd.is_known());
+        carry_slow_part(&mut fresh, &previous);
+        assert_eq!(fresh.sshd, previous.sshd);
+        assert_eq!(fresh.file_hashes, previous.file_hashes);
+        assert_eq!(fresh.slow_collected_at, previous.slow_collected_at);
     }
 
     #[test]

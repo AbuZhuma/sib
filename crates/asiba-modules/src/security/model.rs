@@ -197,6 +197,7 @@ pub struct SecuritySnapshot {
     pub ban_backend: Option<BanBackend>,
     pub is_root_view: bool,
     pub hardening: Hardening,
+    pub slow_collected_at: DateTime<Utc>,
 }
 
 impl SecuritySnapshot {

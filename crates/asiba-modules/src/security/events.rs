@@ -134,6 +134,7 @@ mod tests {
             ban_backend: None,
             is_root_view: false,
             hardening: Default::default(),
+            slow_collected_at: at(0),
         }
     }
 
