@@ -40,6 +40,34 @@ impl Engine {
         self.emit(EngineEvent::ServerRemoved(id));
     }
 
+    pub(super) async fn rename(&mut self, previous: &ServerId, next: &ServerId) {
+        if let Some(entry) = self.workers.remove(previous) {
+            entry.task.abort();
+        }
+        if let Ok(mut state) = self.state.write()
+            && let Some(server) = state.servers.remove(previous)
+        {
+            state.servers.insert(next.clone(), server);
+            for incident in &mut state.incidents {
+                if &incident.server == previous {
+                    incident.server = next.clone();
+                }
+            }
+            for alert in &mut state.alerts {
+                if &alert.server == previous {
+                    alert.server = next.clone();
+                }
+            }
+        }
+        let persistence = self.persistence.clone();
+        let (from, to) = (previous.clone(), next.clone());
+        let moved = tokio::task::spawn_blocking(move || persistence.rename(&from, &to)).await;
+        if let Ok(Err(error)) = moved {
+            self.warn(format!("не удалось переименовать файлы сервера: {error}"));
+        }
+        self.emit(EngineEvent::ServerRemoved(previous.clone()));
+    }
+
     pub(super) fn restart(&mut self, id: &ServerId, policy: HostKeyPolicy) {
         let Some(entry) = self.workers.remove(id) else {
             return;
@@ -58,9 +86,9 @@ impl Engine {
             previous.task.abort();
         }
         if let Ok(mut state) = self.state.write() {
-            state
-                .servers
-                .insert(spec.id.clone(), ServerState::new(spec.clone()));
+            let previous = state.servers.remove(&spec.id);
+            let restarted = ServerState::restarted(spec.clone(), previous);
+            state.servers.insert(spec.id.clone(), restarted);
         }
         let transport: TransportSlot = Arc::new(Mutex::new(None));
         let (backfill, _) = broadcast::channel(worker::BACKFILL_QUEUE);

@@ -139,11 +139,18 @@ impl Engine {
             Command::AddServer { spec, credentials } => {
                 self.save_and_start(spec, credentials).await;
             }
-            Command::UpdateServer { spec, credentials } => {
-                let merged = match self.workers.get(&spec.id) {
+            Command::UpdateServer {
+                previous,
+                spec,
+                credentials,
+            } => {
+                let merged = match self.workers.get(&previous) {
                     Some(entry) => credentials.fill_missing_from(&entry.credentials),
                     None => credentials,
                 };
+                if previous != spec.id {
+                    self.rename(&previous, &spec.id).await;
+                }
                 self.save_and_start(spec, merged).await;
             }
             Command::RemoveServer(id) => self.remove(id).await,

@@ -152,6 +152,18 @@ impl ServerState {
         }
     }
 
+    pub fn restarted(spec: ServerSpec, previous: Option<Self>) -> Self {
+        let same_host = |p: &Self| p.spec.host == spec.host && p.spec.port == spec.port;
+        match previous.filter(same_host) {
+            Some(previous) => Self {
+                spec,
+                connection: ConnectionStatus::Connecting,
+                ..previous
+            },
+            None => Self::new(spec),
+        }
+    }
+
     pub fn snapshot(&self, module: ModuleId) -> Option<&Snapshot> {
         self.modules.get(&module)?.last_snapshot.as_ref()
     }
@@ -193,6 +205,38 @@ impl ServerState {
             .iter()
             .filter(|(_, state)| state.availability.is_usable())
             .map(|(id, _)| *id)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{AuthMethod, ServerDescription, SudoMode};
+
+    fn spec(host: &str) -> ServerSpec {
+        ServerSpec {
+            id: ServerId::parse("neo").expect("id"),
+            host: host.into(),
+            port: 22,
+            user: "u".into(),
+            auth: AuthMethod::Auto,
+            jump: None,
+            sudo: SudoMode::None,
+            description: ServerDescription::default(),
+            location: None,
+            modules: Default::default(),
+        }
+    }
+
+    #[test]
+    fn restarted_keeps_series_for_same_host_and_resets_for_new_host() {
+        let mut previous = ServerState::new(spec("a"));
+        previous.push_samples(Utc::now(), &[Sample::new("cpu.total", 1.0)]);
+        let kept = ServerState::restarted(spec("a"), Some(previous.clone()));
+        assert_eq!(kept.series.len(), 1);
+        assert_eq!(kept.connection, ConnectionStatus::Connecting);
+        let reset = ServerState::restarted(spec("b"), Some(previous));
+        assert!(reset.series.is_empty());
     }
 }
 

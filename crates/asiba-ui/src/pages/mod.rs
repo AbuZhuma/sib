@@ -36,7 +36,7 @@ pub enum Action {
     SaveServer {
         spec: ServerSpec,
         credentials: Credentials,
-        is_new: bool,
+        previous: Option<ServerId>,
     },
     TestConnection(TestRequest),
     Reconnect(ServerId),

@@ -233,7 +233,7 @@ impl ServerForm {
                 Some(Action::SaveServer {
                     spec,
                     credentials,
-                    is_new: self.editing.is_none(),
+                    previous: self.editing.clone(),
                 })
             }
             Err(error) => {

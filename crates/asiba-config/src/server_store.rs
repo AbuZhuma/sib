@@ -66,16 +66,36 @@ impl ServerStore {
     }
 
     pub fn delete(&self, id: &ServerId) -> Result<(), ConfigError> {
-        for path in [self.spec_path(id), self.doc_path(id)] {
-            if path.exists() {
-                std::fs::remove_file(&path).map_err(|source| ConfigError::Write {
-                    path: path.clone(),
-                    source,
-                })?;
-            }
+        for path in [self.spec_path(id), self.doc_path(id), self.llm_doc_path(id)] {
+            remove_if_exists(&path)?;
         }
         Ok(())
     }
+
+    pub fn rename(&self, previous: &ServerId, next: &ServerId) -> Result<(), ConfigError> {
+        let moves = [
+            (self.doc_path(previous), self.doc_path(next)),
+            (self.llm_doc_path(previous), self.llm_doc_path(next)),
+        ];
+        for (from, to) in moves {
+            if !from.exists() {
+                continue;
+            }
+            std::fs::rename(&from, &to)
+                .map_err(|source| ConfigError::Write { path: to, source })?;
+        }
+        remove_if_exists(&self.spec_path(previous))
+    }
+}
+
+fn remove_if_exists(path: &Path) -> Result<(), ConfigError> {
+    if !path.exists() {
+        return Ok(());
+    }
+    std::fs::remove_file(path).map_err(|source| ConfigError::Write {
+        path: path.to_path_buf(),
+        source,
+    })
 }
 
 fn load_spec(path: &Path) -> Result<ServerSpec, ConfigError> {
@@ -141,6 +161,36 @@ mod tests {
         let loaded = store.load_all().expect("load");
         let _ = std::fs::remove_dir_all(store.dir());
         assert!(loaded.is_empty());
+    }
+
+    #[test]
+    fn delete_removes_both_documents() {
+        let store = temp_store();
+        let spec = sample("neo");
+        store.save(&spec).expect("save");
+        std::fs::write(store.doc_path(&spec.id), "doc").expect("doc");
+        std::fs::write(store.llm_doc_path(&spec.id), "llm").expect("llm");
+        store.delete(&spec.id).expect("delete");
+        let left = std::fs::read_dir(store.dir())
+            .map(|d| d.count())
+            .unwrap_or(0);
+        let _ = std::fs::remove_dir_all(store.dir());
+        assert_eq!(left, 0);
+    }
+
+    #[test]
+    fn rename_moves_documents_and_drops_old_spec() {
+        let store = temp_store();
+        let spec = sample("neo");
+        store.save(&spec).expect("save");
+        std::fs::write(store.doc_path(&spec.id), "notes").expect("doc");
+        let next = ServerId::parse("trinity").expect("id");
+        store.rename(&spec.id, &next).expect("rename");
+        let moved = std::fs::read_to_string(store.doc_path(&next)).ok();
+        let old_spec = store.spec_path(&spec.id).exists();
+        let _ = std::fs::remove_dir_all(store.dir());
+        assert_eq!(moved.as_deref(), Some("notes"));
+        assert!(!old_spec);
     }
 
     #[test]

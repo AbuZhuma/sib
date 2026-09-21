@@ -18,6 +18,7 @@ pub enum Command {
         credentials: Credentials,
     },
     UpdateServer {
+        previous: ServerId,
         spec: ServerSpec,
         credentials: Credentials,
     },

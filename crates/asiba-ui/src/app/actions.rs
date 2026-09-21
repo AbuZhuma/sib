@@ -1,6 +1,7 @@
 use asiba_config::ThemeChoice;
 use asiba_core::{
-    ActionRequest, ActionSpec, AlertRule, Environment, ModuleId, QueryRequest, ServerId,
+    ActionRequest, ActionSpec, AlertRule, Credentials, Environment, ModuleId, QueryRequest,
+    ServerId, ServerSpec,
 };
 use asiba_engine::{AlertSettings, Command};
 use asiba_modules::files;
@@ -23,18 +24,8 @@ impl AsibaApp {
             Action::SaveServer {
                 spec,
                 credentials,
-                is_new,
-            } => {
-                let id = spec.id.clone();
-                let command = if is_new {
-                    Command::AddServer { spec, credentials }
-                } else {
-                    Command::UpdateServer { spec, credentials }
-                };
-                self.engine.send(command);
-                self.form = None;
-                self.page = Page::ServerDetail(id);
-            }
+                previous,
+            } => self.save_server(spec, credentials, previous),
             Action::TestConnection(request) => self.engine.send(Command::TestConnection(request)),
             Action::Reconnect(id) => self.engine.send(Command::Reconnect(id)),
             Action::TrustHostKey {
@@ -121,6 +112,50 @@ impl AsibaApp {
                 self.sync_ignored();
             }
         }
+    }
+
+    fn save_server(
+        &mut self,
+        spec: ServerSpec,
+        credentials: Credentials,
+        previous: Option<ServerId>,
+    ) {
+        let id = spec.id.clone();
+        let command = match previous {
+            None => Command::AddServer { spec, credentials },
+            Some(previous) => {
+                if previous != id {
+                    self.rename_local_records(&previous, &id);
+                }
+                Command::UpdateServer {
+                    previous,
+                    spec,
+                    credentials,
+                }
+            }
+        };
+        self.engine.send(command);
+        self.form = None;
+        self.page = Page::ServerDetail(id);
+    }
+
+    fn rename_local_records(&mut self, previous: &ServerId, next: &ServerId) {
+        if let Some(layout) = self.layouts.servers.remove(previous.as_str()) {
+            self.layouts.servers.insert(next.to_string(), layout);
+            if let Err(error) = self.layouts.save(&self.paths) {
+                self.notices.push(Notice::new(error.to_string()));
+            }
+        }
+        let has_ignored = self.ignored.incidents.iter().any(|i| &i.server == previous);
+        if has_ignored {
+            for entry in &mut self.ignored.incidents {
+                if &entry.server == previous {
+                    entry.server = next.clone();
+                }
+            }
+            self.sync_ignored();
+        }
+        self.files.remove(previous);
     }
 
     fn open_form(&mut self, id: Option<ServerId>) {

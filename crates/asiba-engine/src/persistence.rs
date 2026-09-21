@@ -46,6 +46,13 @@ impl Persistence {
         self.servers.llm_doc_path(id)
     }
 
+    pub fn rename(&self, previous: &ServerId, next: &ServerId) -> Result<(), ConfigError> {
+        let credentials = self.secrets.load_credentials(previous)?;
+        self.secrets.save_credentials(next, &credentials)?;
+        self.servers.rename(previous, next)?;
+        self.secrets.delete_all(previous)
+    }
+
     pub fn remove(&self, id: &ServerId) -> Result<(), ConfigError> {
         self.servers.delete(id)?;
         self.secrets.delete_all(id)
