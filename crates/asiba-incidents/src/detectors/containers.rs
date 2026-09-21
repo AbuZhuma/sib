@@ -6,6 +6,13 @@ use super::Detector;
 pub struct ContainersDetector;
 
 const RESTART_LOOP_THRESHOLD: u32 = 5;
+const STALE_STATUS_MARKERS: [&str; 4] = ["days ago", "weeks ago", "months ago", "years ago"];
+
+fn is_stale(container: &Container) -> bool {
+    STALE_STATUS_MARKERS
+        .iter()
+        .any(|marker| container.status.contains(marker))
+}
 
 fn should_be_running(container: &Container) -> bool {
     matches!(
@@ -15,13 +22,20 @@ fn should_be_running(container: &Container) -> bool {
 }
 
 fn down(container: &Container) -> Option<IncidentDraft> {
-    if container.is_running() || !(should_be_running(container) || container.exit_code != 0) {
+    if container.is_running() {
         return None;
     }
+    let severity = if should_be_running(container) {
+        Severity::Critical
+    } else if container.exit_code != 0 && !is_stale(container) {
+        Severity::Warning
+    } else {
+        return None;
+    };
     Some(
         IncidentDraft::new(
             IncidentKind::ContainerDown,
-            Severity::Critical,
+            severity,
             container.name.clone(),
             format!(
                 "container {} is {} (exit code {}, restart policy {})",
@@ -75,5 +89,51 @@ impl Detector for ContainersDetector {
             .iter()
             .filter_map(|c| down(c).or_else(|| unhealthy(c)))
             .collect()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn container(state: &str, status: &str, policy: &str, exit_code: i32) -> Container {
+        Container {
+            id: "abc".into(),
+            name: "web".into(),
+            image: "nginx".into(),
+            state: state.into(),
+            status: status.into(),
+            ports: String::new(),
+            restart_count: 0,
+            health: None,
+            restart_policy: policy.into(),
+            exit_code,
+            started_at: String::new(),
+            compose_project: None,
+            compose_service: None,
+            compose_dir: None,
+            stats: None,
+        }
+    }
+
+    #[test]
+    fn stopped_container_with_restart_policy_is_critical() {
+        let draft = down(&container(
+            "exited",
+            "Exited (0) 2 minutes ago",
+            "always",
+            0,
+        ));
+        assert_eq!(draft.map(|d| d.severity), Some(Severity::Critical));
+    }
+
+    #[test]
+    fn failed_one_off_container_is_warning_until_it_gets_old() {
+        let fresh = down(&container("exited", "Exited (1) 5 minutes ago", "no", 1));
+        assert_eq!(fresh.map(|d| d.severity), Some(Severity::Warning));
+        let old = down(&container("exited", "Exited (1) 6 days ago", "no", 1));
+        assert!(old.is_none());
+        let clean = down(&container("exited", "Exited (0) 5 minutes ago", "no", 0));
+        assert!(clean.is_none());
     }
 }
