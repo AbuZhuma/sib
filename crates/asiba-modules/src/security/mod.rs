@@ -57,7 +57,7 @@ fn script() -> String {
         ),
         (
             "sshd",
-            "sshd -T 2>/dev/null | grep -iE '^(passwordauthentication|permitrootlogin|pubkeyauthentication|port|maxauthtries|permitemptypasswords|x11forwarding) ' || grep -hiE '^[[:space:]]*(PasswordAuthentication|PermitRootLogin|PubkeyAuthentication|Port|MaxAuthTries|PermitEmptyPasswords|X11Forwarding)[[:space:]]' /etc/ssh/sshd_config /etc/ssh/sshd_config.d/*.conf",
+            "sshd -T 2>/dev/null | grep -iE '^(passwordauthentication|permitrootlogin|pubkeyauthentication|port|maxauthtries|permitemptypasswords|x11forwarding|logingracetime|clientaliveinterval|allowtcpforwarding|usepam|maxstartups) ' || grep -hiE '^[[:space:]]*(PasswordAuthentication|PermitRootLogin|PubkeyAuthentication|Port|MaxAuthTries|PermitEmptyPasswords|X11Forwarding|LoginGraceTime|ClientAliveInterval|AllowTcpForwarding|UsePAM|MaxStartups)[[:space:]]' /etc/ssh/sshd_config /etc/ssh/sshd_config.d/*.conf",
         ),
         (
             "hashes",
