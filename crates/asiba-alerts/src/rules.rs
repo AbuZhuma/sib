@@ -1,32 +1,41 @@
 use asiba_core::{AlertRule, Condition, METRIC_OFFLINE, Severity};
 use asiba_modules::{anomalies, cpu, disk, logs, memory, security, services, updates};
 
-fn rule(
-    id: &str,
-    name: &str,
-    metric: &str,
+struct BuiltinRule {
+    id: &'static str,
+    name: &'static str,
+    metric: &'static str,
     condition: Condition,
     threshold: f64,
     for_secs: u64,
     severity: Severity,
-) -> AlertRule {
-    AlertRule {
-        id: id.to_owned(),
-        name: name.to_owned(),
-        metric: metric.to_owned(),
+}
+
+const fn builtin(
+    id: &'static str,
+    name: &'static str,
+    metric: &'static str,
+    condition: Condition,
+    threshold: f64,
+    for_secs: u64,
+    severity: Severity,
+) -> BuiltinRule {
+    BuiltinRule {
+        id,
+        name,
+        metric,
         condition,
         threshold,
         for_secs,
         severity,
-        builtin: true,
     }
 }
 
-pub fn builtin_rules() -> Vec<AlertRule> {
+const BUILTIN: [BuiltinRule; 10] = {
     use Condition::Above;
-    use Severity::{Critical, Warning};
-    vec![
-        rule(
+    use Severity::{Critical, Info, Warning};
+    [
+        builtin(
             "offline",
             "Сервер недоступен",
             METRIC_OFFLINE,
@@ -35,7 +44,7 @@ pub fn builtin_rules() -> Vec<AlertRule> {
             60,
             Critical,
         ),
-        rule(
+        builtin(
             "cpu-high",
             "CPU выше 90%",
             cpu::KEY_TOTAL,
@@ -44,7 +53,7 @@ pub fn builtin_rules() -> Vec<AlertRule> {
             300,
             Warning,
         ),
-        rule(
+        builtin(
             "memory-high",
             "Память выше 90%",
             memory::KEY_USED_PCT,
@@ -53,7 +62,7 @@ pub fn builtin_rules() -> Vec<AlertRule> {
             120,
             Warning,
         ),
-        rule(
+        builtin(
             "disk-full",
             "Корневой диск заполнен на 90%",
             disk::KEY_ROOT_USED_PCT,
@@ -62,7 +71,7 @@ pub fn builtin_rules() -> Vec<AlertRule> {
             0,
             Critical,
         ),
-        rule(
+        builtin(
             "disk-warning",
             "Корневой диск заполнен на 80%",
             disk::KEY_ROOT_USED_PCT,
@@ -71,7 +80,7 @@ pub fn builtin_rules() -> Vec<AlertRule> {
             0,
             Warning,
         ),
-        rule(
+        builtin(
             "services-failed",
             "Есть упавшие сервисы",
             services::KEY_FAILED,
@@ -80,7 +89,7 @@ pub fn builtin_rules() -> Vec<AlertRule> {
             60,
             Warning,
         ),
-        rule(
+        builtin(
             "log-errors",
             "Много ошибок в журнале",
             logs::KEY_ERRORS_PER_MIN,
@@ -89,7 +98,7 @@ pub fn builtin_rules() -> Vec<AlertRule> {
             60,
             Warning,
         ),
-        rule(
+        builtin(
             "attack",
             "Признаки DDoS",
             anomalies::KEY_ATTACK,
@@ -98,7 +107,7 @@ pub fn builtin_rules() -> Vec<AlertRule> {
             0,
             Critical,
         ),
-        rule(
+        builtin(
             "brute-force",
             "Брутфорс SSH",
             security::KEY_BRUTE_FORCE,
@@ -107,16 +116,32 @@ pub fn builtin_rules() -> Vec<AlertRule> {
             0,
             Critical,
         ),
-        rule(
+        builtin(
             "reboot-required",
             "Требуется перезагрузка",
             updates::KEY_REBOOT_REQUIRED,
             Above,
             0.5,
             0,
-            Severity::Info,
+            Info,
         ),
     ]
+};
+
+pub fn builtin_rules() -> Vec<AlertRule> {
+    BUILTIN
+        .iter()
+        .map(|rule| AlertRule {
+            id: rule.id.to_owned(),
+            name: rule.name.to_owned(),
+            metric: rule.metric.to_owned(),
+            condition: rule.condition,
+            threshold: rule.threshold,
+            for_secs: rule.for_secs,
+            severity: rule.severity,
+            builtin: true,
+        })
+        .collect()
 }
 
 pub fn merge_rules(custom: &[AlertRule]) -> Vec<AlertRule> {
