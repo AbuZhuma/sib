@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use chrono::{DateTime, Utc};
+
 use super::model::{Deploy, DeployError, DeployStatus, Source, Stage, StageStatus};
 use crate::common::systemd_time::systemd_time;
 
@@ -37,47 +39,19 @@ fn unit_logs(raw: &str) -> HashMap<String, Vec<String>> {
 
 fn unit_deploy(block: &str, logs: &HashMap<String, Vec<String>>) -> Option<Deploy> {
     let fields: HashMap<&str, &str> = block.lines().filter_map(|l| l.split_once('=')).collect();
+    let field = |name: &str| fields.get(name).copied().unwrap_or_default();
     let unit = *fields.get("Id")?;
-    let started = systemd_time(
-        fields
-            .get("ExecMainStartTimestamp")
-            .copied()
-            .unwrap_or_default(),
-    );
-    let exited = systemd_time(
-        fields
-            .get("ExecMainExitTimestamp")
-            .copied()
-            .unwrap_or_default(),
-    );
-    let active = fields.get("ActiveState").copied().unwrap_or_default();
-    let result = fields.get("Result").copied().unwrap_or_default();
+    let started_at = systemd_time(field("ExecMainStartTimestamp"))?;
+    let exited = systemd_time(field("ExecMainExitTimestamp"));
+    let active = field("ActiveState");
+    let result = field("Result");
     let exit_status = fields.get("ExecMainStatus").copied().unwrap_or("0");
-    let started_at = started?;
     let log_tail = logs.get(unit).cloned().unwrap_or_default();
-    let (status, finished_at) = match (active, result) {
-        ("activating" | "active" | "reloading" | "deactivating", _) => {
-            (DeployStatus::InProgress, None)
-        }
-        ("failed", _) | (_, "exit-code" | "signal" | "core-dump" | "timeout") => {
-            (DeployStatus::Failed, exited)
-        }
-        _ => (DeployStatus::Success, exited),
-    };
-    let mut stages = vec![Stage::done("start", Some(started_at))];
-    stages.push(match status {
-        DeployStatus::InProgress => Stage {
-            name: "run".to_owned(),
-            at: None,
-            status: StageStatus::Active,
-        },
-        DeployStatus::Success => Stage::done("exit 0", exited),
-        DeployStatus::Failed => Stage {
-            name: format!("exit {exit_status}"),
-            at: exited,
-            status: StageStatus::Failed,
-        },
-    });
+    let (status, finished_at) = unit_status(active, result, exited);
+    let stages = vec![
+        Stage::done("start", Some(started_at)),
+        final_stage(status, exit_status, exited),
+    ];
     Some(Deploy {
         key: format!("systemd:{unit}:{}", started_at.timestamp()),
         project: unit.trim_end_matches(".service").to_owned(),
@@ -90,6 +64,38 @@ fn unit_deploy(block: &str, logs: &HashMap<String, Vec<String>>) -> Option<Deplo
         error: (status == DeployStatus::Failed).then(|| error_from_log(&log_tail)),
         log_tail,
     })
+}
+
+fn unit_status(
+    active: &str,
+    result: &str,
+    exited: Option<DateTime<Utc>>,
+) -> (DeployStatus, Option<DateTime<Utc>>) {
+    match (active, result) {
+        ("activating" | "active" | "reloading" | "deactivating", _) => {
+            (DeployStatus::InProgress, None)
+        }
+        ("failed", _) | (_, "exit-code" | "signal" | "core-dump" | "timeout") => {
+            (DeployStatus::Failed, exited)
+        }
+        _ => (DeployStatus::Success, exited),
+    }
+}
+
+fn final_stage(status: DeployStatus, exit_status: &str, exited: Option<DateTime<Utc>>) -> Stage {
+    match status {
+        DeployStatus::InProgress => Stage {
+            name: "run".to_owned(),
+            at: None,
+            status: StageStatus::Active,
+        },
+        DeployStatus::Success => Stage::done("exit 0", exited),
+        DeployStatus::Failed => Stage {
+            name: format!("exit {exit_status}"),
+            at: exited,
+            status: StageStatus::Failed,
+        },
+    }
 }
 
 fn error_from_log(lines: &[String]) -> DeployError {

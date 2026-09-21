@@ -129,6 +129,41 @@ fn build(project: &str, window: &[&ComposeEvent], now: DateTime<Utc>) -> Option<
     {
         return None;
     }
+    let mut stages = stages_of(window);
+    let crash = crash_of(window);
+    let failed = crash.is_some();
+    let (status, finished_at) = if failed {
+        (DeployStatus::Failed, Some(last.at))
+    } else if now - last.at < SETTLE {
+        (DeployStatus::InProgress, None)
+    } else {
+        (DeployStatus::Success, Some(last.at))
+    };
+    if let Some(c) = crash {
+        stages.push(Stage {
+            name: format!("{} exited", c.name),
+            at: Some(c.at),
+            status: StageStatus::Failed,
+        });
+    }
+    Some(Deploy {
+        key: format!("compose:{project}:{}", first.at.timestamp()),
+        project: project.to_owned(),
+        source: Source::Compose,
+        detail: container_names(window).join(", "),
+        started_at: first.at,
+        finished_at,
+        stages,
+        status,
+        error: crash.map(|c| DeployError {
+            line: format!("{} завершился с кодом {}", c.name, c.exit_code.unwrap_or(0)),
+            context: Vec::new(),
+        }),
+        log_tail: Vec::new(),
+    })
+}
+
+fn stages_of(window: &[&ComposeEvent]) -> Vec<Stage> {
     let mut stages = Vec::new();
     for (action, name) in [("pull", "pull"), ("create", "create"), ("start", "start")] {
         if let Some(event) = window.iter().find(|e| e.action == action) {
@@ -138,51 +173,27 @@ fn build(project: &str, window: &[&ComposeEvent], now: DateTime<Utc>) -> Option<
     if let Some(event) = window.iter().find(|e| e.action.contains("healthy")) {
         stages.push(Stage::done("healthy", Some(event.at)));
     }
+    stages
+}
+
+fn crash_of<'a>(window: &[&'a ComposeEvent]) -> Option<&'a ComposeEvent> {
     let crash = window
         .iter()
         .rev()
-        .find(|e| e.action == "die" && e.exit_code.is_some_and(|c| c != 0));
+        .find(|e| e.action == "die" && e.exit_code.is_some_and(|c| c != 0))?;
     let last_start = window.iter().rev().find(|e| e.action == "start");
-    let failed = crash.is_some_and(|c| last_start.is_none_or(|s| c.at >= s.at));
-    let (status, finished_at) = if failed {
-        (DeployStatus::Failed, Some(last.at))
-    } else if now - last.at < SETTLE {
-        (DeployStatus::InProgress, None)
-    } else {
-        (DeployStatus::Success, Some(last.at))
-    };
-    if let (true, Some(c)) = (failed, crash) {
-        stages.push(Stage {
-            name: format!("{} exited", c.name),
-            at: Some(c.at),
-            status: StageStatus::Failed,
-        });
-    }
-    let containers: Vec<&str> = {
-        let mut names: Vec<&str> = window
-            .iter()
-            .map(|e| e.name.as_str())
-            .filter(|n| !n.is_empty())
-            .collect();
-        names.sort_unstable();
-        names.dedup();
-        names
-    };
-    Some(Deploy {
-        key: format!("compose:{project}:{}", first.at.timestamp()),
-        project: project.to_owned(),
-        source: Source::Compose,
-        detail: containers.join(", "),
-        started_at: first.at,
-        finished_at,
-        stages,
-        status,
-        error: crash.filter(|_| failed).map(|c| DeployError {
-            line: format!("{} завершился с кодом {}", c.name, c.exit_code.unwrap_or(0)),
-            context: Vec::new(),
-        }),
-        log_tail: Vec::new(),
-    })
+    last_start.is_none_or(|s| crash.at >= s.at).then_some(crash)
+}
+
+fn container_names<'a>(window: &[&'a ComposeEvent]) -> Vec<&'a str> {
+    let mut names: Vec<&str> = window
+        .iter()
+        .map(|e| e.name.as_str())
+        .filter(|n| !n.is_empty())
+        .collect();
+    names.sort_unstable();
+    names.dedup();
+    names
 }
 
 #[cfg(test)]
