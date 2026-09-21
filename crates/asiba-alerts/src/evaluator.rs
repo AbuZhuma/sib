@@ -20,6 +20,7 @@ const BASELINE_METRICS: [&str; 8] = [
     anomalies::KEY_PPS_IN,
 ];
 const BASELINE_FOR_SECS: u64 = 60;
+const MAX_VALUE_AGE: chrono::Duration = chrono::Duration::hours(1);
 const BASELINE_RULE_PREFIX: &str = "baseline:";
 
 type Key = (ServerId, String);
@@ -56,7 +57,7 @@ impl Evaluator {
             let Some(server) = state.servers.get(&server_id) else {
                 continue;
             };
-            let mut checks = self.rule_checks(server, state);
+            let mut checks = self.rule_checks(server, state, now);
             checks.extend(self.baseline_checks(server));
             for check in checks {
                 if let Some(alert) = self.settle(state, &server_id, check, now) {
@@ -68,29 +69,35 @@ impl Evaluator {
         Raised(raised)
     }
 
-    fn rule_checks(&self, server: &ServerState, state: &AppState) -> Vec<Check> {
+    fn rule_checks(
+        &self,
+        server: &ServerState,
+        state: &AppState,
+        now: DateTime<Utc>,
+    ) -> Vec<Check> {
         self.rules
             .iter()
             .filter(|rule| {
                 !state.is_incident_ignored(&server.spec.id, IncidentKind::Alert, &rule.id)
             })
-            .filter_map(|rule| {
-                let value = metric_value(server, &rule.metric)?;
-                Some(Check {
+            .map(|rule| {
+                let current = metric_value(server, &rule.metric, now);
+                let value = current.unwrap_or_default();
+                Check {
                     rule_id: rule.id.clone(),
                     rule_name: rule.name.clone(),
                     metric: rule.metric.clone(),
                     severity: rule.severity,
                     for_secs: rule.for_secs,
                     value,
-                    holds: rule.condition.holds(value, rule.threshold),
+                    holds: current.is_some_and(|v| rule.condition.holds(v, rule.threshold)),
                     message: format!(
                         "{} = {value:.1} ({} {})",
                         rule.metric,
                         rule.condition.symbol(),
                         rule.threshold
                     ),
-                })
+                }
             })
             .collect()
     }
@@ -192,14 +199,26 @@ fn baseline_check(metric: &str, value: f64, deviation: Option<Deviation>) -> Che
     }
 }
 
-fn metric_value(server: &ServerState, metric: &str) -> Option<f64> {
+fn metric_value(server: &ServerState, metric: &str, now: DateTime<Utc>) -> Option<f64> {
     if metric == METRIC_OFFLINE {
         return Some(match &server.connection {
             ConnectionStatus::Offline { .. } => 1.0,
             _ => 0.0,
         });
     }
-    server.latest_value(metric)
+    if !server.connection.is_online() || is_module_failing(server, metric) {
+        return None;
+    }
+    let point = server.series.get(metric)?.latest()?;
+    (now - point.at <= MAX_VALUE_AGE).then_some(point.value)
+}
+
+fn is_module_failing(server: &ServerState, metric: &str) -> bool {
+    let module = metric.split('.').next().unwrap_or_default();
+    server
+        .modules
+        .iter()
+        .any(|(id, state)| id.0 == module && state.last_error.is_some())
 }
 
 #[cfg(test)]
@@ -277,6 +296,31 @@ mod tests {
         assert_eq!(raised.0.len(), 1);
         assert_eq!(raised.0[0].started_at, now);
         assert!(evaluator.evaluate(&mut state, later).0.is_empty());
+    }
+
+    #[test]
+    fn rule_resolves_when_server_goes_offline_with_stale_value() {
+        let now = Utc::now();
+        let mut state = state_with("neo", cpu::KEY_TOTAL, 95.0, now);
+        let mut evaluator = Evaluator::new(vec![cpu_rule(0)]);
+        evaluator.evaluate(&mut state, now);
+        assert_eq!(state.active_alerts().count(), 1);
+        if let Some(server) = state.servers.values_mut().next() {
+            server.connection = ConnectionStatus::Offline {
+                reason: "x".to_owned(),
+                retry_at: now,
+            };
+        }
+        evaluator.evaluate(&mut state, now + Duration::seconds(5));
+        assert_eq!(state.active_alerts().count(), 0);
+    }
+
+    #[test]
+    fn rule_ignores_value_older_than_an_hour() {
+        let now = Utc::now();
+        let mut state = state_with("neo", cpu::KEY_TOTAL, 95.0, now - Duration::hours(2));
+        let mut evaluator = Evaluator::new(vec![cpu_rule(0)]);
+        assert!(evaluator.evaluate(&mut state, now).0.is_empty());
     }
 
     #[test]
