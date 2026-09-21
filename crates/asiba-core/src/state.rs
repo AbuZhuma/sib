@@ -245,6 +245,7 @@ pub struct PingStatus {
     pub rtt_ms: Option<f64>,
     pub at: DateTime<Utc>,
     pub lost_in_row: u32,
+    pub is_jump_host: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

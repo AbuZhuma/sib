@@ -129,6 +129,7 @@ pub const NET_CONNECTIONS: &str = "Соединения";
 pub const NET_ESTABLISHED: &str = "соединений";
 pub const NET_GATEWAY: &str = "шлюз";
 pub const NET_PING: &str = "пинг";
+pub const NET_PING_JUMP: &str = "пинг (jump host)";
 pub const NET_PING_LOST: &str = "нет ответа";
 
 pub const PROC_TOTAL: &str = "процессов";

@@ -54,11 +54,16 @@ fn ping_line(ui: &mut Ui, server: &ServerState) {
     let Some(ping) = &server.ping else {
         return;
     };
+    let label = if ping.is_jump_host {
+        text::NET_PING_JUMP
+    } else {
+        text::NET_PING
+    };
     match ping.rtt_ms {
-        Some(rtt) => ui.monospace(format!("{} {rtt:.1} ms", text::NET_PING)),
-        None => ui.label(
-            RichText::new(format!("{} {}", text::NET_PING, text::NET_PING_LOST)).color(p.warning),
-        ),
+        Some(rtt) => ui.monospace(format!("{label} {rtt:.1} ms")),
+        None => {
+            ui.label(RichText::new(format!("{label} {}", text::NET_PING_LOST)).color(p.warning))
+        }
     };
 }
 

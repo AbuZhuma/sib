@@ -125,7 +125,7 @@ connect (таймаут 15 с)
 - **В памяти**: `ServerState.series[key]` — кольцо на 900 точек (`asiba-core/src/series.rs`). UI рисует `TimeSeriesPlot` (`egui_plot`) и sparkline (`components/plot.rs`, `sparkline.rs`).
 - **SQLite** (`~/.local/share/asiba/history.db`, WAL): поток `asiba-storage` в отдельном потоке ОС, батч раз в 5 с или 5 000 сэмплов. Таблицы `samples` (сырые, 48 ч) → `samples_1m` (avg/min/max, 30 дней) → `samples_1h` (365 дней); даунсэмплинг раз в час (`maintenance.rs`). Сроки — `[retention]` в `config.toml`.
 - **При старте воркера** (`engine/history.rs`): последние 30 минут сырых сэмплов из базы подставляются перед живыми точками (`Series::prepend_history`).
-- **Пинг** (`worker/ping.rs`): TCP-connect на SSH-порт раз в 5 с (таймаут 3 с) с локальной машины → `ServerState.ping` и серия `ping.rtt_ms` (только в памяти).
+- **Пинг** (`worker/ping.rs`): TCP-connect на SSH-порт раз в 5 с (таймаут 3 с) с локальной машины → `ServerState.ping` и серия `ping.rtt_ms` (только в памяти). Для сервера за jump host пингуется сам jump host (в UI подпись «пинг (jump host)»).
 - **Пауза**: кнопка в статусбаре замораживает копию `AppState` для UI; сбор продолжается.
 
 ## 5. События, алерты, инциденты
