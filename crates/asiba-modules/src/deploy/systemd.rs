@@ -7,7 +7,7 @@ const UNIT_MARKER: &str = "@@ ";
 const LOG_LINES: u32 = 60;
 const ERROR_MARKERS: [&str; 5] = ["error", "Error", "ERROR", "failed", "Failed"];
 
-pub const UNITS_SCRIPT: &str = "systemctl show 'deploy*' -p Id -p ActiveState -p SubState -p Result -p ExecMainStartTimestamp -p ExecMainExitTimestamp -p ExecMainStatus --no-pager";
+pub const UNITS_SCRIPT: &str = "TZ=UTC systemctl show 'deploy*' -p Id -p ActiveState -p SubState -p Result -p ExecMainStartTimestamp -p ExecMainExitTimestamp -p ExecMainStatus --no-pager";
 
 pub fn logs_script() -> String {
     format!(

@@ -28,11 +28,11 @@ const SCRIPT_PARTS: [(&str, &str); 3] = [
     ),
     (
         "show",
-        "systemctl show '*.service' -p Id -p NRestarts -p MainPID -p ActiveEnterTimestamp -p FragmentPath -p WorkingDirectory -p Result --no-pager",
+        "TZ=UTC systemctl show '*.service' -p Id -p NRestarts -p MainPID -p ActiveEnterTimestamp -p FragmentPath -p WorkingDirectory -p Result --no-pager",
     ),
     (
         "timers",
-        "systemctl list-timers --all --no-legend --no-pager -o json",
+        "TZ=UTC systemctl list-timers --all --no-legend --no-pager -o json",
     ),
 ];
 
