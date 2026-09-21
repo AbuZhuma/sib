@@ -54,7 +54,7 @@ impl Engine {
             return 0;
         };
         let id = state.audits.iter().map(|a| a.id).max().unwrap_or(0) + 1;
-        state.audits.push(AuditReport {
+        state.push_audit(AuditReport {
             id,
             target: target.clone(),
             scope: scope.clone(),

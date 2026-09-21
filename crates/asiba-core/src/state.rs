@@ -18,6 +18,7 @@ const MAX_ACTIONS: usize = 200;
 const MAX_RESOLVED_ALERTS: usize = 300;
 const MAX_RESOLVED_INCIDENTS: usize = 300;
 const MAX_SERVER_EVENTS: usize = 500;
+const MAX_AUDITS: usize = 200;
 
 pub type SharedState = Arc<RwLock<AppState>>;
 
@@ -81,6 +82,22 @@ impl AppState {
 
     pub fn audit_mut(&mut self, id: u64) -> Option<&mut AuditReport> {
         self.audits.iter_mut().find(|a| a.id == id)
+    }
+
+    pub fn push_audit(&mut self, report: AuditReport) {
+        self.audits.push(report);
+        let finished = self.audits.iter().filter(|a| !a.is_running()).count();
+        if finished <= MAX_AUDITS {
+            return;
+        }
+        let mut overflow = finished - MAX_AUDITS;
+        self.audits.retain(|a| {
+            if a.is_running() || overflow == 0 {
+                return true;
+            }
+            overflow -= 1;
+            false
+        });
     }
 
     pub fn latest_audit(&self, target: &AuditTarget, scope: &AuditScope) -> Option<&AuditReport> {
@@ -226,6 +243,29 @@ mod tests {
             location: None,
             modules: Default::default(),
         }
+    }
+
+    #[test]
+    fn push_audit_drops_oldest_finished_reports_beyond_cap() {
+        let mut state = AppState::default();
+        let report = |id: u64, status: crate::AuditStatus| AuditReport {
+            id,
+            target: AuditTarget::Fleet,
+            scope: AuditScope::Full,
+            started_at: Utc::now(),
+            finished_at: None,
+            model: String::new(),
+            context_tokens: 0,
+            text: String::new(),
+            status,
+        };
+        state.push_audit(report(0, crate::AuditStatus::Running));
+        for id in 1..=MAX_AUDITS as u64 + 1 {
+            state.push_audit(report(id, crate::AuditStatus::Done));
+        }
+        assert_eq!(state.audits.len(), MAX_AUDITS + 1);
+        assert!(state.audits.iter().any(|a| a.id == 0));
+        assert!(!state.audits.iter().any(|a| a.id == 1));
     }
 
     #[test]

@@ -151,7 +151,7 @@ impl Runner {
                 Some(stored) => *stored = report.clone(),
                 None => {
                     report.id = state.audits.iter().map(|a| a.id).max().unwrap_or(0) + 1;
-                    state.audits.push(report.clone());
+                    state.push_audit(report.clone());
                 }
             }
         }
