@@ -1,5 +1,4 @@
 mod actions;
-mod checks;
 mod events;
 mod hardening;
 mod journal;
@@ -14,10 +13,9 @@ use async_trait::async_trait;
 use chrono::Utc;
 
 pub use actions::{ACTION_BAN, ACTION_UNBAN, PERMANENT, SPEC_BAN, SPEC_UNBAN};
-pub use checks::{Category, Check, CheckStatus, Grade, Score, Weight, checks, score};
 pub use model::{
     Attacker, BRUTE_FORCE_THRESHOLD, BRUTE_FORCE_WINDOW_MINUTES, Ban, BanBackend, FirewallState,
-    Jail, Login, SecuritySnapshot, SshdSettings, SudoCall, Switch,
+    Hardening, Jail, Login, MacStatus, SecuritySnapshot, SshdSettings, SudoCall, Switch,
 };
 
 use crate::common::root::exec_prefer_root;
@@ -83,7 +81,7 @@ fn script() -> String {
         ),
         (
             "shadow",
-            "[ -r /etc/shadow ] && awk -F: '($2==\"\"){print $1}' /etc/shadow",
+            "if [ -r /etc/shadow ]; then awk -F: '($2==\"\"){print $1}' /etc/shadow; else echo '@@unreadable'; fi",
         ),
         (
             "nopasswd",
@@ -91,7 +89,7 @@ fn script() -> String {
         ),
         (
             "keyperms",
-            "find /root/.ssh /home/*/.ssh -name authorized_keys -perm /go+w 2>/dev/null",
+            "[ \"$(id -u)\" = 0 ] || echo '@@unreadable'; find /root/.ssh /home/*/.ssh -name authorized_keys -perm /go+w 2>/dev/null",
         ),
         (
             "wwfiles",
@@ -125,11 +123,9 @@ impl Module for SecurityModule {
         if transport.sudo_mode() == SudoMode::None {
             let whoami = transport.exec("id -un").await?;
             if whoami.stdout.trim() != "root" {
-                return Ok(Availability::Partial {
-                    missing: vec![
-                        "настройки sshd, fail2ban и список банов (нужен sudo)".to_owned(),
-                    ],
-                });
+                return Ok(Availability::partial(
+                    "настройки sshd, fail2ban и список банов (нужен sudo)",
+                ));
             }
         }
         Ok(Availability::Available)

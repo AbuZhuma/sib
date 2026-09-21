@@ -1,7 +1,9 @@
 use super::model::{Hardening, MacStatus};
 use crate::common::sections::Sections;
 
-pub const SYSCTL_KEYS: [&str; 7] = [
+const UNREADABLE: &str = "@@unreadable";
+
+pub const SYSCTL_KEYS: [&str; 18] = [
     "net.ipv4.tcp_syncookies",
     "net.ipv4.conf.all.rp_filter",
     "kernel.randomize_va_space",
@@ -9,6 +11,17 @@ pub const SYSCTL_KEYS: [&str; 7] = [
     "net.ipv4.icmp_echo_ignore_broadcasts",
     "net.ipv4.conf.all.accept_redirects",
     "net.ipv4.conf.all.send_redirects",
+    "net.ipv4.conf.all.accept_source_route",
+    "net.ipv4.conf.all.log_martians",
+    "net.ipv6.conf.all.accept_redirects",
+    "kernel.kptr_restrict",
+    "kernel.dmesg_restrict",
+    "kernel.yama.ptrace_scope",
+    "kernel.sysrq",
+    "kernel.unprivileged_bpf_disabled",
+    "kernel.perf_event_paranoid",
+    "fs.protected_symlinks",
+    "fs.protected_hardlinks",
 ];
 
 pub fn parse(sections: &Sections<'_>, units: &str) -> Hardening {
@@ -17,11 +30,11 @@ pub fn parse(sections: &Sections<'_>, units: &str) -> Hardening {
         mac: mac(sections.get_or_empty("mac")),
         ntp_synced: yes_no(sections.get_or_empty("ntp")),
         extra_uid0: lines(sections.get_or_empty("uid0")),
-        empty_passwords: sections.get("shadow").map(lines),
+        empty_passwords: readable_lines(sections.get("shadow")),
         sudo_nopasswd: sections
             .get("nopasswd")
             .and_then(|raw| raw.trim().parse().ok()),
-        writable_keys: lines(sections.get_or_empty("keyperms")),
+        writable_keys: readable_lines(sections.get("keyperms")),
         world_writable_etc: lines(sections.get_or_empty("wwfiles")),
         risky_ports: risky_ports(sections.get_or_empty("risky")),
         auto_updates: unit_active(units, "unattended-upgrades")
@@ -72,6 +85,14 @@ fn yes_no(raw: &str) -> Option<bool> {
     }
 }
 
+fn readable_lines(raw: Option<&str>) -> Option<Vec<String>> {
+    let raw = raw?;
+    if raw.lines().any(|line| line.trim() == UNREADABLE) {
+        return None;
+    }
+    Some(lines(raw))
+}
+
 fn lines(raw: &str) -> Vec<String> {
     raw.lines()
         .map(str::trim)
@@ -105,6 +126,7 @@ mod tests {
         assert_eq!(hardening.ntp_synced, Some(true));
         assert_eq!(hardening.extra_uid0, vec!["toor"]);
         assert_eq!(hardening.empty_passwords, Some(Vec::new()));
+        assert_eq!(hardening.writable_keys, Some(Vec::new()));
         assert_eq!(hardening.sudo_nopasswd, Some(2));
         assert_eq!(hardening.world_writable_etc, vec!["/etc/x"]);
         assert_eq!(hardening.risky_ports, vec![23, 2375]);
@@ -117,6 +139,15 @@ mod tests {
         let sections = Sections::parse("###units\n");
         let hardening = parse(&sections, "");
         assert_eq!(hardening.empty_passwords, None);
+        assert_eq!(hardening.writable_keys, None);
         assert_eq!(hardening.mac, None);
+    }
+
+    #[test]
+    fn unreadable_marker_makes_shadow_and_keys_unknown() {
+        let sections = Sections::parse("###shadow\n@@unreadable\n###keyperms\n@@unreadable\n");
+        let hardening = parse(&sections, "");
+        assert_eq!(hardening.empty_passwords, None);
+        assert_eq!(hardening.writable_keys, None);
     }
 }

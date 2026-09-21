@@ -97,6 +97,11 @@ pub struct SshdSettings {
     pub max_auth_tries: Option<u32>,
     pub permit_empty_passwords: Option<Switch>,
     pub x11_forwarding: Option<Switch>,
+    pub login_grace_time: Option<u32>,
+    pub client_alive_interval: Option<u32>,
+    pub allow_tcp_forwarding: Option<Switch>,
+    pub use_pam: Option<Switch>,
+    pub max_startups: Option<String>,
 }
 
 impl SshdSettings {
@@ -164,7 +169,7 @@ pub struct Hardening {
     pub extra_uid0: Vec<String>,
     pub empty_passwords: Option<Vec<String>>,
     pub sudo_nopasswd: Option<u32>,
-    pub writable_keys: Vec<String>,
+    pub writable_keys: Option<Vec<String>>,
     pub world_writable_etc: Vec<String>,
     pub risky_ports: Vec<u16>,
     pub auto_updates: bool,

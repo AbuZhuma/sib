@@ -190,7 +190,10 @@ fn ufw_bans(raw: &str) -> Vec<Ban> {
 fn sshd_settings(raw: &str) -> SshdSettings {
     let mut settings = SshdSettings::default();
     for line in raw.lines() {
-        let line = line.split_once(':').map(|(_, l)| l).unwrap_or(line);
+        let line = match line.split_once(':') {
+            Some((prefix, rest)) if !prefix.contains(' ') => rest,
+            _ => line,
+        };
         let mut tokens = line.split_whitespace();
         let (Some(key), Some(value)) = (tokens.next(), tokens.next()) else {
             continue;
@@ -205,6 +208,13 @@ fn sshd_settings(raw: &str) -> SshdSettings {
                 settings.permit_empty_passwords = Some(Switch::from_yes_no(value));
             }
             "x11forwarding" => settings.x11_forwarding = Some(Switch::from_yes_no(value)),
+            "logingracetime" => settings.login_grace_time = value.parse().ok(),
+            "clientaliveinterval" => settings.client_alive_interval = value.parse().ok(),
+            "allowtcpforwarding" => {
+                settings.allow_tcp_forwarding = Some(Switch::from_yes_no(value));
+            }
+            "usepam" => settings.use_pam = Some(Switch::from_yes_no(value)),
+            "maxstartups" => settings.max_startups = Some(value.to_owned()),
             _ => {}
         }
     }
@@ -259,6 +269,10 @@ mod tests {
         assert_eq!(snapshot.jails[0].name, "sshd");
         assert_eq!(snapshot.jails[0].banned, vec!["192.0.2.10", "198.51.100.7"]);
         assert_eq!(snapshot.sshd.password_auth, Some(Switch::Off));
+        assert_eq!(snapshot.sshd.login_grace_time, Some(120));
+        assert_eq!(snapshot.sshd.client_alive_interval, Some(0));
+        assert_eq!(snapshot.sshd.allow_tcp_forwarding, Some(Switch::On));
+        assert_eq!(snapshot.sshd.max_startups.as_deref(), Some("10:30:100"));
         assert_eq!(
             snapshot.sshd.permit_root_login.as_deref(),
             Some("prohibit-password")
