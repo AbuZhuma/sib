@@ -1,5 +1,6 @@
 use asiba_core::{AppState, IncidentDraft, IncidentKind, ServerState, Severity};
 use asiba_modules::memory::{self, MemorySnapshot};
+use chrono::Utc;
 
 use super::Detector;
 
@@ -13,15 +14,13 @@ impl Detector for MemoryDetector {
             return Vec::new();
         };
         let mut drafts = Vec::new();
-        if snapshot.oom_kills > 0 {
+        let recent = snapshot.recent_oom_kills(Utc::now());
+        if recent > 0 {
             drafts.push(IncidentDraft::new(
                 IncidentKind::Memory,
                 Severity::Warning,
                 "oom",
-                format!(
-                    "kernel OOM killer fired {} times since boot",
-                    snapshot.oom_kills
-                ),
+                format!("kernel OOM killer fired {recent} times in the last 24 h"),
             ));
         }
         if snapshot.swap_total_bytes > 0 && snapshot.swap_used_pct() >= SWAP_WARNING_PCT {

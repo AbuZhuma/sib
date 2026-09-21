@@ -6,8 +6,9 @@ use asiba_core::{
     Snapshot, Transport,
 };
 use async_trait::async_trait;
+use chrono::Utc;
 
-pub use model::MemorySnapshot;
+pub use model::{MemorySnapshot, OOM_RECENT_WINDOW};
 
 use crate::common::rate;
 use crate::common::sections;
@@ -71,7 +72,10 @@ impl Module for MemoryModule {
                 elapsed,
             ));
             let new_kills = snapshot.oom_kills.saturating_sub(previous.oom_kills);
+            snapshot.oom_kills_observed = previous.oom_kills_observed + new_kills;
+            snapshot.last_oom_at = previous.last_oom_at;
             if new_kills > 0 {
+                snapshot.last_oom_at = Some(Utc::now());
                 events.push(oom_event(new_kills));
             }
         }

@@ -180,10 +180,11 @@ fn oom(ctx: &AuditContext<'_>) -> Vec<Verdict> {
     let Some(snapshot) = ctx.data::<MemorySnapshot>(memory::ID) else {
         return Verdict::skipped(NO_DATA).single();
     };
+    let recent = snapshot.recent_oom_kills(chrono::Utc::now());
     Verdict::graded(
         false,
-        snapshot.oom_kills > 0,
-        format!("{} срабатываний с загрузки", snapshot.oom_kills),
+        recent > 0,
+        format!("{recent} за сутки, {} с загрузки", snapshot.oom_kills),
     )
     .single()
 }

@@ -25,6 +25,8 @@ pub fn memory_snapshot(raw: &str) -> Result<MemorySnapshot, ModuleError> {
         swap_free_bytes: meminfo_field(meminfo, "SwapFree").unwrap_or(0),
         pressure: pressure::parse(sections.get_or_empty("pressure")),
         oom_kills: vmstat_field(vmstat, "oom_kill"),
+        oom_kills_observed: 0,
+        last_oom_at: None,
         swap_in_pages: vmstat_field(vmstat, "pswpin"),
         swap_out_pages: vmstat_field(vmstat, "pswpout"),
         swap_in_ps: None,
