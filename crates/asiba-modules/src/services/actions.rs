@@ -24,15 +24,25 @@ pub async fn perform(
         ACTION_RESTART | ACTION_START | ACTION_STOP => request.kind.as_str(),
         other => return Err(ModuleError::UnsupportedAction(other.to_owned())),
     };
-    let command = format!("systemctl {verb} {unit} && systemctl is-active {unit}");
-    let state = require_success(exec_as_root(transport, &command).await?).or_else(|error| {
-        if verb == ACTION_STOP {
-            Ok("inactive".to_owned())
-        } else {
-            Err(error)
-        }
-    })?;
+    let command = action_command(verb, &unit);
+    let state = require_success(exec_as_root(transport, &command).await?)?;
     Ok(ActionOutcome::new(format!(
         "systemctl {verb} {unit}: {state}"
     )))
+}
+
+fn action_command(verb: &str, unit: &str) -> String {
+    format!("systemctl {verb} {unit} && {{ systemctl is-active {unit}; true; }}")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn action_command_reports_state_but_fails_only_on_the_action_itself() {
+        let command = action_command(ACTION_STOP, "nginx.service");
+        assert!(command.starts_with("systemctl stop nginx.service && {"));
+        assert!(command.ends_with("systemctl is-active nginx.service; true; }"));
+    }
 }
