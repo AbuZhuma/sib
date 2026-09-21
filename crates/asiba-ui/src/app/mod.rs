@@ -1,6 +1,7 @@
 mod actions;
 mod confirm;
 mod dialogs;
+mod dispatch;
 mod events;
 mod external;
 
