@@ -27,15 +27,17 @@ impl ModuleView for GitView {
         Tab::Git
     }
 
-    fn summary(&self, ui: &mut Ui, server: &ServerState) {
+    fn has_content(&self, server: &ServerState) -> bool {
+        server
+            .data::<GitSnapshot>(git::ID)
+            .is_some_and(|snapshot| !snapshot.repositories.is_empty())
+    }
+
+    fn summary(&self, ui: &mut Ui, server: &ServerState, _shared: &ViewShared) {
         let p = Palette::current(ui.ctx());
         let Some(snapshot) = server.data::<GitSnapshot>(git::ID) else {
             return;
         };
-        if snapshot.repositories.is_empty() {
-            ui.label(RichText::new(text::GIT_NONE).color(p.text_muted));
-            return;
-        }
         ui.monospace(format!(
             "{} {}",
             snapshot.repositories.len(),

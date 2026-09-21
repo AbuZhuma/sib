@@ -51,6 +51,11 @@ passwordauthentication no
 pubkeyauthentication yes
 permitrootlogin prohibit-password
 maxauthtries 3
+logingracetime 120
+clientaliveinterval 0
+allowtcpforwarding yes
+usepam yes
+maxstartups 10:30:100
 ###hashes
 aaaa  /etc/passwd
 bbbb  /etc/group

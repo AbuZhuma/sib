@@ -1,0 +1,5 @@
+d	d	755	www-data	www-data	4096	1789480000.0000000000		app
+f	f	600	deploy	deploy	212	1789480100.5000000000		.env
+f	f	644	deploy	deploy	0	1789480000.0000000000		README with space.md
+l	?	777	root	root	9	1789480000.0000000000	/nowhere	broken
+p	p	600	root	root	0	1789480000.0000000000		queue.fifo

@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::common::rate;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -67,12 +69,13 @@ impl ProcessSnapshot {
 
 pub fn fill_rates(current: &mut ProcessSnapshot, previous: &ProcessSnapshot, elapsed: f64) {
     let hz = current.clock_ticks_per_sec.max(1) as f64;
+    let earlier: HashMap<(u32, u64), &Process> = previous
+        .processes
+        .iter()
+        .map(|p| ((p.pid, p.start_ticks), p))
+        .collect();
     for process in &mut current.processes {
-        let Some(before) = previous
-            .processes
-            .iter()
-            .find(|p| p.pid == process.pid && p.start_ticks == process.start_ticks)
-        else {
+        let Some(before) = earlier.get(&(process.pid, process.start_ticks)) else {
             continue;
         };
         let ticks = rate::per_second(process.cpu_ticks, before.cpu_ticks, elapsed);

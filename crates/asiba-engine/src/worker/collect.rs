@@ -5,12 +5,14 @@ use asiba_core::{
     CollectContext, Module, ModuleError, ModuleId, Snapshot, Transport, TransportError,
 };
 use asiba_storage::StoredSample;
+use chrono::Utc;
 use tokio::sync::{broadcast, watch};
 use tokio::time::{MissedTickBehavior, interval};
 
 use super::WorkerContext;
 
 const FAILURES_BEFORE_GIVING_UP: u32 = 3;
+const STALE_PREVIOUS_INTERVALS: u32 = 3;
 
 pub struct LoopContext {
     pub worker: Arc<WorkerContext>,
@@ -24,7 +26,7 @@ pub async fn run(ctx: LoopContext) {
     let mut ticker = interval(ctx.interval);
     ticker.set_missed_tick_behavior(MissedTickBehavior::Delay);
     let mut requests = ctx.worker.backfill.subscribe();
-    let mut previous: Option<Snapshot> = None;
+    let mut previous = recent_snapshot(&ctx);
     let mut failures = 0;
     loop {
         let is_backfill = tokio::select! {
@@ -82,6 +84,19 @@ fn is_own_request(
     matches!(request, Ok(module) if module == ctx.module.id())
 }
 
+fn recent_snapshot(ctx: &LoopContext) -> Option<Snapshot> {
+    let state = ctx.worker.state.read().ok()?;
+    let snapshot = state
+        .servers
+        .get(&ctx.worker.spec.id)?
+        .modules
+        .get(&ctx.module.id())?
+        .last_snapshot
+        .clone()?;
+    let max_age = chrono::Duration::from_std(ctx.interval * STALE_PREVIOUS_INTERVALS).ok()?;
+    (Utc::now() - snapshot.taken_at <= max_age).then_some(snapshot)
+}
+
 fn record_snapshot(ctx: &LoopContext, snapshot: &Snapshot) {
     let worker = &ctx.worker;
     if let Ok(mut state) = worker.state.write() {
@@ -92,19 +107,18 @@ fn record_snapshot(ctx: &LoopContext, snapshot: &Snapshot) {
         if let Some(module_state) = server.modules.get_mut(&ctx.module.id()) {
             module_state.record_snapshot(snapshot.clone());
         }
-        let server_id = worker.spec.id.clone();
         let events: Vec<_> = snapshot
             .events
             .iter()
-            .cloned()
-            .map(|e| e.for_server(server_id.clone()))
+            .map(|event| event.clone().for_server(worker.spec.id.clone()))
             .collect();
         server.push_recent_events(events.iter().cloned());
         state.push_events(events);
     }
     persist_samples(ctx, snapshot);
-    worker.docs.maybe_write(worker);
-    (worker.notify)();
+    let worker = Arc::clone(worker);
+    tokio::task::spawn_blocking(move || worker.docs.maybe_write(&worker));
+    (ctx.worker.notify)();
 }
 
 fn persist_samples(ctx: &LoopContext, snapshot: &Snapshot) {

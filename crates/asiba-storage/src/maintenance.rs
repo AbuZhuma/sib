@@ -59,6 +59,8 @@ pub fn run(
 
 #[cfg(test)]
 mod tests {
+    use chrono::Timelike;
+
     use crate::database::Database;
     use crate::sample::StoredSample;
 
@@ -77,7 +79,10 @@ mod tests {
     fn old_raw_samples_are_folded_into_minutes() {
         let mut db = Database::in_memory().expect("db");
         let now = Utc::now();
-        let old = now - Duration::hours(50);
+        let old = (now - Duration::hours(50))
+            .with_second(0)
+            .and_then(|t| t.with_nanosecond(0))
+            .expect("minute start");
         db.insert_batch(&[
             sample(old, 10.0),
             sample(old + Duration::seconds(2), 30.0),

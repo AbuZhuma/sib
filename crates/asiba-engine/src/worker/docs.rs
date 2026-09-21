@@ -36,7 +36,7 @@ impl DocWriter {
     }
 
     pub fn maybe_write(&self, ctx: &WorkerContext) {
-        let Ok(mut state) = self.state.lock() else {
+        let Ok(mut state) = self.state.try_lock() else {
             return;
         };
         if state

@@ -2,7 +2,7 @@ use asiba_core::{ModuleId, ServerState};
 use asiba_modules::updates::{self, UpdatesSnapshot};
 use egui::{RichText, Ui};
 
-use super::{ModuleView, Tab};
+use super::{ModuleView, Tab, ViewShared};
 use crate::text;
 use crate::theme::Palette;
 
@@ -23,7 +23,7 @@ impl ModuleView for UpdatesView {
         Tab::Summary
     }
 
-    fn summary(&self, ui: &mut Ui, server: &ServerState) {
+    fn summary(&self, ui: &mut Ui, server: &ServerState, _shared: &ViewShared) {
         let p = Palette::current(ui.ctx());
         let Some(snapshot) = server.data::<UpdatesSnapshot>(updates::ID) else {
             return;

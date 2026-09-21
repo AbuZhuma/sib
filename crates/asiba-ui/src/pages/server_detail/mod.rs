@@ -1,18 +1,22 @@
 pub mod audit;
 mod connection;
 mod events;
+pub mod files;
 mod header;
 mod modules_table;
+pub mod security;
 mod summary;
-mod system_audit;
 
 use asiba_config::{AiConfig, SummaryLayout};
-use asiba_core::{AppState, AuditScope, AuditTarget, ModuleId, ServerState};
+use asiba_core::{
+    AppState, AuditScope, AuditTarget, Incident, IncidentKind, ModuleId, ServerState,
+};
+use asiba_modules::files as files_module;
 use egui::{Id, RichText, Ui};
 
 use super::Action;
-use crate::components::{AiBlock, ai_block, chip, panel, panel_plain, scroll};
-use crate::modules::{ModuleView, Tab, ViewAction, ViewShared, has_data};
+use crate::components::{AiBlock, ai_block, chip, incident_tab, panel, panel_plain, scroll};
+use crate::modules::{ModuleView, Tab, ViewAction, ViewShared};
 use crate::pages::inspector::{self, Inspector};
 use crate::text;
 use crate::theme::{GAP, Palette};
@@ -25,12 +29,24 @@ pub struct DetailContext<'a> {
     pub ai: &'a AiConfig,
     pub views: &'a [Box<dyn ModuleView>],
     pub inspector: Option<&'a Inspector>,
+    pub files: Option<&'a files::FileBrowser>,
     pub layout: &'a SummaryLayout,
     pub shared: ViewShared<'a>,
 }
 
 pub fn select_tab(ctx: &egui::Context, tab: Tab) {
     ctx.data_mut(|d| d.insert_temp(Id::new(TAB_KEY), tab));
+}
+
+pub fn open_for_incident(ctx: &egui::Context, state: &AppState, incident: &Incident) {
+    select_tab(ctx, incident_tab(state, incident));
+    if incident.kind == IncidentKind::SecurityCheck {
+        security::select_subpage(
+            ctx,
+            &incident.server,
+            security::Subpage::problem(&incident.subject),
+        );
+    }
 }
 
 pub fn show(ui: &mut Ui, ctx: &DetailContext<'_>) -> Option<Action> {
@@ -62,12 +78,11 @@ pub fn show(ui: &mut Ui, ctx: &DetailContext<'_>) -> Option<Action> {
                     can_audit: ctx.ai.is_ready(),
                     views,
                     layout: ctx.layout,
+                    shared: &ctx.shared,
                 },
             ),
-            Tab::Audit => {
-                system_audit::show(ui, ctx);
-                audit::show(ui, ctx)
-            }
+            Tab::Files => files::show(ui, ctx),
+            Tab::Security => security::show(ui, ctx),
             other => {
                 let analysis_action = section_analysis(ui, ctx, other);
                 pages_for(ui, ctx, other).or(analysis_action)
@@ -87,12 +102,20 @@ fn visible_tabs(server: &ServerState, views: &[Box<dyn ModuleView>]) -> Vec<Tab>
     Tab::ALL
         .into_iter()
         .filter(|tab| {
-            matches!(tab, Tab::Summary | Tab::Audit)
+            matches!(tab, Tab::Summary | Tab::Security)
+                || (*tab == Tab::Files && has_files_module(server))
                 || views
                     .iter()
-                    .any(|v| v.tab() == *tab && has_data(server, v.id()))
+                    .any(|v| v.tab() == *tab && v.has_content(server))
         })
         .collect()
+}
+
+fn has_files_module(server: &ServerState) -> bool {
+    server
+        .modules
+        .get(&files_module::ID)
+        .is_some_and(|module| module.availability.is_usable())
 }
 
 fn current_tab(ui: &Ui, tabs: &[Tab]) -> Tab {
@@ -142,7 +165,7 @@ fn pages_for(ui: &mut Ui, ctx: &DetailContext<'_>, tab: Tab) -> Option<Action> {
     let mut action = None;
     let shown: Vec<&Box<dyn ModuleView>> = views
         .iter()
-        .filter(|v| v.tab() == tab && has_data(server, v.id()))
+        .filter(|v| v.tab() == tab && v.has_content(server))
         .collect();
     let is_single = shown.len() == 1;
     for view in shown {

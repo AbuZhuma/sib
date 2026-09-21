@@ -11,7 +11,7 @@ use async_trait::async_trait;
 pub use model::{AnomaliesSnapshot, AttackSign, Counters, Peer, Rates, SignKind, TOP_PEERS};
 
 use crate::common::rate::per_second;
-use crate::common::sections;
+use crate::common::{detect, sections};
 
 pub const ID: ModuleId = ModuleId("anomalies");
 pub const KEY_SYN_RECV: &str = "anomalies.syn_recv";
@@ -50,13 +50,14 @@ impl Module for AnomaliesModule {
     }
 
     async fn detect(&self, transport: &dyn Transport) -> Result<Availability, ModuleError> {
-        let output = transport
-            .exec("command -v ss && test -r /proc/net/snmp")
-            .await?;
-        if !output.is_success() {
-            return Ok(Availability::Unavailable {
-                reason: "нет ss или /proc/net/snmp".to_owned(),
-            });
+        let probe = detect::require(
+            transport,
+            "command -v ss && test -r /proc/net/snmp",
+            "нет ss или /proc/net/snmp",
+        )
+        .await?;
+        if !probe.is_usable() {
+            return Ok(probe);
         }
         Ok(Availability::Available)
     }

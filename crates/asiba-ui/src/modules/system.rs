@@ -2,7 +2,7 @@ use asiba_core::{ModuleId, ServerState, Snapshot};
 use asiba_modules::system::{self, SystemInfo};
 use egui::{Grid, Label, RichText, Ui};
 
-use super::{ModuleView, Tab};
+use super::{ModuleView, Tab, ViewShared};
 use crate::format;
 use crate::text;
 use crate::theme::Palette;
@@ -22,7 +22,7 @@ impl ModuleView for SystemView {
         Tab::Summary
     }
 
-    fn summary(&self, ui: &mut Ui, server: &ServerState) {
+    fn summary(&self, ui: &mut Ui, server: &ServerState, _shared: &ViewShared) {
         if let Some(info) = server.data::<SystemInfo>(system::ID) {
             grid(ui, "system-summary", info);
         }

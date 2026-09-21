@@ -35,7 +35,7 @@ impl ModuleView for LogsView {
         Tab::Logs
     }
 
-    fn summary(&self, ui: &mut Ui, server: &ServerState) {
+    fn summary(&self, ui: &mut Ui, server: &ServerState, _shared: &ViewShared) {
         let p = Palette::current(ui.ctx());
         let Some(snapshot) = server.data::<LogsSnapshot>(logs::ID) else {
             return;

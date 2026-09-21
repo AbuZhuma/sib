@@ -13,7 +13,8 @@
 
 ## Правила
 
-- `detect` обязан вернуть `Unavailable { reason }`, если данных на сервере нет. Проверяй наличие бинарника (`command -v docker`) и прав.
+- `detect` обязан вернуть `Unavailable`, если данных на сервере нет. Проверка одной командой - `common::detect::require(transport, "command -v df", "нет df")`; частичный доступ - `Availability::partial("...")`, отказ по своей причине - `Availability::unavailable("...")`. Проверяй наличие бинарника и прав, а не наличие данных: пустой, но корректный снимок - нормальный результат `collect`.
+- Если модуль доступен, но собрал пусто (нет деплоев, нет репозиториев), вкладку и блок в сводке скрывает UI: `ModuleView::has_content` переопределяется в представлении модуля. Так сделаны `deploy` и `git`.
 - Сбор — одна команда через `common::sections::script(&[(name, cmd), ...])`, ответ — `Sections::parse`. Не делай десять `exec` подряд.
 - Данные модуля не тянут другие модули напрямую. Если нужна связь (порты ↔ процессы), она делается в UI.
 - Расписание: `Fast` — только для живых метрик (cpu, memory, network, processes, docker stats); `Normal` — списки и состояния; `Slow` — редко меняющееся.
@@ -89,6 +90,9 @@
 
 ### git
 Детект: `git --version`, первый найденный `.git` в `/opt /srv /var/www /home/* /root /app /docker /data` (`find -maxdepth 3 -name .git -type d`). Сбор (Normal): тот же поиск, затем по каждому репозиторию с `GIT_CONFIG_*=safe.directory=*`, `GIT_OPTIONAL_LOCKS=0`: `git rev-parse --abbrev-ref HEAD`, `rev-parse HEAD`, `remote get-url origin`, `rev-list --left-right --count 'HEAD...@{upstream}'`, `status --porcelain | head -200`, `stash list | wc -l`, `branch --format='%(refname:short)' | head -50`, `tag --sort=-creatordate | head -20`, `log -100 --format='%H%x09%an%x09%ct%x09%D%x09%s'`. Запрос `history <path>`: `git log -2000` с тем же форматом. Ничего не пишет: `status` с `GIT_OPTIONAL_LOCKS=0` не обновляет индекс.
+
+### files
+Детект: `find / -maxdepth 0 -printf ''` и `command -v stat`. По расписанию не собирает (`OnDemand`). Запрос `list <dir>`: `find <dir> -mindepth 1 -maxdepth 1 -printf '%y\t%Y\t%m\t%u\t%g\t%s\t%T@\t%l\t%f\n' | head -n 1000`. Запрос `search <pattern>`: `timeout 15 nice -n 19 find / \( -path /proc -o -path /sys -o -path /dev -o -path /run \) -prune -o -iname '*<pattern>*' -printf … | head -n 200` (шаблон без `/`, до 120 символов; свои `*?[` не оборачиваются). Запрос `read <file>`: `stat -c %s`, проверка `-r`, лимит 200 000 байт, проба на NUL в первых 8 КБ (`head -c 8192 | tr -cd '\000' | wc -c`), затем `cat`. Всё через sudo, если он настроен (`exec_prefer_root`). **Действия**: `printf '%s' <содержимое> > <file>` (write, содержимое передаётся в аргументе действия, в журнал пишется только размер), `mkdir -- <path>`, `[ ! -e <path> ] && : > <path>` (create), `[ ! -e <dst> ] && mv -- <src> <dst>` (move; `/` запрещён), `[ ! -e <dst> ] && cp -a -- <src> <dst>` (copy), `chmod <mode> -- <path>`, `chown <user:group> -- <path>`, `rm -rf -- <path>` (delete, `/` запрещён). Пути - только абсолютные без `..`, всё экранируется `shell_quote`.
 
 ### gpu
 Детект: `command -v nvidia-smi || ls /sys/class/drm/card*/device/gpu_busy_percent`. Сбор: `nvidia-smi --query-gpu=index,name,utilization.gpu,memory.used,memory.total,temperature.gpu,power.draw,power.limit --format=csv,noheader,nounits`, `nvidia-smi --query-compute-apps=gpu_bus_id,pid,process_name,used_memory` (индекс GPU сопоставляется через `--query-gpu=index,pci.bus_id`); AMD — чтение `/sys/class/drm/card*/device/{gpu_busy_percent,mem_info_vram_used,mem_info_vram_total,product_name}` и `hwmon/hwmon*/{temp1_input,power1_average}`.

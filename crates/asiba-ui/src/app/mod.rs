@@ -1,21 +1,23 @@
 mod actions;
 mod confirm;
 mod dialogs;
+mod events;
 mod external;
 
+use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
 
 use asiba_config::{AppConfig, IgnoredStore, LayoutStore, Paths};
-use asiba_core::{AppState, AuditStatus, ServerId, SharedState};
-use asiba_engine::{EngineEvent, EngineHandle, RepaintNotifier};
+use asiba_core::{AppState, ServerId, SharedState};
+use asiba_engine::{EngineHandle, RepaintNotifier};
 use egui::{CentralPanel, Frame, Margin, Panel};
 
 use crate::components::MapState;
 use crate::devtools::{self, ScreenshotOnStart};
 use crate::modules::{self, ModuleView, Tab, ViewShared};
 use crate::pages::inspector::Inspector;
-use crate::pages::server_detail::{self, DetailContext};
+use crate::pages::server_detail::{self, DetailContext, files::FileBrowser};
 use crate::pages::settings::SettingsContext;
 use crate::pages::{self, Action, Page, server_form::ServerForm};
 use crate::shell::{Notice, StatusContext, sidebar, statusbar};
@@ -25,7 +27,6 @@ use crate::theme::{self, GAP, SIDEBAR_WIDTH, STATUSBAR_HEIGHT};
 const REPAINT_INTERVAL: Duration = Duration::from_secs(1);
 const WINDOW_SIZE: [f32; 2] = [1280.0, 800.0];
 const MIN_WINDOW_SIZE: [f32; 2] = [900.0, 600.0];
-const MAX_INCIDENT_NOTICES: usize = 3;
 
 pub struct AppDeps {
     pub state: SharedState,
@@ -77,6 +78,7 @@ pub struct AsibaApp {
     layouts: LayoutStore,
     ignored: IgnoredStore,
     inspector: Option<Inspector>,
+    files: HashMap<ServerId, FileBrowser>,
     next_query_token: u64,
 }
 
@@ -104,6 +106,7 @@ impl AsibaApp {
             paused: false,
             frozen: None,
             inspector: None,
+            files: HashMap::new(),
             next_query_token: 1,
         }
     }
@@ -129,64 +132,18 @@ impl AsibaApp {
         self.start_page = None;
     }
 
-    fn drain_engine_events(&mut self) {
-        for event in self.engine.poll_events() {
-            match event {
-                EngineEvent::TestFinished(report) => {
-                    if let Some(form) = &mut self.form {
-                        form.accept_report(report);
-                    }
-                }
-                EngineEvent::QueryFinished { token, result } => {
-                    if let Some(inspector) = &mut self.inspector {
-                        inspector.accept(token, result.map(|r| (r.title, r.text)));
-                    }
-                }
-                EngineEvent::ActionFinished(record) => {
-                    let outcome = if record.is_success {
-                        text::ACTION_DONE
-                    } else {
-                        text::ACTION_FAILED
-                    };
-                    let message = format!(
-                        "{} {}: {outcome} - {}",
-                        record.kind, record.target, record.message
-                    );
-                    self.notices.push(Notice::new(message));
-                }
-                EngineEvent::IncidentsOpened(incidents) => {
-                    for incident in incidents.iter().take(MAX_INCIDENT_NOTICES) {
-                        self.notices.push(Notice::new(format!(
-                            "{} {}: {}",
-                            text::INCIDENT_NOTICE,
-                            incident.server,
-                            incident.summary
-                        )));
-                    }
-                }
-                EngineEvent::AuditFinished(report) => {
-                    let message = match &report.status {
-                        AuditStatus::Failed(error) => {
-                            format!(
-                                "{} {}: {error}",
-                                text::AUDIT_NOTICE_FAILED,
-                                report.target.key()
-                            )
-                        }
-                        _ => format!(
-                            "{} {}: {}",
-                            text::AUDIT_NOTICE_DONE,
-                            report.target.key(),
-                            report.scope.key()
-                        ),
-                    };
-                    self.notices.push(Notice::new(message));
-                }
-                EngineEvent::ServerSaved(_) | EngineEvent::ServerRemoved(_) => {}
-                EngineEvent::Warning(message) => self.notices.push(Notice::new(message)),
-            }
-        }
-        self.notices.retain(|n| !n.is_expired());
+    fn statusbar(&mut self, ui: &mut egui::Ui) {
+        let Ok(state) = self.state.read() else {
+            return;
+        };
+        statusbar(
+            ui,
+            StatusContext {
+                state: &state,
+                notices: &self.notices,
+                paused: &mut self.paused,
+            },
+        );
     }
 
     fn sync_pause(&mut self) {
@@ -197,6 +154,27 @@ impl AsibaApp {
             (false, true) => self.frozen = None,
             _ => {}
         }
+    }
+
+    fn server_detail(&self, ui: &mut egui::Ui, state: &AppState, id: &ServerId) -> Option<Action> {
+        let Some(server) = state.servers.get(id) else {
+            return Some(Action::Navigate(Page::Servers));
+        };
+        let layout = self.layouts.for_server(id.as_str());
+        let detail = DetailContext {
+            server,
+            state,
+            ai: &self.config.ai,
+            views: &self.views,
+            inspector: self.inspector.as_ref(),
+            files: self.files.get(id),
+            layout: &layout,
+            shared: ViewShared {
+                state,
+                countries: &state.ip_countries,
+            },
+        };
+        pages::server_detail::show(ui, &detail)
     }
 
     fn central(&mut self, ui: &mut egui::Ui) -> Option<Action> {
@@ -216,24 +194,7 @@ impl AsibaApp {
                 },
             ),
             Page::Servers => pages::servers::show(ui, state),
-            Page::ServerDetail(id) => match state.servers.get(&id) {
-                Some(server) => {
-                    let layout = self.layouts.for_server(id.as_str());
-                    let detail = DetailContext {
-                        server,
-                        state,
-                        ai: &self.config.ai,
-                        views: &self.views,
-                        inspector: self.inspector.as_ref(),
-                        layout: &layout,
-                        shared: ViewShared {
-                            countries: &state.ip_countries,
-                        },
-                    };
-                    pages::server_detail::show(ui, &detail)
-                }
-                None => Some(Action::Navigate(Page::Servers)),
-            },
+            Page::ServerDetail(id) => self.server_detail(ui, state, &id),
             Page::ServerForm => {
                 let existing: Vec<ServerId> = state.servers.keys().cloned().collect();
                 match &mut self.form {
@@ -255,6 +216,12 @@ impl AsibaApp {
     }
 }
 
+fn panel_frame(fill: egui::Color32, vertical_margin: i8) -> Frame {
+    Frame::new()
+        .fill(fill)
+        .inner_margin(Margin::symmetric(GAP as i8, vertical_margin))
+}
+
 impl eframe::App for AsibaApp {
     fn ui(&mut self, root: &mut egui::Ui, _frame: &mut eframe::Frame) {
         let ctx = root.ctx().clone();
@@ -269,43 +236,20 @@ impl eframe::App for AsibaApp {
         Panel::top("statusbar")
             .exact_size(STATUSBAR_HEIGHT)
             .resizable(false)
-            .frame(
-                Frame::new()
-                    .fill(palette.bg_panel)
-                    .inner_margin(Margin::symmetric(GAP as i8, 0)),
-            )
-            .show(root, |ui| {
-                if let Ok(state) = self.state.read() {
-                    statusbar(
-                        ui,
-                        StatusContext {
-                            state: &state,
-                            notices: &self.notices,
-                            paused: &mut self.paused,
-                        },
-                    );
-                }
-            });
+            .frame(panel_frame(palette.bg_panel, 0))
+            .show(root, |ui| self.statusbar(ui));
         self.sync_pause();
         Panel::left("sidebar")
             .exact_size(SIDEBAR_WIDTH)
             .resizable(false)
-            .frame(
-                Frame::new()
-                    .fill(palette.bg_window)
-                    .inner_margin(Margin::same(GAP as i8)),
-            )
+            .frame(panel_frame(palette.bg_window, GAP as i8))
             .show(root, |ui| {
                 if let Ok(state) = self.state.read() {
                     action = sidebar(ui, &self.page, &state);
                 }
             });
         CentralPanel::default_margins()
-            .frame(
-                Frame::new()
-                    .fill(palette.bg_window)
-                    .inner_margin(Margin::same(GAP as i8)),
-            )
+            .frame(panel_frame(palette.bg_window, GAP as i8))
             .show(root, |ui| {
                 if let Some(next) = self.central(ui) {
                     action = Some(next);

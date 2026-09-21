@@ -81,6 +81,18 @@ pub enum Availability {
 }
 
 impl Availability {
+    pub fn unavailable(reason: impl Into<String>) -> Self {
+        Self::Unavailable {
+            reason: reason.into(),
+        }
+    }
+
+    pub fn partial(missing: impl Into<String>) -> Self {
+        Self::Partial {
+            missing: vec![missing.into()],
+        }
+    }
+
     pub fn is_usable(&self) -> bool {
         !matches!(self, Self::Unavailable { .. })
     }

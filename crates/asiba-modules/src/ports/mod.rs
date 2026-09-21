@@ -11,7 +11,7 @@ use async_trait::async_trait;
 
 pub use model::{Firewall, FirewallBackend, ListeningPort, PortsSnapshot, Protocol};
 
-use crate::common::sections;
+use crate::common::{detect, sections};
 
 pub const ID: ModuleId = ModuleId("ports");
 pub const KEY_LISTENING: &str = "ports.listening";
@@ -46,16 +46,12 @@ impl Module for PortsModule {
     }
 
     async fn detect(&self, transport: &dyn Transport) -> Result<Availability, ModuleError> {
-        let output = transport.exec("command -v ss").await?;
-        if !output.is_success() {
-            return Ok(Availability::Unavailable {
-                reason: "нет ss (iproute2)".to_owned(),
-            });
+        let probe = detect::require(transport, "command -v ss", "нет ss (iproute2)").await?;
+        if !probe.is_usable() {
+            return Ok(probe);
         }
         if transport.sudo_mode() == SudoMode::None {
-            return Ok(Availability::Partial {
-                missing: vec!["файрвол (нужен sudo)".to_owned()],
-            });
+            return Ok(Availability::partial("файрвол (нужен sudo)"));
         }
         Ok(Availability::Available)
     }

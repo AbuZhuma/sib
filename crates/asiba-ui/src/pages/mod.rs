@@ -67,6 +67,17 @@ pub enum Action {
         request: ActionRequest,
     },
     CloseInspector,
+    FilesQuery {
+        server: ServerId,
+        request: QueryRequest,
+    },
+    FilesRefresh {
+        server: ServerId,
+        path: String,
+    },
+    FilesClearSearch {
+        server: ServerId,
+    },
     AcknowledgeAlert(u64),
     MuteAlert {
         id: u64,

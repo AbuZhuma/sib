@@ -11,6 +11,8 @@ use chrono::{DateTime, Utc};
 
 pub use model::{LogEntry, LogGroup, LogsSnapshot};
 
+use crate::common::detect;
+
 pub const ID: ModuleId = ModuleId("logs");
 pub const KEY_WARNINGS_PER_MIN: &str = "logs.warnings_per_min";
 pub const KEY_ERRORS_PER_MIN: &str = "logs.errors_per_min";
@@ -61,19 +63,17 @@ impl Module for LogsModule {
     }
 
     async fn detect(&self, transport: &dyn Transport) -> Result<Availability, ModuleError> {
-        let output = transport.exec("command -v journalctl").await?;
-        if !output.is_success() {
-            return Ok(Availability::Unavailable {
-                reason: "нет journalctl".to_owned(),
-            });
+        let probe = detect::require(transport, "command -v journalctl", "нет journalctl").await?;
+        if !probe.is_usable() {
+            return Ok(probe);
         }
         let probe = transport
             .exec("journalctl -q -n 1 -o cat --system 2>&1 | head -c 200")
             .await?;
         if probe.stdout.contains("No journal files") || probe.stdout.contains("permission") {
-            return Ok(Availability::Partial {
-                missing: vec!["системный журнал (нужна группа systemd-journal)".to_owned()],
-            });
+            return Ok(Availability::partial(
+                "системный журнал (нужна группа systemd-journal)",
+            ));
         }
         Ok(Availability::Available)
     }

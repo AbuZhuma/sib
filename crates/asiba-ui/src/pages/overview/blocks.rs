@@ -6,12 +6,11 @@ use egui::{RichText, Ui};
 
 use super::{Action, Page};
 use crate::components::{
-    IncidentLine, Table, badge, has_report, incident_line, incident_scope, incident_tab, panel,
-    severity_color,
+    IncidentLine, Table, badge, has_report, incident_line, incident_scope, panel, severity_color,
 };
 use crate::format;
 use crate::modules::{Tab, deploy_timeline};
-use crate::pages::server_detail::select_tab;
+use crate::pages::server_detail::{open_for_incident, select_tab};
 use crate::text;
 use crate::theme::{GAP, Palette};
 
@@ -69,12 +68,12 @@ pub fn active_incidents(ui: &mut Ui, state: &AppState, can_audit: bool) -> Optio
                     scope: incident_scope(incident),
                 });
             } else if click.open_report {
-                select_tab(ui.ctx(), Tab::Audit);
+                select_tab(ui.ctx(), Tab::Security);
                 action = Some(Action::Navigate(Page::ServerDetail(
                     incident.server.clone(),
                 )));
             } else if click.open_server || click.open_details {
-                select_tab(ui.ctx(), incident_tab(state, incident));
+                open_for_incident(ui.ctx(), state, incident);
                 action = Some(Action::Navigate(Page::ServerDetail(
                     incident.server.clone(),
                 )));

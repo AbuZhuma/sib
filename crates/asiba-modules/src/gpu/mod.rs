@@ -9,7 +9,7 @@ use async_trait::async_trait;
 
 pub use model::{Gpu, GpuProcess, GpuSnapshot, Vendor};
 
-use crate::common::sections;
+use crate::common::{detect, sections};
 
 pub const ID: ModuleId = ModuleId("gpu");
 pub const KEY_MAX_UTIL: &str = "gpu.util_pct";
@@ -49,15 +49,12 @@ impl Module for GpuModule {
     }
 
     async fn detect(&self, transport: &dyn Transport) -> Result<Availability, ModuleError> {
-        let output = transport
-            .exec("command -v nvidia-smi || ls /sys/class/drm/card*/device/gpu_busy_percent")
-            .await?;
-        if !output.is_success() || output.stdout.trim().is_empty() {
-            return Ok(Availability::Unavailable {
-                reason: "нет nvidia-smi и gpu_busy_percent".to_owned(),
-            });
-        }
-        Ok(Availability::Available)
+        detect::require(
+            transport,
+            "command -v nvidia-smi || ls /sys/class/drm/card*/device/gpu_busy_percent",
+            "нет nvidia-smi и gpu_busy_percent",
+        )
+        .await
     }
 
     async fn collect(

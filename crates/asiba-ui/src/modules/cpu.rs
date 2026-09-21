@@ -26,7 +26,7 @@ impl ModuleView for CpuView {
         Tab::Resources
     }
 
-    fn summary(&self, ui: &mut Ui, server: &ServerState) {
+    fn summary(&self, ui: &mut Ui, server: &ServerState, _shared: &ViewShared) {
         let p = Palette::current(ui.ctx());
         let Some(snapshot) = server.data::<CpuSnapshot>(cpu::ID) else {
             return;

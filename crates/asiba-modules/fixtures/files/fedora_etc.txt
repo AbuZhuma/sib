@@ -1,0 +1,40 @@
+l	f	777	root	root	56	1768521600.0000000000	/usr/share/icons/hicolor/16x16/apps/fedora-logo-icon.png	favicon.png
+l	?	777	root	root	22	1786579200.0000000000	../boot/grub2/grub.cfg	grub2-efi.cfg
+l	?	777	root	root	22	1786579200.0000000000	../boot/grub2/grub.cfg	grub2.cfg
+l	f	777	root	root	16	1778630400.0000000000	../usr/lib/issue	issue
+l	f	777	root	root	20	1778630400.0000000000	../usr/lib/issue.net	issue.net
+l	f	777	root	root	16	1776556800.0000000000	/etc/opensc.conf	opensc-x86_64.conf
+d	d	755	root	root	24	1787184000.0000000000		.java
+d	d	755	root	root	402	1788771794.0187985120		ImageMagick-7
+d	d	755	root	root	160	1781136000.0000000000		NetworkManager
+d	d	755	root	root	92	1781913600.0000000000		PackageKit
+d	d	755	root	root	48	1788771816.4497786510		UPower
+d	d	755	root	root	118	1788786789.4499982240		X11
+d	d	755	root	root	126	1785715200.0000000000		abrt
+d	d	755	root	root	70	1780272000.0000000000		alsa
+d	d	755	root	root	1448	1788842372.6819924530		alternatives
+d	d	755	root	root	56	1776866669.6975939150		anaconda
+d	d	750	root	root	108	1788771925.8650970200		audit
+d	d	755	root	root	262	1788786788.5712821320		authselect
+d	d	755	root	root	66	1776866453.1557284670		avahi
+d	d	755	root	root	148	1788771939.2400120610		bash_completion.d
+d	d	755	root	root	0	1784937600.0000000000		binfmt.d
+d	d	555	root	root	62	1788771808.5093749500		bluetooth
+d	d	755	root	root	76	1776866672.2244770690		brltty
+d	d	755	root	root	0	1787097600.0000000000		ceph
+d	d	755	root	root	44	1776866671.9364854010		chromium
+d	d	755	root	root	24	1787788800.0000000000		cifs-utils
+d	d	755	root	root	72	1787788800.0000000000		cockpit
+d	d	755	root	root	184	1776866672.0023236550		containers
+d	d	700	root	root	0	1784937600.0000000000		credstore.encrypted
+d	d	700	root	root	0	1784937600.0000000000		credstore
+d	d	755	root	root	14	1776866495.9019446810		cron.d
+d	d	755	root	root	0	1768521600.0000000000		cron.daily
+d	d	755	root	root	16	1776866495.8571126980		cron.hourly
+d	d	755	root	root	0	1768521600.0000000000		cron.monthly
+d	d	755	root	root	0	1768521600.0000000000		cron.weekly
+d	d	755	root	root	70	1776866335.0657155730		crypto-policies
+d	d	755	root	lp	396	1789627631.5657857480		cups
+d	d	755	root	root	40	1787011200.0000000000		cupshelpers
+d	d	755	root	root	80	1776866336.0625971180		dbus-1
+d	d	755	root	root	18	1776866454.9549629190		dconf

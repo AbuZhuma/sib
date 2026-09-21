@@ -27,7 +27,7 @@ impl ModuleView for AnomaliesView {
         Tab::Anomalies
     }
 
-    fn summary(&self, ui: &mut Ui, server: &ServerState) {
+    fn summary(&self, ui: &mut Ui, server: &ServerState, _shared: &ViewShared) {
         let Some(snapshot) = server.data::<AnomaliesSnapshot>(anomalies::ID) else {
             return;
         };

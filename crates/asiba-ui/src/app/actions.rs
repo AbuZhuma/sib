@@ -3,6 +3,7 @@ use asiba_core::{
     ActionRequest, ActionSpec, AlertRule, Environment, ModuleId, QueryRequest, ServerId,
 };
 use asiba_engine::{AlertSettings, Command};
+use asiba_modules::files;
 
 use super::AsibaApp;
 use super::confirm::ConfirmDialog;
@@ -74,6 +75,13 @@ impl AsibaApp {
                 request,
             } => self.ask_perform(server, spec, request),
             Action::CloseInspector => self.inspector = None,
+            Action::FilesQuery { server, request } => self.start_files_query(server, request),
+            Action::FilesRefresh { server, path } => self.refresh_files(server, path),
+            Action::FilesClearSearch { server } => {
+                if let Some(browser) = self.files.get_mut(&server) {
+                    browser.clear_search();
+                }
+            }
             Action::AcknowledgeAlert(id) => self.engine.send(Command::AcknowledgeAlert(id)),
             Action::MuteAlert { id, until } => self.engine.send(Command::MuteAlert { id, until }),
             Action::SaveCollection {
@@ -153,6 +161,28 @@ impl AsibaApp {
             module,
             request,
         });
+    }
+
+    pub(super) fn start_files_query(&mut self, server: ServerId, request: QueryRequest) {
+        let token = self.next_query_token;
+        self.next_query_token += 1;
+        self.files
+            .entry(server.clone())
+            .or_default()
+            .start(token, &request);
+        self.engine.send(Command::Query {
+            token,
+            server,
+            module: files::ID,
+            request,
+        });
+    }
+
+    fn refresh_files(&mut self, server: ServerId, path: String) {
+        if let Some(browser) = self.files.get_mut(&server) {
+            browser.forget_subtree(&path);
+        }
+        self.start_files_query(server, QueryRequest::new(files::QUERY_LIST, path));
     }
 
     fn ask_perform(&mut self, server: ServerId, spec: ActionSpec, request: ActionRequest) {

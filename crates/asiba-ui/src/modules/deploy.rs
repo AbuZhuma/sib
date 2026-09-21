@@ -28,16 +28,18 @@ impl ModuleView for DeployView {
         Tab::Deploy
     }
 
-    fn summary(&self, ui: &mut Ui, server: &ServerState) {
+    fn has_content(&self, server: &ServerState) -> bool {
+        server.data::<DeployState>(deploy::ID).is_some_and(|state| {
+            !state.snapshot.deploys.is_empty() || state.snapshot.runner.is_some()
+        })
+    }
+
+    fn summary(&self, ui: &mut Ui, server: &ServerState, _shared: &ViewShared) {
         let p = Palette::current(ui.ctx());
         let Some(state) = server.data::<DeployState>(deploy::ID) else {
             return;
         };
         let snapshot = &state.snapshot;
-        if snapshot.deploys.is_empty() {
-            ui.label(RichText::new(text::DEP_NONE).color(p.text_muted));
-            return;
-        }
         let active = snapshot.active().count();
         let failed = snapshot.failed_count();
         ui.horizontal_wrapped(|ui| {

@@ -48,14 +48,10 @@ impl Module for GitModule {
         let output = transport.exec(&sections::script(&parts)).await?;
         let found = sections::Sections::parse(&output.stdout);
         if found.get_or_empty("version").trim().is_empty() {
-            return Ok(Availability::Unavailable {
-                reason: "git не установлен".to_owned(),
-            });
+            return Ok(Availability::unavailable("git не установлен"));
         }
         if found.get_or_empty("first").trim().is_empty() {
-            return Ok(Availability::Unavailable {
-                reason: "репозитории не найдены".to_owned(),
-            });
+            return Ok(Availability::unavailable("репозитории не найдены"));
         }
         Ok(Availability::Available)
     }

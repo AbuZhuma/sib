@@ -2,12 +2,12 @@ use asiba_config::SummaryLayout;
 use asiba_core::{AppState, AuditScope, AuditTarget, IgnoredIncident, ServerState};
 use egui::{Id, RichText, Ui};
 
-use super::{connection, header, modules_table, select_tab};
+use super::{connection, header, modules_table, open_for_incident, select_tab};
 use crate::components::{
-    AiBlock, IncidentLine, ai_block, has_report, incident_line, incident_scope, incident_tab,
-    panel, panel_with_controls,
+    AiBlock, IncidentLine, ai_block, has_report, incident_line, incident_scope, panel,
+    panel_with_controls,
 };
-use crate::modules::{ModuleView, Tab, has_data};
+use crate::modules::{ModuleView, Tab, ViewShared};
 use crate::pages::Action;
 use crate::text;
 use crate::theme::{GAP, Palette};
@@ -20,6 +20,7 @@ pub struct SummaryContext<'a> {
     pub can_audit: bool,
     pub views: &'a [Box<dyn ModuleView>],
     pub layout: &'a SummaryLayout,
+    pub shared: &'a ViewShared<'a>,
 }
 
 pub fn show(ui: &mut Ui, ctx: &SummaryContext<'_>) -> Option<Action> {
@@ -31,63 +32,81 @@ pub fn show(ui: &mut Ui, ctx: &SummaryContext<'_>) -> Option<Action> {
     if let Some(next) = incidents(ui, ctx) {
         action = Some(next);
     }
-    if ctx.can_audit
-        || ctx
-            .state
-            .latest_audit(
-                &AuditTarget::Server(server.spec.id.clone()),
-                &AuditScope::Full,
-            )
-            .is_some()
-    {
-        let block = AiBlock {
-            state: ctx.state,
-            target: AuditTarget::Server(server.spec.id.clone()),
-            scope: AuditScope::Full,
-            title: text::AI_BLOCK_TITLE,
-            can_audit: ctx.can_audit,
-            auto_request: false,
-        };
-        if let Some(next) = ai_block(ui, &block) {
-            action = Some(next);
-        }
-        ui.add_space(GAP);
+    if let Some(next) = full_audit(ui, ctx) {
+        action = Some(next);
     }
     let editing = edit_toggle(ui);
     let available: Vec<&dyn ModuleView> = ctx
         .views
         .iter()
         .map(Box::as_ref)
-        .filter(|v| has_data(server, v.id()))
+        .filter(|v| v.has_content(server))
         .collect();
-    let ids: Vec<&str> = available.iter().map(|v| v.id().0).collect();
     let mut layout = ctx.layout.clone();
-    let mut changed = false;
+    let mut changed = module_grid(ui, ctx, &available, &mut layout, editing);
+    if editing {
+        changed |= hidden_list(ui, &mut layout, &available);
+    }
+    if changed {
+        action = Some(Action::SaveLayout {
+            server: server.spec.id.clone(),
+            layout,
+        });
+    }
+    action
+}
+
+fn full_audit(ui: &mut Ui, ctx: &SummaryContext<'_>) -> Option<Action> {
+    let target = AuditTarget::Server(ctx.server.spec.id.clone());
+    let has_report = ctx.state.latest_audit(&target, &AuditScope::Full).is_some();
+    if !ctx.can_audit && !has_report {
+        return None;
+    }
+    let block = AiBlock {
+        state: ctx.state,
+        target,
+        scope: AuditScope::Full,
+        title: text::AI_BLOCK_TITLE,
+        can_audit: ctx.can_audit,
+        auto_request: false,
+    };
+    let action = ai_block(ui, &block);
+    ui.add_space(GAP);
+    action
+}
+
+fn module_grid(
+    ui: &mut Ui,
+    ctx: &SummaryContext<'_>,
+    available: &[&dyn ModuleView],
+    layout: &mut SummaryLayout,
+    editing: bool,
+) -> bool {
+    let server = ctx.server;
+    let ids: Vec<&str> = available.iter().map(|v| v.id().0).collect();
     let visible: Vec<&dyn ModuleView> = layout
         .arrange(&ids)
         .into_iter()
         .filter(|id| !layout.is_hidden(id))
         .filter_map(|id| available.iter().copied().find(|v| v.id().0 == id))
         .collect();
+    let mut changed = false;
     ui.columns(2, |columns| {
         for (index, view) in visible.iter().enumerate() {
             let column = &mut columns[index % 2];
             let id = view.id().0;
-            if editing {
-                panel_with_controls(
-                    column,
-                    view.title(),
-                    |ui| changed |= layout_controls(ui, &mut layout, &ids, id),
-                    |ui| view.summary(ui, server),
-                );
-            } else {
-                panel_with_controls(
-                    column,
-                    view.title(),
-                    |ui| open_button(ui, view.tab()),
-                    |ui| view.summary(ui, server),
-                );
-            }
+            panel_with_controls(
+                column,
+                view.title(),
+                |ui| {
+                    if editing {
+                        changed |= layout_controls(ui, layout, &ids, id);
+                    } else {
+                        open_button(ui, view.tab());
+                    }
+                },
+                |ui| view.summary(ui, server, ctx.shared),
+            );
             column.add_space(GAP);
         }
         let short = shorter_column(columns);
@@ -102,16 +121,7 @@ pub fn show(ui: &mut Ui, ctx: &SummaryContext<'_>) -> Option<Action> {
             |ui| header::description(ui, server),
         );
     });
-    if editing {
-        changed |= hidden_list(ui, &mut layout, &available);
-    }
-    if changed {
-        action = Some(Action::SaveLayout {
-            server: server.spec.id.clone(),
-            layout,
-        });
-    }
-    action
+    changed
 }
 
 fn incidents(ui: &mut Ui, ctx: &SummaryContext<'_>) -> Option<Action> {
@@ -142,9 +152,9 @@ fn incidents(ui: &mut Ui, ctx: &SummaryContext<'_>) -> Option<Action> {
                     scope: incident_scope(incident),
                 });
             } else if click.open_report {
-                select_tab(ui.ctx(), Tab::Audit);
+                select_tab(ui.ctx(), Tab::Security);
             } else if click.open_details {
-                select_tab(ui.ctx(), incident_tab(ctx.state, incident));
+                open_for_incident(ui.ctx(), ctx.state, incident);
             }
         }
     });

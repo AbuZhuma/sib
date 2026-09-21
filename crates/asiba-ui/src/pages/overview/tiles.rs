@@ -9,6 +9,12 @@ use crate::theme::Palette;
 
 pub fn show(ui: &mut Ui, state: &AppState) {
     let p = Palette::current(ui.ctx());
+    let mut tiles = fleet_tiles(state, &p);
+    tiles.extend(usage_tiles(state));
+    tile_grid(ui, &tiles);
+}
+
+fn fleet_tiles(state: &AppState, p: &Palette) -> Vec<TileSpec> {
     let total = state.servers.len();
     let online = state.online_count();
     let offline = state
@@ -21,22 +27,7 @@ pub fn show(ui: &mut Ui, state: &AppState) {
         .filter(|a| a.severity == Severity::Critical)
         .count();
     let alerts = state.active_alerts().count();
-    let percent = |value: Option<f64>| {
-        value
-            .map(|v| format!("{v:.0}%"))
-            .unwrap_or_else(|| "-".to_owned())
-    };
-    let traffic = sum(state, network::KEY_RX_BPS)
-        .zip(sum(state, network::KEY_TX_BPS))
-        .map(|(rx, tx)| {
-            format!(
-                "{} / {}",
-                format::bytes_per_second(rx),
-                format::bytes_per_second(tx)
-            )
-        })
-        .unwrap_or_else(|| "-".to_owned());
-    let tiles = [
+    vec![
         spec(text::TILE_SERVERS, total.to_string(), None),
         spec(
             text::TILE_ONLINE,
@@ -51,26 +42,33 @@ pub fn show(ui: &mut Ui, state: &AppState) {
         spec(
             text::TILE_ALERTS,
             alerts.to_string(),
-            alert_color(&p, alerts, critical),
+            alert_color(p, alerts, critical),
         ),
-        spec(
-            text::TILE_CPU,
-            percent(average(state, cpu::KEY_TOTAL)),
-            None,
-        ),
-        spec(
-            text::TILE_MEMORY,
-            percent(average(state, memory::KEY_USED_PCT)),
-            None,
-        ),
-        spec(
-            text::TILE_DISK,
-            percent(average(state, disk::KEY_ROOT_USED_PCT)),
-            None,
-        ),
+    ]
+}
+
+fn usage_tiles(state: &AppState) -> Vec<TileSpec> {
+    let percent = |key: &str| {
+        average(state, key)
+            .map(|v| format!("{v:.0}%"))
+            .unwrap_or_else(|| "-".to_owned())
+    };
+    let traffic = sum(state, network::KEY_RX_BPS)
+        .zip(sum(state, network::KEY_TX_BPS))
+        .map(|(rx, tx)| {
+            format!(
+                "{} / {}",
+                format::bytes_per_second(rx),
+                format::bytes_per_second(tx)
+            )
+        })
+        .unwrap_or_else(|| "-".to_owned());
+    vec![
+        spec(text::TILE_CPU, percent(cpu::KEY_TOTAL), None),
+        spec(text::TILE_MEMORY, percent(memory::KEY_USED_PCT), None),
+        spec(text::TILE_DISK, percent(disk::KEY_ROOT_USED_PCT), None),
         spec(text::TILE_TRAFFIC, traffic, None),
-    ];
-    tile_grid(ui, &tiles);
+    ]
 }
 
 fn spec(label: &'static str, value: String, color: Option<egui::Color32>) -> TileSpec {

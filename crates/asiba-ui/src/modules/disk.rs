@@ -42,7 +42,7 @@ impl ModuleView for DiskView {
         Tab::Resources
     }
 
-    fn summary(&self, ui: &mut Ui, server: &ServerState) {
+    fn summary(&self, ui: &mut Ui, server: &ServerState, _shared: &ViewShared) {
         let Some(snapshot) = server.data::<DiskSnapshot>(disk::ID) else {
             return;
         };

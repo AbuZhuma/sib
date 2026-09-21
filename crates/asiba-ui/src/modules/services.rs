@@ -39,7 +39,7 @@ impl ModuleView for ServicesView {
         Tab::Services
     }
 
-    fn summary(&self, ui: &mut Ui, server: &ServerState) {
+    fn summary(&self, ui: &mut Ui, server: &ServerState, _shared: &ViewShared) {
         let p = Palette::current(ui.ctx());
         let Some(snapshot) = server.data::<ServicesSnapshot>(services::ID) else {
             return;

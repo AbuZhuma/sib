@@ -9,7 +9,7 @@ use async_trait::async_trait;
 
 pub use model::{DeviceIo, DiskSnapshot, Filesystem, IoRates};
 
-use crate::common::sections;
+use crate::common::{detect, sections};
 
 pub const ID: ModuleId = ModuleId("disk");
 pub const KEY_ROOT_USED_PCT: &str = "disk.root_used_pct";
@@ -47,13 +47,7 @@ impl Module for DiskModule {
     }
 
     async fn detect(&self, transport: &dyn Transport) -> Result<Availability, ModuleError> {
-        let output = transport.exec("command -v df").await?;
-        if output.is_success() {
-            return Ok(Availability::Available);
-        }
-        Ok(Availability::Unavailable {
-            reason: "нет df".to_owned(),
-        })
+        detect::require(transport, "command -v df", "нет df").await
     }
 
     async fn collect(

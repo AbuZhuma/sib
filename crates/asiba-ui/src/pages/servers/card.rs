@@ -60,7 +60,10 @@ pub fn show(ui: &mut Ui, server: &ServerState, state: &AppState) -> CardResponse
             });
     });
     CardResponse {
-        opened: scoped.response.clicked(),
+        opened: scoped
+            .response
+            .on_hover_cursor(egui::CursorIcon::PointingHand)
+            .clicked(),
         terminal,
     }
 }
@@ -133,8 +136,7 @@ fn modules_row(ui: &mut Ui, server: &ServerState) {
 
 fn body(ui: &mut Ui, server: &ServerState) {
     let p = Palette::current(ui.ctx());
-    let info = server.data::<SystemInfo>(system::ID);
-    let Some(info) = info else {
+    let Some(info) = server.data::<SystemInfo>(system::ID) else {
         let project = &server.spec.description.project;
         let line = if project.is_empty() {
             text::DETAIL_NO_DATA
@@ -146,51 +148,8 @@ fn body(ui: &mut Ui, server: &ServerState) {
     };
     ui.add(Label::new(&info.os_name).truncate());
     ui.horizontal(|ui| {
-        ui.vertical(|ui| {
-            metric_line(
-                ui,
-                "CPU",
-                server
-                    .latest_value(cpu::KEY_TOTAL)
-                    .map(|v| format!("{v:.0}%")),
-            );
-            metric_line(
-                ui,
-                "RAM",
-                server
-                    .latest_value(memory::KEY_USED_PCT)
-                    .map(|v| format!("{v:.0}%")),
-            );
-            metric_line(
-                ui,
-                "Disk",
-                server
-                    .latest_value(disk::KEY_ROOT_USED_PCT)
-                    .map(|v| format!("{v:.0}%")),
-            );
-        });
-        ui.vertical(|ui| {
-            sparkline(
-                ui,
-                server.series.get(cpu::KEY_TOTAL),
-                SPARKLINE_SIZE,
-                p.chart[0],
-                Some(100.0),
-            );
-            let rx = server
-                .latest_value(network::KEY_RX_BPS)
-                .map(format::bytes_per_second);
-            let tx = server
-                .latest_value(network::KEY_TX_BPS)
-                .map(format::bytes_per_second);
-            if let (Some(rx), Some(tx)) = (rx, tx) {
-                ui.monospace(
-                    RichText::new(format!("↓{rx} ↑{tx}"))
-                        .small()
-                        .color(p.text_secondary),
-                );
-            }
-        });
+        ui.vertical(|ui| usage_lines(ui, server));
+        ui.vertical(|ui| traffic_column(ui, server, &p));
     });
     let ping = server
         .ping
@@ -203,6 +162,36 @@ fn body(ui: &mut Ui, server: &ServerState) {
             .small()
             .color(p.text_muted),
     );
+}
+
+fn usage_lines(ui: &mut Ui, server: &ServerState) {
+    let percent = |key: &str| server.latest_value(key).map(|v| format!("{v:.0}%"));
+    metric_line(ui, "CPU", percent(cpu::KEY_TOTAL));
+    metric_line(ui, "RAM", percent(memory::KEY_USED_PCT));
+    metric_line(ui, "Disk", percent(disk::KEY_ROOT_USED_PCT));
+}
+
+fn traffic_column(ui: &mut Ui, server: &ServerState, p: &Palette) {
+    sparkline(
+        ui,
+        server.series.get(cpu::KEY_TOTAL),
+        SPARKLINE_SIZE,
+        p.chart[0],
+        Some(100.0),
+    );
+    let rx = server
+        .latest_value(network::KEY_RX_BPS)
+        .map(format::bytes_per_second);
+    let tx = server
+        .latest_value(network::KEY_TX_BPS)
+        .map(format::bytes_per_second);
+    if let (Some(rx), Some(tx)) = (rx, tx) {
+        ui.monospace(
+            RichText::new(format!("↓{rx} ↑{tx}"))
+                .small()
+                .color(p.text_secondary),
+        );
+    }
 }
 
 fn metric_line(ui: &mut Ui, label: &str, value: Option<String>) {

@@ -10,6 +10,7 @@ use crate::command::EngineEvent;
 use crate::engine::RepaintNotifier;
 
 const JOURNAL_PREFILL: usize = 200;
+const MAX_JOURNALED_ARGUMENT: usize = 120;
 
 pub struct Perform {
     pub server: ServerId,
@@ -44,7 +45,7 @@ pub fn perform(job: Perform) {
             module: module_name,
             kind: job.request.kind,
             target: job.request.target,
-            argument: job.request.argument,
+            argument: job.request.argument.map(journaled_argument),
             is_success: result.is_ok(),
             message: result.unwrap_or_else(|error| error),
         };
@@ -58,6 +59,13 @@ pub fn perform(job: Perform) {
         let _ = job.events.send(EngineEvent::ActionFinished(record));
         (job.notify)();
     });
+}
+
+fn journaled_argument(argument: String) -> String {
+    if argument.chars().count() <= MAX_JOURNALED_ARGUMENT {
+        return argument;
+    }
+    format!("{} байт", argument.len())
 }
 
 fn log_record(record: &ActionRecord) {

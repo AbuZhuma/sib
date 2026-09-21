@@ -4,6 +4,7 @@ pub mod cpu;
 pub mod deploy;
 pub mod disk;
 pub mod docker;
+pub mod files;
 pub mod git;
 pub mod gpu;
 pub mod logs;
@@ -29,6 +30,7 @@ pub fn default_registry() -> ModuleRegistry {
         .register(processes::ProcessesModule)
         .register(services::ServicesModule)
         .register(docker::DockerModule)
+        .register(files::FilesModule)
         .register(ports::PortsModule)
         .register(logs::LogsModule)
         .register(users::UsersModule)

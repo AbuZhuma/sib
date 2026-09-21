@@ -74,12 +74,10 @@ impl Module for DockerModule {
         let output = transport.exec(&probe).await?;
         match output.exit_code {
             0 => Ok(Availability::Available),
-            3 => Ok(Availability::Unavailable {
-                reason: "нет docker/podman".to_owned(),
-            }),
-            _ => Ok(Availability::Unavailable {
-                reason: "нет доступа к docker: добавьте пользователя в группу docker".to_owned(),
-            }),
+            3 => Ok(Availability::unavailable("нет docker/podman")),
+            _ => Ok(Availability::unavailable(
+                "нет доступа к docker: добавьте пользователя в группу docker",
+            )),
         }
     }
 

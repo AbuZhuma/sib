@@ -10,7 +10,7 @@ mod memory;
 mod network;
 mod ports;
 mod processes;
-mod security;
+pub mod security;
 mod services;
 mod system;
 mod updates;
@@ -18,7 +18,9 @@ mod users;
 
 use std::collections::BTreeMap;
 
-use asiba_core::{ActionRequest, ActionSpec, ModuleId, QueryRequest, ServerState, Snapshot};
+use asiba_core::{
+    ActionRequest, ActionSpec, AppState, ModuleId, QueryRequest, ServerState, Snapshot,
+};
 use egui::Ui;
 
 use crate::text;
@@ -39,7 +41,7 @@ pub enum Tab {
     Deploy,
     Git,
     Gpu,
-    Audit,
+    Files,
 }
 
 impl Tab {
@@ -58,7 +60,7 @@ impl Tab {
         Tab::Deploy,
         Tab::Git,
         Tab::Gpu,
-        Tab::Audit,
+        Tab::Files,
     ];
 
     pub fn from_key(key: &str) -> Option<Self> {
@@ -81,7 +83,7 @@ impl Tab {
             Tab::Deploy => "deploy",
             Tab::Git => "git",
             Tab::Gpu => "gpu",
-            Tab::Audit => "audit",
+            Tab::Files => "files",
         }
     }
 
@@ -101,6 +103,7 @@ impl Tab {
             "deploy" => Tab::Deploy,
             "git" => Tab::Git,
             "gpu" => Tab::Gpu,
+            "files" => Tab::Files,
             _ => return None,
         };
         Some(tab)
@@ -119,7 +122,7 @@ impl Tab {
             Tab::Anomalies => Some("anomalies"),
             Tab::Deploy => Some("deploy"),
             Tab::Gpu => Some("gpu"),
-            Tab::Summary | Tab::Git | Tab::Audit => None,
+            Tab::Summary | Tab::Git | Tab::Files => None,
         }
     }
 
@@ -144,7 +147,7 @@ impl Tab {
             Tab::Deploy => text::TAB_DEPLOY,
             Tab::Git => text::TAB_GIT,
             Tab::Gpu => text::TAB_GPU,
-            Tab::Audit => text::AUDIT_TITLE,
+            Tab::Files => text::TAB_FILES,
         }
     }
 }
@@ -179,6 +182,7 @@ pub fn action_button(
 }
 
 pub struct ViewShared<'a> {
+    pub state: &'a AppState,
     pub countries: &'a BTreeMap<String, String>,
 }
 
@@ -195,10 +199,14 @@ pub trait ModuleView: Send + Sync {
 
     fn tab(&self) -> Tab;
 
-    fn summary(&self, ui: &mut Ui, server: &ServerState);
+    fn has_content(&self, server: &ServerState) -> bool {
+        has_data(server, self.id())
+    }
 
-    fn page(&self, ui: &mut Ui, server: &ServerState, _shared: &ViewShared) -> Option<ViewAction> {
-        self.summary(ui, server);
+    fn summary(&self, ui: &mut Ui, server: &ServerState, shared: &ViewShared);
+
+    fn page(&self, ui: &mut Ui, server: &ServerState, shared: &ViewShared) -> Option<ViewAction> {
+        self.summary(ui, server, shared);
         None
     }
 
@@ -229,6 +237,7 @@ pub fn all() -> Vec<Box<dyn ModuleView>> {
 
 pub use anomalies::attack_badge;
 pub use deploy::timeline as deploy_timeline;
+pub use security as security_view;
 
 pub fn short_label(id: ModuleId) -> &'static str {
     match id.0 {
@@ -249,6 +258,7 @@ pub fn short_label(id: ModuleId) -> &'static str {
         "deploy" => "dpl",
         "git" => "git",
         "gpu" => "gpu",
+        "files" => "fil",
         other => other,
     }
 }

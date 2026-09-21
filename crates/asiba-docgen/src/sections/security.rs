@@ -1,6 +1,7 @@
-use asiba_modules::security::{
-    self, Category, Check, CheckStatus, FirewallState, SecuritySnapshot, Weight,
+use asiba_incidents::{
+    Area, AuditCheck, Outcome, SystemAudit, Weight, security_score, system_audit,
 };
+use asiba_modules::security::{self, FirewallState, SecuritySnapshot};
 
 use crate::section::{DocContext, Section, SectionId};
 use crate::write::{NONE, blank, bullet, field, heading, list, local_time, subheading, table};
@@ -16,12 +17,12 @@ fn snapshot<'a>(ctx: &'a DocContext<'_>) -> Option<&'a SecuritySnapshot> {
     ctx.server.data::<SecuritySnapshot>(security::ID)
 }
 
-fn status_name(status: CheckStatus) -> &'static str {
-    match status {
-        CheckStatus::Pass => "pass",
-        CheckStatus::Warn => "warn",
-        CheckStatus::Fail => "FAIL",
-        CheckStatus::Unknown => "unknown",
+fn status_name(outcome: Outcome) -> &'static str {
+    match outcome {
+        Outcome::Pass => "pass",
+        Outcome::Warn => "warn",
+        Outcome::Fail => "FAIL",
+        Outcome::Skipped => "skipped",
     }
 }
 
@@ -33,15 +34,18 @@ fn weight_name(weight: Weight) -> &'static str {
     }
 }
 
-fn check_rows(checks: &[Check], category: Category) -> Vec<Vec<String>> {
-    checks
-        .iter()
-        .filter(|c| c.category == category)
-        .map(|c| {
+fn security_areas() -> impl Iterator<Item = Area> {
+    Area::ALL.into_iter().filter(|a| a.is_security())
+}
+
+fn check_rows(audit: &SystemAudit, area: Area) -> Vec<Vec<String>> {
+    audit
+        .in_area(area)
+        .map(|c: &AuditCheck| {
             vec![
-                status_name(c.status).to_owned(),
+                status_name(c.outcome).to_owned(),
                 weight_name(c.weight).to_owned(),
-                c.label.to_owned(),
+                c.title(),
                 c.detail.clone(),
             ]
         })
@@ -137,9 +141,11 @@ fn firewall_label(snapshot: &SecuritySnapshot) -> String {
     }
 }
 
-fn overview(snapshot: &SecuritySnapshot) -> Vec<(&'static str, &'static str, String)> {
-    let checks = security::checks(snapshot);
-    let score = security::score(&checks);
+fn overview(
+    snapshot: &SecuritySnapshot,
+    audit: &SystemAudit,
+) -> Vec<(&'static str, &'static str, String)> {
+    let score = security_score(audit.checks.iter());
     vec![
         (
             "Оценка",
@@ -199,18 +205,18 @@ impl Section for SecuritySection {
         let Some(snapshot) = snapshot(ctx) else {
             return;
         };
+        let audit = system_audit(ctx.server, ctx.state);
         heading(out, "Безопасность");
-        for (label, _, value) in overview(snapshot) {
+        for (label, _, value) in overview(snapshot, &audit) {
             bullet(out, label, value);
         }
         blank(out);
-        let checks = security::checks(snapshot);
-        for category in Category::ALL {
-            let rows = check_rows(&checks, category);
+        for area in security_areas() {
+            let rows = check_rows(&audit, area);
             if rows.is_empty() {
                 continue;
             }
-            subheading(out, category.label());
+            subheading(out, area.label());
             table(out, &["Статус", "Вес", "Проверка", "Детали"], &rows);
         }
         subheading(out, "Атакующие IP");
@@ -247,18 +253,18 @@ impl Section for SecuritySection {
         let Some(snapshot) = snapshot(ctx) else {
             return;
         };
+        let audit = system_audit(ctx.server, ctx.state);
         heading(out, "Security");
-        for (_, key, value) in overview(snapshot) {
+        for (_, key, value) in overview(snapshot, &audit) {
             field(out, key, value);
         }
-        let checks = security::checks(snapshot);
         field(out, "checks", "status | weight | check | detail");
-        for category in Category::ALL {
-            let rows = check_rows(&checks, category);
+        for area in security_areas() {
+            let rows = check_rows(&audit, area);
             if rows.is_empty() {
                 continue;
             }
-            field(out, "category", category.label());
+            field(out, "category", area.label());
             list(out, "  ", &rows);
         }
         field(

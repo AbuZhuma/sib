@@ -1,6 +1,8 @@
 use egui::epaint::Shadow;
 use egui::style::{Selection, WidgetVisuals, Widgets};
-use egui::{Context, CornerRadius, FontFamily, FontId, Margin, Stroke, TextStyle, Vec2, Visuals};
+use egui::{
+    Context, CornerRadius, CursorIcon, FontFamily, FontId, Margin, Stroke, TextStyle, Vec2, Visuals,
+};
 
 use super::palette::Palette;
 
@@ -18,6 +20,7 @@ pub fn apply(ctx: &Context, palette: &Palette) {
     style.spacing.indent = 12.0;
     style.spacing.text_edit_width = 320.0;
     style.spacing.combo_width = 200.0;
+    style.visuals.interact_cursor = Some(CursorIcon::PointingHand);
     style.text_styles = text_styles();
     ctx.set_global_style(style);
 }

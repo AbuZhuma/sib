@@ -46,6 +46,45 @@ impl Draft {
     }
 }
 
+fn draft_grid(ui: &mut Ui, draft: &mut Draft) {
+    let rows: [(&str, &mut String, &str, &str, &mut String, &str); 3] = [
+        (
+            text::SETTINGS_FAST,
+            &mut draft.fast,
+            text::SETTINGS_SECONDS,
+            text::SETTINGS_RAW,
+            &mut draft.raw_hours,
+            text::SETTINGS_HOURS,
+        ),
+        (
+            text::SETTINGS_NORMAL,
+            &mut draft.normal,
+            text::SETTINGS_SECONDS,
+            text::SETTINGS_MINUTE,
+            &mut draft.minute_days,
+            text::SETTINGS_DAYS,
+        ),
+        (
+            text::SETTINGS_SLOW,
+            &mut draft.slow,
+            text::SETTINGS_SECONDS,
+            text::SETTINGS_HOUR,
+            &mut draft.hour_days,
+            text::SETTINGS_DAYS,
+        ),
+    ];
+    Grid::new("collection-grid")
+        .num_columns(4)
+        .spacing([12.0, 4.0])
+        .show(ui, |ui| {
+            for (label, value, unit, right_label, right_value, right_unit) in rows {
+                row(ui, label, value, unit);
+                row(ui, right_label, right_value, right_unit);
+                ui.end_row();
+            }
+        });
+}
+
 pub fn show(ui: &mut Ui, config: &AppConfig) -> Option<Action> {
     let p = Palette::current(ui.ctx());
     let id = Id::new(DRAFT_KEY);
@@ -53,50 +92,7 @@ pub fn show(ui: &mut Ui, config: &AppConfig) -> Option<Action> {
         .ctx()
         .data(|d| d.get_temp(id))
         .unwrap_or_else(|| Draft::from_config(config));
-    Grid::new("collection-grid")
-        .num_columns(4)
-        .spacing([12.0, 4.0])
-        .show(ui, |ui| {
-            row(
-                ui,
-                text::SETTINGS_FAST,
-                &mut draft.fast,
-                text::SETTINGS_SECONDS,
-            );
-            row(
-                ui,
-                text::SETTINGS_RAW,
-                &mut draft.raw_hours,
-                text::SETTINGS_HOURS,
-            );
-            ui.end_row();
-            row(
-                ui,
-                text::SETTINGS_NORMAL,
-                &mut draft.normal,
-                text::SETTINGS_SECONDS,
-            );
-            row(
-                ui,
-                text::SETTINGS_MINUTE,
-                &mut draft.minute_days,
-                text::SETTINGS_DAYS,
-            );
-            ui.end_row();
-            row(
-                ui,
-                text::SETTINGS_SLOW,
-                &mut draft.slow,
-                text::SETTINGS_SECONDS,
-            );
-            row(
-                ui,
-                text::SETTINGS_HOUR,
-                &mut draft.hour_days,
-                text::SETTINGS_DAYS,
-            );
-            ui.end_row();
-        });
+    draft_grid(ui, &mut draft);
     ui.label(
         RichText::new(text::SETTINGS_COLLECTION_HINT)
             .small()

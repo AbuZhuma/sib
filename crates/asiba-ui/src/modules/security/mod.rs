@@ -1,13 +1,17 @@
-mod tables;
+mod filter;
+pub mod tables;
 
 use asiba_core::{ModuleId, ServerState};
-use asiba_modules::security::{self, Category, CheckStatus, Grade, SecuritySnapshot, Weight};
+use asiba_incidents::{AuditCheck, Grade, Outcome, SystemAudit, security_score, system_audit};
+use asiba_modules::security::{self, SecuritySnapshot};
 use egui::{Label, RichText, Ui};
 
-use super::{ModuleView, Tab, ViewAction, ViewShared};
-use crate::components::{badge, status_dot};
+use super::{ModuleView, Tab, ViewShared};
+use crate::components::status_dot;
 use crate::text;
 use crate::theme::{GAP, GAP_SMALL, Palette};
+
+pub use filter::{is_showing_passed, toggle as show_passed_toggle};
 
 const SCORE_SIZE: f32 = 30.0;
 const SUMMARY_PROBLEMS: usize = 5;
@@ -27,50 +31,30 @@ impl ModuleView for SecurityView {
         Tab::Security
     }
 
-    fn summary(&self, ui: &mut Ui, server: &ServerState) {
+    fn summary(&self, ui: &mut Ui, server: &ServerState, shared: &ViewShared) {
         let Some(snapshot) = server.data::<SecuritySnapshot>(security::ID) else {
             return;
         };
-        score_line(ui, snapshot);
+        let audit = system_audit(server, shared.state);
+        score_line(ui, snapshot, &audit);
         ui.add_space(GAP);
-        problems_short(ui, snapshot);
+        problems_short(ui, &audit);
         ui.add_space(GAP);
         counters(ui, snapshot);
-    }
-
-    fn page(&self, ui: &mut Ui, server: &ServerState, shared: &ViewShared) -> Option<ViewAction> {
-        let snapshot = server.data::<SecuritySnapshot>(security::ID)?;
-        score_line(ui, snapshot);
-        ui.add_space(GAP);
-        checklist(ui, snapshot);
-        ui.add_space(GAP);
-        let mut action = tables::attackers(ui, snapshot, shared);
-        ui.add_space(GAP);
-        if let Some(next) = tables::bans(ui, snapshot) {
-            action = Some(next);
-        }
-        ui.add_space(GAP);
-        tables::logins(ui, snapshot);
-        ui.add_space(GAP);
-        tables::sudo_calls(ui, snapshot);
-        action
     }
 }
 
 fn grade_color(grade: Grade, p: &Palette) -> egui::Color32 {
     match grade {
-        Grade::A => p.ok,
-        Grade::B => p.ok,
-        Grade::C => p.warning,
-        Grade::D => p.warning,
+        Grade::A | Grade::B => p.ok,
+        Grade::C | Grade::D => p.warning,
         Grade::F => p.critical,
     }
 }
 
-fn score_line(ui: &mut Ui, snapshot: &SecuritySnapshot) {
+pub fn score_line(ui: &mut Ui, snapshot: &SecuritySnapshot, audit: &SystemAudit) {
     let p = Palette::current(ui.ctx());
-    let checks = security::checks(snapshot);
-    let score = security::score(&checks);
+    let score = security_score(audit.checks.iter());
     let color = grade_color(score.grade, &p);
     ui.horizontal(|ui| {
         ui.label(
@@ -102,62 +86,45 @@ fn score_line(ui: &mut Ui, snapshot: &SecuritySnapshot) {
     }
 }
 
-fn status_color(status: CheckStatus, p: &Palette) -> egui::Color32 {
-    match status {
-        CheckStatus::Pass => p.ok,
-        CheckStatus::Warn => p.warning,
-        CheckStatus::Fail => p.critical,
-        CheckStatus::Unknown => p.text_muted,
+pub fn outcome_color(outcome: Outcome, p: &Palette) -> egui::Color32 {
+    match outcome {
+        Outcome::Pass => p.ok,
+        Outcome::Warn => p.warning,
+        Outcome::Fail => p.critical,
+        Outcome::Skipped => p.text_muted,
     }
 }
 
-fn checklist(ui: &mut Ui, snapshot: &SecuritySnapshot) {
-    let p = Palette::current(ui.ctx());
-    let checks = security::checks(snapshot);
-    for category in Category::ALL {
-        let group: Vec<&security::Check> =
-            checks.iter().filter(|c| c.category == category).collect();
-        if group.is_empty() {
-            continue;
-        }
-        let problems = group.iter().filter(|c| c.is_problem()).count();
-        ui.add_space(GAP_SMALL);
-        ui.horizontal(|ui| {
-            ui.label(
-                RichText::new(category.label().to_uppercase())
-                    .small()
-                    .color(p.text_secondary),
-            );
-            if problems > 0 {
-                ui.label(
-                    RichText::new(format!("{problems} {}", text::SEC_PROBLEMS))
-                        .small()
-                        .color(p.warning),
-                );
-            }
-        });
-        for check in group {
-            check_line(ui, check, &p);
-        }
-    }
-}
-
-fn check_line(ui: &mut Ui, check: &security::Check, p: &Palette) {
+pub fn category_header(ui: &mut Ui, label: &str, problems: usize, p: &Palette) {
+    ui.add_space(GAP_SMALL);
     ui.horizontal(|ui| {
-        status_dot(ui, status_color(check.status, p));
-        ui.label(check.label);
-        if check.weight == Weight::High && check.is_problem() {
-            badge(ui, text::SEC_HIGH, p.critical);
+        ui.label(
+            RichText::new(label.to_uppercase())
+                .small()
+                .color(p.text_secondary),
+        );
+        if problems > 0 {
+            ui.label(
+                RichText::new(format!("{problems} {}", text::SEC_PROBLEMS))
+                    .small()
+                    .color(p.warning),
+            );
         }
+    });
+}
+
+fn check_line(ui: &mut Ui, check: &AuditCheck, p: &Palette) {
+    ui.horizontal(|ui| {
+        status_dot(ui, outcome_color(check.outcome, p));
+        ui.label(check.title());
         ui.add(Label::new(RichText::new(&check.detail).color(p.text_secondary)).truncate());
     });
 }
 
-fn problems_short(ui: &mut Ui, snapshot: &SecuritySnapshot) {
+fn problems_short(ui: &mut Ui, audit: &SystemAudit) {
     let p = Palette::current(ui.ctx());
-    let checks = security::checks(snapshot);
-    let mut problems: Vec<&security::Check> = checks.iter().filter(|c| c.is_problem()).collect();
-    problems.sort_by_key(|c| std::cmp::Reverse((c.status == CheckStatus::Fail, c.weight as u8)));
+    let mut problems: Vec<&AuditCheck> = audit.security().filter(|c| c.is_problem()).collect();
+    problems.sort_by_key(|c| std::cmp::Reverse((c.outcome, c.weight)));
     for check in problems.iter().take(SUMMARY_PROBLEMS) {
         check_line(ui, check, &p);
     }

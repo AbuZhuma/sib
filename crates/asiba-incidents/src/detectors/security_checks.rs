@@ -1,29 +1,29 @@
 use asiba_core::{AppState, IncidentDraft, IncidentKind, ServerState, Severity};
-use asiba_modules::security::{self, CheckStatus, SecuritySnapshot, Weight};
 
 use super::Detector;
+use crate::audit::{Outcome, Weight, system_audit};
+
+const COVERED_BY_OWN_DETECTOR: [&str; 2] = ["firewall.brute_force", "firewall.unbanned_attackers"];
 
 pub struct SecurityChecksDetector;
 
 impl Detector for SecurityChecksDetector {
-    fn detect(&self, server: &ServerState, _state: &AppState) -> Vec<IncidentDraft> {
-        let Some(snapshot) = server.data::<SecuritySnapshot>(security::ID) else {
-            return Vec::new();
-        };
-        security::checks(snapshot)
-            .into_iter()
+    fn detect(&self, server: &ServerState, state: &AppState) -> Vec<IncidentDraft> {
+        system_audit(server, state)
+            .security()
+            .filter(|check| !COVERED_BY_OWN_DETECTOR.contains(&check.id))
             .filter_map(|check| {
-                let severity = match (check.status, check.weight) {
-                    (CheckStatus::Fail, Weight::High) => Severity::Critical,
-                    (CheckStatus::Fail, _) | (CheckStatus::Warn, Weight::High) => Severity::Warning,
-                    (CheckStatus::Warn, _) => Severity::Info,
+                let severity = match (check.outcome, check.weight) {
+                    (Outcome::Fail, Weight::High) => Severity::Critical,
+                    (Outcome::Fail, _) | (Outcome::Warn, Weight::High) => Severity::Warning,
+                    (Outcome::Warn, _) => Severity::Info,
                     _ => return None,
                 };
                 Some(IncidentDraft::new(
                     IncidentKind::SecurityCheck,
                     severity,
-                    check.label,
-                    format!("{} - {}", check.label, check.detail),
+                    check.key(),
+                    format!("{} - {}", check.title(), check.detail),
                 ))
             })
             .collect()

@@ -23,7 +23,7 @@ impl ModuleView for MemoryView {
         Tab::Resources
     }
 
-    fn summary(&self, ui: &mut Ui, server: &ServerState) {
+    fn summary(&self, ui: &mut Ui, server: &ServerState, _shared: &ViewShared) {
         let Some(snapshot) = server.data::<MemorySnapshot>(memory::ID) else {
             return;
         };
@@ -47,10 +47,10 @@ impl ModuleView for MemoryView {
         sparkline_fill(ui, series, SUMMARY_RATE_HEIGHT, p.chart[0], Some(100.0));
     }
 
-    fn page(&self, ui: &mut Ui, server: &ServerState, _shared: &ViewShared) -> Option<ViewAction> {
+    fn page(&self, ui: &mut Ui, server: &ServerState, shared: &ViewShared) -> Option<ViewAction> {
         let p = Palette::current(ui.ctx());
         let snapshot = server.data::<MemorySnapshot>(memory::ID)?;
-        self.summary(ui, server);
+        self.summary(ui, server, shared);
         ui.add_space(GAP);
         let mut plot = TimeSeriesPlot::new("memory-plot", Unit::Bytes).title(text::PLOT_MEMORY);
         let keys = [

@@ -10,6 +10,8 @@ use crate::text;
 use crate::theme::Palette;
 
 const NOTICE_TTL: Duration = Duration::from_secs(12);
+const MAX_NOTICES: usize = 2;
+const RIGHT_BLOCK_WIDTH: f32 = 220.0;
 
 #[derive(Debug)]
 pub struct Notice {
@@ -59,38 +61,60 @@ pub fn statusbar(ui: &mut Ui, ctx: StatusContext<'_>) {
         if is_under_attack(state) {
             badge(ui, text::STATUS_ATTACK, p.critical);
         }
-        let queued = state
-            .audits
-            .iter()
-            .filter(|a| a.status == asiba_core::AuditStatus::Queued)
-            .count();
-        if state.audits.iter().any(|a| a.is_running()) {
-            let label = if queued > 0 {
-                format!(
-                    "{} · {} {queued}",
-                    text::STATUS_AI_BUSY,
-                    text::STATUS_AI_QUEUED
-                )
-            } else {
-                text::STATUS_AI_BUSY.to_owned()
-            };
-            badge(ui, &label, p.accent);
-        }
-        for notice in ctx.notices.iter().rev().take(2) {
-            ui.separator();
-            ui.label(RichText::new(&notice.message).color(p.warning));
-        }
+        ai_badge(ui, state, &p);
+        notices(ui, ctx.notices, &p);
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
             pause_button(ui, ctx.paused, &p);
-            let last = last_update(state);
-            let label = if *ctx.paused {
-                text::STATUS_PAUSED.to_owned()
-            } else {
-                format!("{} {last}", text::STATUS_LIVE)
-            };
-            ui.monospace(RichText::new(label).color(p.text_muted));
+            live_label(ui, state, *ctx.paused, &p);
         });
     });
+}
+
+fn notices(ui: &mut Ui, notices: &[Notice], p: &Palette) {
+    let shown: Vec<&Notice> = notices.iter().rev().take(MAX_NOTICES).collect();
+    if shown.is_empty() {
+        return;
+    }
+    let available = (ui.available_width() - RIGHT_BLOCK_WIDTH).max(0.0);
+    let width = available / shown.len() as f32;
+    for notice in shown {
+        ui.separator();
+        ui.add_sized(
+            [width, ui.available_height()],
+            egui::Label::new(RichText::new(&notice.message).color(p.warning)).truncate(),
+        )
+        .on_hover_text(&notice.message);
+    }
+}
+
+fn ai_badge(ui: &mut Ui, state: &AppState, p: &Palette) {
+    if !state.audits.iter().any(|a| a.is_running()) {
+        return;
+    }
+    let queued = state
+        .audits
+        .iter()
+        .filter(|a| a.status == asiba_core::AuditStatus::Queued)
+        .count();
+    let label = if queued > 0 {
+        format!(
+            "{} · {} {queued}",
+            text::STATUS_AI_BUSY,
+            text::STATUS_AI_QUEUED
+        )
+    } else {
+        text::STATUS_AI_BUSY.to_owned()
+    };
+    badge(ui, &label, p.accent);
+}
+
+fn live_label(ui: &mut Ui, state: &AppState, paused: bool, p: &Palette) {
+    let label = if paused {
+        text::STATUS_PAUSED.to_owned()
+    } else {
+        format!("{} {}", text::STATUS_LIVE, last_update(state))
+    };
+    ui.monospace(RichText::new(label).color(p.text_muted));
 }
 
 fn alert_counters(ui: &mut Ui, state: &AppState, p: &Palette) {

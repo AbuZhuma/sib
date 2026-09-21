@@ -471,7 +471,6 @@ dependencies = [
 name = "asiba-ui"
 version = "0.1.0"
 dependencies = [
- "asiba-ai",
  "asiba-alerts",
  "asiba-config",
  "asiba-core",

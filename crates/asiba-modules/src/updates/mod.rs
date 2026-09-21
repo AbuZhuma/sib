@@ -9,7 +9,7 @@ use async_trait::async_trait;
 
 pub use model::{PackageManager, UpdatesSnapshot};
 
-use crate::common::sections;
+use crate::common::{detect, sections};
 
 pub const ID: ModuleId = ModuleId("updates");
 pub const KEY_PENDING: &str = "updates.pending";
@@ -53,13 +53,7 @@ impl Module for UpdatesModule {
     }
 
     async fn detect(&self, transport: &dyn Transport) -> Result<Availability, ModuleError> {
-        let output = transport.exec(DETECT).await?;
-        if output.is_success() {
-            return Ok(Availability::Available);
-        }
-        Ok(Availability::Unavailable {
-            reason: "пакетный менеджер не найден".to_owned(),
-        })
+        detect::require(transport, DETECT, "пакетный менеджер не найден").await
     }
 
     async fn collect(

@@ -104,9 +104,9 @@ impl Module for DeployModule {
             .iter()
             .any(|name| !sections.get_or_empty(name).trim().is_empty());
         if !has_source {
-            return Ok(Availability::Unavailable {
-                reason: "нет источников деплоя (docker, deploy*.service, CI runner)".to_owned(),
-            });
+            return Ok(Availability::unavailable(
+                "нет источников деплоя (docker, deploy*.service, CI runner)",
+            ));
         }
         Ok(Availability::Available)
     }

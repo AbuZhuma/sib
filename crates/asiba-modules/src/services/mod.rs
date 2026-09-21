@@ -13,7 +13,7 @@ use async_trait::async_trait;
 pub use actions::{ACTION_RESTART, ACTION_START, ACTION_STOP, SPEC_RESTART, SPEC_START, SPEC_STOP};
 pub use model::{ServicesSnapshot, Timer, Unit, UnitOrigin};
 
-use crate::common::sections;
+use crate::common::{detect, sections};
 
 pub const ID: ModuleId = ModuleId("services");
 pub const KEY_FAILED: &str = "services.failed";
@@ -53,13 +53,7 @@ impl Module for ServicesModule {
     }
 
     async fn detect(&self, transport: &dyn Transport) -> Result<Availability, ModuleError> {
-        let output = transport.exec("command -v systemctl").await?;
-        if output.is_success() {
-            return Ok(Availability::Available);
-        }
-        Ok(Availability::Unavailable {
-            reason: "нет systemd".to_owned(),
-        })
+        detect::require(transport, "command -v systemctl", "нет systemd").await
     }
 
     async fn collect(

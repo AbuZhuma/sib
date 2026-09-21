@@ -23,11 +23,6 @@ pub fn show(ui: &mut Ui, ctx: &DetailContext<'_>) -> Option<Action> {
         .collect();
     let running = reports.iter().any(|r| r.is_running());
     let mut action = None;
-    ui.label(
-        RichText::new(text::AI_AUDIT_TITLE.to_uppercase())
-            .small()
-            .color(p.text_secondary),
-    );
     ui.horizontal(|ui| {
         let ready = ctx.ai.is_ready() && !running;
         if ui
