@@ -16,8 +16,19 @@ pub struct MetricStats {
 
 pub const HOUR: Duration = Duration::hours(1);
 pub const DAY: Duration = Duration::days(1);
+const COVERAGE_TOLERANCE_PERCENT: i32 = 10;
+
+fn covers(series: &Series, window: Duration) -> bool {
+    let tolerance = window * COVERAGE_TOLERANCE_PERCENT / 100;
+    series
+        .oldest()
+        .is_some_and(|oldest| oldest.at <= chrono::Utc::now() - window + tolerance)
+}
 
 pub fn window(series: &Series, window: Duration) -> Option<WindowStats> {
+    if !covers(series, window) {
+        return None;
+    }
     let mut count = 0usize;
     let mut sum = 0.0;
     let mut max = f64::MIN;
@@ -52,12 +63,12 @@ mod tests {
 
     use super::*;
 
-    fn series(values: &[f64]) -> Series {
+    fn series(values: &[f64], step: Duration) -> Series {
         let mut series = Series::with_capacity(values.len());
-        let start = Utc::now() - Duration::minutes(values.len() as i64);
+        let start = Utc::now() - step * values.len() as i32;
         for (index, value) in values.iter().enumerate() {
             series.push(Point {
-                at: start + Duration::minutes(index as i64),
+                at: start + step * index as i32,
                 value: *value,
             });
         }
@@ -65,10 +76,16 @@ mod tests {
     }
 
     #[test]
-    fn window_computes_average_and_max() {
-        let stats = window(&series(&[10.0, 20.0, 60.0]), HOUR).expect("stats");
-        assert_eq!(stats.average, 30.0);
+    fn window_computes_average_and_max_when_series_covers_it() {
+        let points = series(&[99.0, 10.0, 20.0, 60.0], Duration::minutes(20));
+        let stats = window(&points, HOUR).expect("stats");
+        assert_eq!(stats.average, 40.0);
         assert_eq!(stats.max, 60.0);
+    }
+
+    #[test]
+    fn window_is_none_when_series_is_shorter_than_it() {
+        assert!(window(&series(&[10.0, 20.0, 60.0], Duration::minutes(1)), HOUR).is_none());
     }
 
     #[test]
