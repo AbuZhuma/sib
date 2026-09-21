@@ -24,7 +24,7 @@ const SCRIPT_PARTS: [(&str, &str); 5] = [
     ),
     (
         "dnf",
-        "if command -v dnf >/dev/null; then dnf -q check-update 2>/dev/null | grep -E '^[[:alnum:]]' ; elif command -v yum >/dev/null; then yum -q check-update | grep -E '^[[:alnum:]]'; fi",
+        "if command -v dnf >/dev/null; then { out=$(dnf -q -C check-update 2>/dev/null); [ $? -ne 1 ] || out=$(dnf -q check-update 2>/dev/null); echo \"$out\" | grep -E '^[[:alnum:]]'; } ; elif command -v yum >/dev/null; then yum -q check-update | grep -E '^[[:alnum:]]'; fi",
     ),
     (
         "other",

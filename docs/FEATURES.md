@@ -81,8 +81,8 @@ connect (таймаут 15 с)
 | Расписание | Интервал | Модули |
 |---|---|---|
 | Fast | 2 с | cpu, memory, disk, network, processes, anomalies, gpu |
-| Normal | 20 с | system, services, docker, ports, logs, users, security, deploy, git |
-| Slow | 300 с | updates |
+| Normal | 20 с | services, docker, ports, logs, users, security, deploy |
+| Slow | 300 с | system, updates, git |
 | OnDemand | — | files |
 
 Каждый снимок даёт метрики `Sample { key, value }` (→ кольцо 900 точек в `ServerState.series` + SQLite) и события `Event` (→ лента). После 3 подряд ошибок сбора модуль отключается до следующего `detect` (10 мин); ошибка видна в таблице модулей и становится инцидентом `ModuleError`.

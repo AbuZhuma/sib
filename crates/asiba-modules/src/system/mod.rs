@@ -46,7 +46,7 @@ impl Module for SystemModule {
     }
 
     fn schedule(&self) -> Schedule {
-        Schedule::Normal
+        Schedule::Slow
     }
 
     async fn detect(

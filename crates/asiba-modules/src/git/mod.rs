@@ -34,7 +34,7 @@ impl Module for GitModule {
     }
 
     fn schedule(&self) -> Schedule {
-        Schedule::Normal
+        Schedule::Slow
     }
 
     async fn detect(
