@@ -16,6 +16,7 @@ pub const SPECS: [ActionSpec; 2] = [SPEC_BAN, SPEC_UNBAN];
 const NFT_SETUP: &str = "nft list table inet asiba >/dev/null 2>&1 || { nft add table inet asiba && nft add set inet asiba bans '{ type ipv4_addr; flags timeout; }' && nft add set inet asiba bans6 '{ type ipv6_addr; flags timeout; }' && nft add chain inet asiba input '{ type filter hook input priority -10; policy accept; }' && nft add rule inet asiba input ip saddr @bans drop && nft add rule inet asiba input ip6 saddr @bans6 drop; }";
 const IPTABLES_SETUP: &str = "{ iptables -N ASIBA 2>/dev/null; iptables -C INPUT -j ASIBA 2>/dev/null || iptables -I INPUT -j ASIBA; }";
 const IP6TABLES_SETUP: &str = "{ ip6tables -N ASIBA 2>/dev/null; ip6tables -C INPUT -j ASIBA 2>/dev/null || ip6tables -I INPUT -j ASIBA; }";
+const OWN_ADDRESS_PROBE: &str = "printf '%s\\n' \"${SSH_CLIENT%% *}\" \"${SSH_CONNECTION%% *}\"";
 const DETECT_BACKEND: &str = "for t in fail2ban-client nft iptables ufw; do command -v \"$t\" >/dev/null && echo \"$t\"; done; fail2ban-client status 2>/dev/null | sed -n 's/.*Jail list:[[:space:]]*//p'";
 
 pub async fn perform(
@@ -83,11 +84,30 @@ fn preferred_jail(list: &str) -> Option<String> {
         .map(|j| (*j).to_owned())
 }
 
+async fn own_addresses(transport: &dyn Transport) -> Result<Vec<String>, ModuleError> {
+    let output = transport.exec(OWN_ADDRESS_PROBE).await?;
+    Ok(output
+        .stdout
+        .lines()
+        .filter_map(|line| validate_ip(line).ok())
+        .collect())
+}
+
+fn ensure_not_own(ip: &str, own: &[String]) -> Result<(), ModuleError> {
+    if own.iter().any(|address| address == ip) {
+        return Err(ModuleError::ActionFailed(format!(
+            "{ip} - адрес, с которого Asiba подключена к серверу; бан отрезал бы доступ"
+        )));
+    }
+    Ok(())
+}
+
 async fn ban(
     transport: &dyn Transport,
     ip: &str,
     duration: &str,
 ) -> Result<ActionOutcome, ModuleError> {
+    ensure_not_own(ip, &own_addresses(transport).await?)?;
     let backend = detect(transport).await?;
     let duration = validate_duration(duration)?;
     let command = ban_command(&backend, ip, duration.as_deref())?;
@@ -250,6 +270,14 @@ mod tests {
             ban_command(&jail, "1.2.3.4", Some("12h")).expect("command"),
             "fail2ban-client set sshd banip 1.2.3.4"
         );
+    }
+
+    #[test]
+    fn ensure_not_own_rejects_session_address_and_allows_others() {
+        let own = vec!["203.0.113.5".to_owned()];
+        assert!(ensure_not_own("203.0.113.5", &own).is_err());
+        assert!(ensure_not_own("198.51.100.9", &own).is_ok());
+        assert!(ensure_not_own("198.51.100.9", &[]).is_ok());
     }
 
     #[test]
