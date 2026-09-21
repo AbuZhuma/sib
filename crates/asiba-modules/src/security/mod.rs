@@ -5,6 +5,7 @@ mod hardening;
 mod journal;
 mod model;
 mod parse;
+mod script;
 
 use asiba_core::{
     ActionOutcome, ActionRequest, ActionSpec, Availability, CollectContext, Module, ModuleError,
@@ -20,7 +21,6 @@ pub use model::{
 };
 
 use crate::common::root::exec_prefer_root;
-use crate::common::sections;
 
 pub const ID: ModuleId = ModuleId("security");
 pub const KEY_FAILED_LOGINS: &str = "security.failed_logins";
@@ -28,88 +28,7 @@ pub const KEY_ATTACKERS: &str = "security.attackers";
 pub const KEY_BRUTE_FORCE: &str = "security.brute_force";
 pub const KEY_BANS: &str = "security.bans";
 
-const SSH_LOG_LINES: u32 = 2000;
-const SUDO_LOG_LINES: u32 = 500;
-const LOG_SINCE: &str = "-24h";
 pub const SLOW_PART_INTERVAL: Duration = Duration::minutes(5);
-
-fn script(include_slow: bool) -> String {
-    let ssh = format!(
-        "if command -v journalctl >/dev/null; then journalctl -q --no-pager -o short-iso --since {LOG_SINCE} -t sshd -t sshd-session -n {SSH_LOG_LINES}; else grep -h 'sshd' /var/log/auth.log /var/log/secure | tail -n {SSH_LOG_LINES}; fi"
-    );
-    let sudo = format!(
-        "if command -v journalctl >/dev/null; then journalctl -q --no-pager -o short-iso --since {LOG_SINCE} -t sudo -n {SUDO_LOG_LINES}; else grep -h 'sudo' /var/log/auth.log /var/log/secure | tail -n {SUDO_LOG_LINES}; fi"
-    );
-    let sysctl = format!("sysctl {}", hardening::SYSCTL_KEYS.join(" "));
-    let fast = [
-        ("whoami", "id -un"),
-        (
-            "units",
-            "for s in firewalld ufw nftables iptables netfilter-persistent fail2ban auditd unattended-upgrades dnf-automatic.timer dnf-automatic-install.timer; do printf '%s %s\\n' \"$s\" \"$(systemctl is-active \"$s\" 2>/dev/null)\"; done",
-        ),
-        ("ssh", ssh.as_str()),
-        ("sudo", sudo.as_str()),
-        (
-            "fail2ban",
-            "fail2ban-client status | sed -n 's/.*Jail list:[[:space:]]*//p' | tr ',' '\\n' | while read -r j; do [ -n \"$j\" ] && echo \"@@ $j\" && fail2ban-client status \"$j\"; done",
-        ),
-        (
-            "nftbans",
-            "nft list set inet asiba bans; nft list set inet asiba bans6",
-        ),
-        ("iptbans", "iptables -S ASIBA; ip6tables -S ASIBA"),
-        ("ufwbans", "ufw status | grep DENY"),
-    ];
-    let slow = [
-        (
-            "tools",
-            "for t in fail2ban-client nft iptables ufw; do command -v \"$t\" >/dev/null && echo \"$t\"; done",
-        ),
-        (
-            "sshd",
-            "sshd -T 2>/dev/null | grep -iE '^(passwordauthentication|permitrootlogin|pubkeyauthentication|port|maxauthtries|permitemptypasswords|x11forwarding|logingracetime|clientaliveinterval|allowtcpforwarding|usepam|maxstartups) ' || grep -hiE '^[[:space:]]*(PasswordAuthentication|PermitRootLogin|PubkeyAuthentication|Port|MaxAuthTries|PermitEmptyPasswords|X11Forwarding|LoginGraceTime|ClientAliveInterval|AllowTcpForwarding|UsePAM|MaxStartups)[[:space:]]' /etc/ssh/sshd_config /etc/ssh/sshd_config.d/*.conf",
-        ),
-        (
-            "hashes",
-            "sha256sum /etc/passwd /etc/group /etc/sudoers /etc/sudoers.d/*",
-        ),
-        ("sysctl", sysctl.as_str()),
-        (
-            "mac",
-            "getenforce 2>/dev/null; aa-status --enabled 2>/dev/null && echo apparmor",
-        ),
-        ("ntp", "timedatectl show -p NTPSynchronized --value"),
-        (
-            "uid0",
-            "awk -F: '$3==0 && $1!=\"root\"{print $1}' /etc/passwd",
-        ),
-        (
-            "shadow",
-            "if [ -r /etc/shadow ]; then awk -F: '($2==\"\"){print $1}' /etc/shadow; else echo '@@unreadable'; fi",
-        ),
-        (
-            "nopasswd",
-            "[ -r /etc/sudoers ] && grep -rhs NOPASSWD /etc/sudoers /etc/sudoers.d | grep -vc '^#'",
-        ),
-        (
-            "keyperms",
-            "[ \"$(id -u)\" = 0 ] || echo '@@unreadable'; find /root/.ssh /home/*/.ssh -name authorized_keys -perm /go+w 2>/dev/null",
-        ),
-        (
-            "wwfiles",
-            "find /etc -maxdepth 2 -type f -perm -o+w 2>/dev/null | head -5",
-        ),
-        (
-            "risky",
-            "ss -tlnH | awk '{print $4}' | grep -E ':(21|23|512|513|514|2375|2376|6379|27017|9200)$'",
-        ),
-    ];
-    if !include_slow {
-        return sections::script(&fast);
-    }
-    let all: Vec<(&str, &str)> = fast.iter().chain(slow.iter()).copied().collect();
-    sections::script(&all)
-}
 
 fn needs_slow_part(previous: Option<&SecuritySnapshot>, now: DateTime<Utc>) -> bool {
     previous.is_none_or(|p| now - p.slow_collected_at >= SLOW_PART_INTERVAL)
@@ -155,7 +74,7 @@ impl Module for SecurityModule {
         let now = Utc::now();
         let previous = context.previous::<SecuritySnapshot>().map(|(p, _)| p);
         let include_slow = needs_slow_part(previous, now);
-        let output = exec_prefer_root(transport, &script(include_slow)).await?;
+        let output = exec_prefer_root(transport, &script::build(include_slow)).await?;
         let mut snapshot = parse::security_snapshot(&output.stdout, now)?;
         if let Some(previous) = previous.filter(|_| !include_slow) {
             parse::carry_slow_part(&mut snapshot, previous);
@@ -193,12 +112,12 @@ mod tests {
 
     #[test]
     fn script_without_slow_part_skips_hardening_commands() {
-        let fast = script(false);
+        let fast = script::build(false);
         assert!(fast.contains("###ssh"));
         assert!(fast.contains("###nftbans"));
         assert!(!fast.contains("###sysctl"));
         assert!(!fast.contains("###sshd"));
-        let full = script(true);
+        let full = script::build(true);
         assert!(full.contains("###sysctl"));
         assert!(full.contains("###sshd"));
     }
