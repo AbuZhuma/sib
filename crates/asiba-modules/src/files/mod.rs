@@ -12,7 +12,7 @@ use async_trait::async_trait;
 pub use actions::{
     ACTION_CHMOD, ACTION_CHOWN, ACTION_COPY, ACTION_CREATE, ACTION_DELETE, ACTION_MKDIR,
     ACTION_MOVE, ACTION_WRITE, SPEC_CHMOD, SPEC_CHOWN, SPEC_COPY, SPEC_CREATE, SPEC_DELETE,
-    SPEC_MKDIR, SPEC_MOVE, SPEC_WRITE,
+    SPEC_MKDIR, SPEC_MOVE, SPEC_WRITE, SPEC_WRITE_SYSTEM, write_spec,
 };
 pub use model::{Entry, EntryKind, Listing, join_path, parent_path};
 pub use parse::listing as parse_listing;

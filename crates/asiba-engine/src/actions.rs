@@ -2,6 +2,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use asiba_core::{ActionRecord, ActionRequest, Module, ServerId, SharedState, Transport};
+use asiba_modules::files;
 use asiba_storage::{HistoryReader, StorageWriter};
 use chrono::Utc;
 use tokio::sync::mpsc;
@@ -39,13 +40,17 @@ pub fn perform(job: Perform) {
             (None, _) => Err("сервер не подключён".to_owned()),
             (_, None) => Err("модуль не найден".to_owned()),
         };
+        let argument = job
+            .request
+            .argument
+            .map(|argument| journaled_argument(&module_name, &job.request.kind, argument));
         let record = ActionRecord {
             at: Utc::now(),
             server: job.server,
             module: module_name,
             kind: job.request.kind,
             target: job.request.target,
-            argument: job.request.argument.map(journaled_argument),
+            argument,
             is_success: result.is_ok(),
             message: result.unwrap_or_else(|error| error),
         };
@@ -61,8 +66,9 @@ pub fn perform(job: Perform) {
     });
 }
 
-fn journaled_argument(argument: String) -> String {
-    if argument.chars().count() <= MAX_JOURNALED_ARGUMENT {
+fn journaled_argument(module: &str, kind: &str, argument: String) -> String {
+    let is_file_content = module == files::ID.0 && kind == files::ACTION_WRITE;
+    if !is_file_content && argument.chars().count() <= MAX_JOURNALED_ARGUMENT {
         return argument;
     }
     format!("{} байт", argument.len())
@@ -93,4 +99,25 @@ pub fn prefill_journal(path: Option<PathBuf>, state: SharedState, notify: Repain
             Err(error) => tracing::warn!(%error, "журнал действий не загружен"),
         }
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn file_content_is_journaled_as_size_only() {
+        assert_eq!(
+            journaled_argument("files", "write", "secret=1".to_owned()),
+            "8 байт"
+        );
+        assert_eq!(
+            journaled_argument("files", "chmod", "644".to_owned()),
+            "644"
+        );
+        assert_eq!(
+            journaled_argument("security", "ban", "x".repeat(200)),
+            "200 байт"
+        );
+    }
 }

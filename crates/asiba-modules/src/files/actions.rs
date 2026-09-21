@@ -14,6 +14,19 @@ pub const ACTION_COPY: &str = "copy";
 
 pub const SPEC_WRITE: ActionSpec =
     ActionSpec::new(ID, ACTION_WRITE, "Сохранить файл", Danger::Normal);
+pub const SPEC_WRITE_SYSTEM: ActionSpec =
+    ActionSpec::new(ID, ACTION_WRITE, "Сохранить системный файл", Danger::High);
+const SYSTEM_PREFIXES: [&str; 6] = ["/etc/", "/boot/", "/usr/", "/bin/", "/sbin/", "/lib/"];
+
+pub fn write_spec(path: &str) -> ActionSpec {
+    if SYSTEM_PREFIXES
+        .iter()
+        .any(|prefix| path.starts_with(prefix))
+    {
+        return SPEC_WRITE_SYSTEM;
+    }
+    SPEC_WRITE
+}
 pub const SPEC_CHMOD: ActionSpec =
     ActionSpec::new(ID, ACTION_CHMOD, "Изменить права", Danger::Normal);
 pub const SPEC_CHOWN: ActionSpec =
@@ -111,6 +124,12 @@ mod tests {
         assert!(validate_mode("8").is_err());
         assert!(validate_mode("u+x").is_err());
         assert!(validate_mode("64").is_err());
+    }
+
+    #[test]
+    fn write_spec_is_dangerous_under_system_directories() {
+        assert_eq!(write_spec("/etc/fstab").danger, Danger::High);
+        assert_eq!(write_spec("/srv/app/.env").danger, Danger::Normal);
     }
 
     #[test]

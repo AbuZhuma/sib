@@ -49,7 +49,7 @@ pub fn show(
             {
                 action = Some(Action::AskPerform {
                     server: server.clone(),
-                    spec: files::SPEC_WRITE,
+                    spec: files::write_spec(&editor.path),
                     request: ActionRequest::new(files::ACTION_WRITE, &editor.path)
                         .with_argument(editor.text.clone()),
                 });

@@ -10,6 +10,7 @@ pub const BINARY_PROBE_BYTES: u32 = 8192;
 pub const EXIT_UNREADABLE: i32 = 2;
 pub const EXIT_TOO_LARGE: i32 = 3;
 pub const EXIT_BINARY: i32 = 4;
+const TEMP_SUFFIX: &str = ".asiba-tmp";
 
 const LIST_FORMAT: &str = "%y\\t%Y\\t%m\\t%u\\t%g\\t%s\\t%T@\\t%l\\t%f\\n";
 const SEARCH_FORMAT: &str = "%y\\t%Y\\t%m\\t%u\\t%g\\t%s\\t%T@\\t%l\\t%p\\n";
@@ -41,10 +42,10 @@ pub fn read(path: &str) -> String {
 }
 
 pub fn write(path: &str, content: &str) -> String {
+    let quoted = shell_quote(path);
     format!(
-        "printf '%s' {} > {}",
-        shell_quote(content),
-        shell_quote(path)
+        "f={quoted}; t=\"$f{TEMP_SUFFIX}\"; printf '%s' {} > \"$t\" && {{ if [ -e \"$f\" ]; then chmod --reference=\"$f\" \"$t\" 2>/dev/null; chown --reference=\"$f\" \"$t\" 2>/dev/null; fi; mv -f -- \"$t\" \"$f\"; }} || {{ rm -f -- \"$t\"; false; }}",
+        shell_quote(content)
     )
 }
 
@@ -83,4 +84,19 @@ pub fn copy_path(source: &str, destination: &str) -> String {
 
 pub fn delete(path: &str) -> String {
     format!("rm -rf -- {}", shell_quote(path))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn write_goes_through_a_temporary_file_and_moves_it_over() {
+        let command = write("/etc/it's.conf", "a=1\n");
+        assert!(command.starts_with(
+            "f='/etc/it'\\''s.conf'; t=\"$f.asiba-tmp\"; printf '%s' 'a=1\n' > \"$t\""
+        ));
+        assert!(command.contains("mv -f -- \"$t\" \"$f\""));
+        assert!(command.ends_with("|| { rm -f -- \"$t\"; false; }"));
+    }
 }
