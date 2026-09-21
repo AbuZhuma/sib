@@ -90,6 +90,7 @@ pub const BTN_TERMINAL_SHORT: &str = ">_";
 pub const BTN_TERMINAL_HINT: &str = "открыть SSH в терминале";
 pub const ERR_NO_TERMINAL: &str = "не найден эмулятор терминала (задайте $TERMINAL)";
 pub const ERR_OPEN_FAILED: &str = "не удалось открыть";
+pub const ERR_AI_KEY_NOT_STORED: &str = "ключ ИИ не сохранён в keyring";
 pub const INSPECTOR_TITLE: &str = "Просмотр";
 pub const INSPECTOR_LOADING: &str = "Загрузка…";
 

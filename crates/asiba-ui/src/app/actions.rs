@@ -1,4 +1,4 @@
-use asiba_config::ThemeChoice;
+use asiba_config::{AI_KEY_ACCOUNT, AiConfig, ThemeChoice};
 use asiba_core::{
     ActionRequest, ActionSpec, AlertRule, Credentials, Environment, ModuleId, QueryRequest,
     ServerId, ServerSpec,
@@ -14,6 +14,7 @@ use crate::pages::inspector::Inspector;
 use crate::pages::server_form::ServerForm;
 use crate::pages::{Action, Page};
 use crate::shell::Notice;
+use crate::text;
 use crate::theme;
 
 impl AsibaApp {
@@ -91,13 +92,7 @@ impl AsibaApp {
                 rules,
                 desktop_notifications,
             } => self.save_alert_settings(rules, desktop_notifications),
-            Action::SaveAiConfig(config) => {
-                self.config.ai = config.clone();
-                self.engine.send(Command::SetAiConfig(config));
-                if let Err(error) = self.config.save(&self.paths) {
-                    self.notices.push(Notice::new(error.to_string()));
-                }
-            }
+            Action::SaveAiConfig(config) => self.save_ai_config(config),
             Action::Audit { target, scope } => self.engine.send(Command::Audit {
                 target,
                 scope,
@@ -244,6 +239,23 @@ impl AsibaApp {
                 &self.config.alert_rules,
                 desktop_notifications,
             )));
+        if let Err(error) = self.config.save(&self.paths) {
+            self.notices.push(Notice::new(error.to_string()));
+        }
+    }
+
+    fn save_ai_config(&mut self, config: AiConfig) {
+        let stored = self
+            .secrets
+            .set_or_delete_named(AI_KEY_ACCOUNT, &config.api_key);
+        if let Err(error) = stored {
+            self.notices.push(Notice::new(format!(
+                "{}: {error}",
+                text::ERR_AI_KEY_NOT_STORED
+            )));
+        }
+        self.config.ai = config.clone();
+        self.engine.send(Command::SetAiConfig(config));
         if let Err(error) = self.config.save(&self.paths) {
             self.notices.push(Notice::new(error.to_string()));
         }

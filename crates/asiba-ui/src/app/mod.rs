@@ -8,7 +8,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
 
-use asiba_config::{AppConfig, IgnoredStore, LayoutStore, Paths};
+use asiba_config::{AppConfig, IgnoredStore, LayoutStore, Paths, SecretStore};
 use asiba_core::{AppState, ServerId, SharedState};
 use asiba_engine::{EngineHandle, RepaintNotifier};
 use egui::{CentralPanel, Frame, Margin, Panel};
@@ -32,6 +32,7 @@ pub struct AppDeps {
     pub state: SharedState,
     pub paths: Paths,
     pub config: AppConfig,
+    pub secrets: Arc<dyn SecretStore>,
 }
 
 pub type EngineFactory = Box<dyn FnOnce(RepaintNotifier) -> EngineHandle + Send>;
@@ -64,6 +65,7 @@ pub struct AsibaApp {
     state: SharedState,
     paths: Paths,
     config: AppConfig,
+    secrets: Arc<dyn SecretStore>,
     page: Page,
     form: Option<ServerForm>,
     delete_dialog: Option<dialogs::DeleteDialog>,
@@ -95,6 +97,7 @@ impl AsibaApp {
             state: deps.state,
             paths: deps.paths,
             config: deps.config,
+            secrets: deps.secrets,
             page: Page::Overview,
             form: None,
             delete_dialog: None,

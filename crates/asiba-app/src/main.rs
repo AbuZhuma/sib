@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use anyhow::Context;
-use asiba_config::{AppConfig, IgnoredStore, KeyringSecretStore, Paths, ServerStore};
+use asiba_config::{AppConfig, IgnoredStore, KeyringSecretStore, Paths, SecretStore, ServerStore};
 use asiba_core::{AppState, Retention};
 use asiba_engine::{AlertSettings, EngineDeps, Persistence};
 use asiba_storage::{Database, spawn_writer};
@@ -11,9 +11,13 @@ use tracing_subscriber::EnvFilter;
 fn main() -> anyhow::Result<()> {
     init_tracing();
     let paths = Paths::discover().context("пути приложения")?;
-    let config = AppConfig::load(&paths).context("config.toml")?;
+    let mut config = AppConfig::load(&paths).context("config.toml")?;
+    let secrets: Arc<dyn SecretStore> = Arc::new(KeyringSecretStore);
+    if let Err(error) = config.load_ai_key(secrets.as_ref(), &paths) {
+        tracing::warn!(%error, "ключ ИИ недоступен в keyring");
+    }
     let servers = ServerStore::new(config.servers_dir(&paths));
-    let persistence = Persistence::new(servers, Arc::new(KeyringSecretStore));
+    let persistence = Persistence::new(servers, Arc::clone(&secrets));
     let registry = asiba_modules::default_registry();
     let state = AppState::shared();
     let runtime = tokio::runtime::Builder::new_multi_thread()
@@ -45,6 +49,7 @@ fn main() -> anyhow::Result<()> {
         state,
         paths,
         config,
+        secrets,
     };
     asiba_ui::run(deps, factory).map_err(|e| anyhow::anyhow!("{e}"))?;
     runtime.shutdown_background();

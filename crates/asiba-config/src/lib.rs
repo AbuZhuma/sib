@@ -13,5 +13,5 @@ pub use error::ConfigError;
 pub use ignored::IgnoredStore;
 pub use layout::{LayoutStore, SummaryLayout};
 pub use paths::Paths;
-pub use secrets::{KeyringSecretStore, SecretKind, SecretStore};
+pub use secrets::{AI_KEY_ACCOUNT, KeyringSecretStore, SecretKind, SecretStore};
 pub use server_store::ServerStore;

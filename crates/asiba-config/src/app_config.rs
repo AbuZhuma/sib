@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use crate::ai_config::AiConfig;
 use crate::error::ConfigError;
 use crate::paths::Paths;
+use crate::secrets::{AI_KEY_ACCOUNT, SecretStore};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -66,6 +67,20 @@ impl AppConfig {
         std::fs::write(&path, raw).map_err(|source| ConfigError::Write { path, source })
     }
 
+    pub fn load_ai_key(
+        &mut self,
+        store: &dyn SecretStore,
+        paths: &Paths,
+    ) -> Result<(), ConfigError> {
+        let from_file = std::mem::take(&mut self.ai.api_key);
+        if !from_file.trim().is_empty() {
+            store.set_named(AI_KEY_ACCOUNT, from_file.trim())?;
+            self.save(paths)?;
+        }
+        self.ai.api_key = store.get_named(AI_KEY_ACCOUNT)?.unwrap_or_default();
+        Ok(())
+    }
+
     pub fn servers_dir(&self, paths: &Paths) -> PathBuf {
         self.servers_dir
             .clone()
@@ -108,6 +123,19 @@ mod tests {
         let raw = toml::to_string(&config).unwrap_or_default();
         let parsed: AppConfig = toml::from_str(&raw).unwrap_or_default();
         assert_eq!(parsed, config);
+    }
+
+    #[test]
+    fn api_key_is_never_serialized() {
+        let config = AppConfig {
+            ai: AiConfig {
+                api_key: "secret".to_owned(),
+                ..AiConfig::default()
+            },
+            ..AppConfig::default()
+        };
+        let raw = toml::to_string(&config).unwrap_or_default();
+        assert!(!raw.contains("secret"));
     }
 
     #[test]

@@ -101,6 +101,7 @@ impl AiProvider {
 pub struct AiConfig {
     pub consent: bool,
     pub provider: AiProvider,
+    #[serde(skip_serializing)]
     pub api_key: String,
     pub model: String,
     pub base_url: String,

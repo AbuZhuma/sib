@@ -4,6 +4,7 @@ use keyring::Entry;
 use crate::error::ConfigError;
 
 const SERVICE: &str = "asiba";
+pub const AI_KEY_ACCOUNT: &str = "ai/api_key";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SecretKind {
@@ -25,11 +26,30 @@ impl SecretKind {
 }
 
 pub trait SecretStore: Send + Sync {
-    fn get(&self, id: &ServerId, kind: SecretKind) -> Result<Option<String>, ConfigError>;
+    fn get_named(&self, account: &str) -> Result<Option<String>, ConfigError>;
 
-    fn set(&self, id: &ServerId, kind: SecretKind, value: &str) -> Result<(), ConfigError>;
+    fn set_named(&self, account: &str, value: &str) -> Result<(), ConfigError>;
 
-    fn delete(&self, id: &ServerId, kind: SecretKind) -> Result<(), ConfigError>;
+    fn delete_named(&self, account: &str) -> Result<(), ConfigError>;
+
+    fn get(&self, id: &ServerId, kind: SecretKind) -> Result<Option<String>, ConfigError> {
+        self.get_named(&account(id, kind))
+    }
+
+    fn set(&self, id: &ServerId, kind: SecretKind, value: &str) -> Result<(), ConfigError> {
+        self.set_named(&account(id, kind), value)
+    }
+
+    fn delete(&self, id: &ServerId, kind: SecretKind) -> Result<(), ConfigError> {
+        self.delete_named(&account(id, kind))
+    }
+
+    fn set_or_delete_named(&self, account: &str, value: &str) -> Result<(), ConfigError> {
+        if value.trim().is_empty() {
+            return self.delete_named(account);
+        }
+        self.set_named(account, value.trim())
+    }
 
     fn load_credentials(&self, id: &ServerId) -> Result<Credentials, ConfigError> {
         Ok(Credentials {
@@ -64,33 +84,36 @@ pub trait SecretStore: Send + Sync {
     }
 }
 
+fn account(id: &ServerId, kind: SecretKind) -> String {
+    format!("{id}/{}", kind.suffix())
+}
+
 #[derive(Debug, Default, Clone)]
 pub struct KeyringSecretStore;
 
 impl KeyringSecretStore {
-    fn entry(id: &ServerId, kind: SecretKind) -> Result<Entry, ConfigError> {
-        let account = format!("{id}/{}", kind.suffix());
-        Entry::new(SERVICE, &account).map_err(|e| ConfigError::Secrets(e.to_string()))
+    fn entry(account: &str) -> Result<Entry, ConfigError> {
+        Entry::new(SERVICE, account).map_err(|e| ConfigError::Secrets(e.to_string()))
     }
 }
 
 impl SecretStore for KeyringSecretStore {
-    fn get(&self, id: &ServerId, kind: SecretKind) -> Result<Option<String>, ConfigError> {
-        match Self::entry(id, kind)?.get_password() {
+    fn get_named(&self, account: &str) -> Result<Option<String>, ConfigError> {
+        match Self::entry(account)?.get_password() {
             Ok(value) => Ok(Some(value)),
             Err(keyring::Error::NoEntry) => Ok(None),
             Err(error) => Err(ConfigError::Secrets(error.to_string())),
         }
     }
 
-    fn set(&self, id: &ServerId, kind: SecretKind, value: &str) -> Result<(), ConfigError> {
-        Self::entry(id, kind)?
+    fn set_named(&self, account: &str, value: &str) -> Result<(), ConfigError> {
+        Self::entry(account)?
             .set_password(value)
             .map_err(|e| ConfigError::Secrets(e.to_string()))
     }
 
-    fn delete(&self, id: &ServerId, kind: SecretKind) -> Result<(), ConfigError> {
-        match Self::entry(id, kind)?.delete_credential() {
+    fn delete_named(&self, account: &str) -> Result<(), ConfigError> {
+        match Self::entry(account)?.delete_credential() {
             Ok(()) | Err(keyring::Error::NoEntry) => Ok(()),
             Err(error) => Err(ConfigError::Secrets(error.to_string())),
         }
