@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::sync::atomic::AtomicBool;
 use std::sync::{Arc, Mutex};
 
 use tokio::sync::{mpsc, watch};
@@ -50,6 +51,7 @@ pub fn spawn(
         storage: deps.storage,
         history_path: deps.history_path,
         geo_cache: deps.geo_cache,
+        geolocation: Arc::new(AtomicBool::new(deps.geolocation)),
         intervals: deps.intervals.clamped(),
         notify,
         events,
@@ -109,6 +111,7 @@ async fn run(
     geo::resolve_self(engine.geo_request());
     peers::spawn(peers::PeerLookup {
         cache: engine.geo_cache.clone(),
+        enabled: Arc::clone(&engine.geolocation),
         state: Arc::clone(&engine.state),
         notify: Arc::clone(&engine.notify),
     });

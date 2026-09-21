@@ -29,6 +29,13 @@ fn sections(ui: &mut Ui, ctx: &SettingsContext<'_>) -> Option<Action> {
         action = theme_picker(ui, config.theme);
     });
     ui.add_space(GAP);
+    let privacy = panel(ui, text::SETTINGS_SECTION_PRIVACY, |ui| {
+        geolocation_toggle(ui, config.geolocation)
+    });
+    if privacy.is_some() {
+        action = privacy;
+    }
+    ui.add_space(GAP);
     panel(ui, text::SETTINGS_SECTION_PATHS, |ui| {
         paths_grid(ui, paths, config)
     });
@@ -84,6 +91,14 @@ fn theme_picker(ui: &mut Ui, current: ThemeChoice) -> Option<Action> {
         );
     });
     (chosen != current).then_some(Action::SetTheme(chosen))
+}
+
+fn geolocation_toggle(ui: &mut Ui, current: bool) -> Option<Action> {
+    let p = Palette::current(ui.ctx());
+    let mut enabled = current;
+    ui.checkbox(&mut enabled, text::SETTINGS_GEOLOCATION);
+    ui.label(RichText::new(text::SETTINGS_GEOLOCATION_HINT).color(p.text_secondary));
+    (enabled != current).then_some(Action::SetGeolocation(enabled))
 }
 
 fn paths_grid(ui: &mut Ui, paths: &Paths, config: &AppConfig) {

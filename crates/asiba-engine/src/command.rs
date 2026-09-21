@@ -52,6 +52,7 @@ pub enum Command {
     SetAlertSettings(AlertSettings),
     SetIntervals(Intervals),
     SetRetention(Retention),
+    SetGeolocation(bool),
     Audit {
         target: AuditTarget,
         scope: AuditScope,

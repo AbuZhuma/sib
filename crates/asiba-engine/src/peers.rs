@@ -1,5 +1,7 @@
 use std::collections::BTreeMap;
 use std::path::PathBuf;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
 use asiba_core::SharedState;
@@ -32,6 +34,7 @@ struct BatchAnswer {
 
 pub struct PeerLookup {
     pub cache: Option<PathBuf>,
+    pub enabled: Arc<AtomicBool>,
     pub state: SharedState,
     pub notify: RepaintNotifier,
 }
@@ -46,6 +49,9 @@ async fn run(context: PeerLookup) {
     seed_from_cache(&context);
     loop {
         ticker.tick().await;
+        if !context.enabled.load(Ordering::Relaxed) {
+            continue;
+        }
         let pending = pending_ips(&context.state);
         if pending.is_empty() {
             continue;

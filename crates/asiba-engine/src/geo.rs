@@ -1,7 +1,8 @@
 use std::collections::BTreeMap;
 use std::net::{IpAddr, ToSocketAddrs};
 use std::path::PathBuf;
-use std::sync::Mutex;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex};
 
 use asiba_core::{Location, LocationSource, ServerId, ServerSpec, SharedState};
 use chrono::Utc;
@@ -52,15 +53,25 @@ struct LookupResponse {
 
 pub struct GeoRequest {
     pub cache: Option<PathBuf>,
+    pub enabled: Arc<AtomicBool>,
     pub state: SharedState,
     pub notify: RepaintNotifier,
+}
+
+impl GeoRequest {
+    fn is_enabled(&self) -> bool {
+        self.enabled.load(Ordering::Relaxed)
+    }
 }
 
 pub fn resolve_server(request: GeoRequest, spec: ServerSpec) {
     tokio::task::spawn_blocking(move || {
         let location = match &spec.location {
             Some(manual) => Some(Location::manual(manual)),
-            None => lookup_key(&spec).and_then(|key| locate(request.cache.as_deref(), &key)),
+            None if request.is_enabled() => {
+                lookup_key(&spec).and_then(|key| locate(request.cache.as_deref(), &key))
+            }
+            None => None,
         };
         store_server(&request.state, &spec.id, location);
         (request.notify)();
@@ -68,6 +79,9 @@ pub fn resolve_server(request: GeoRequest, spec: ServerSpec) {
 }
 
 pub fn resolve_self(request: GeoRequest) {
+    if !request.is_enabled() {
+        return;
+    }
     tokio::task::spawn_blocking(move || {
         let location = locate(request.cache.as_deref(), SELF_KEY);
         if let Ok(mut state) = request.state.write() {

@@ -52,6 +52,7 @@ pub enum Action {
     },
     OpenTerminal(ServerId),
     SetTheme(ThemeChoice),
+    SetGeolocation(bool),
     Query {
         server: ServerId,
         module: ModuleId,

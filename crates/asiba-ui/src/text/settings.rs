@@ -1,6 +1,10 @@
 pub const SETTINGS_TITLE: &str = "Настройки";
 pub const SETTINGS_SECTION_PATHS: &str = "Пути";
 pub const SETTINGS_SECTION_APPEARANCE: &str = "Вид";
+pub const SETTINGS_SECTION_PRIVACY: &str = "Приватность";
+pub const SETTINGS_GEOLOCATION: &str =
+    "Определять расположение серверов и страны адресов через ip-api.com";
+pub const SETTINGS_GEOLOCATION_HINT: &str = "Наружу уходят IP-адреса серверов и адреса атакующих, по HTTP без шифрования. Без этого карта показывает только серверы с ручными координатами, а страны в таблицах не заполняются.";
 pub const SETTINGS_CONFIG_DIR: &str = "конфигурация";
 pub const SETTINGS_SERVERS_DIR: &str = "файлы серверов";
 pub const SETTINGS_DATA_DIR: &str = "данные";

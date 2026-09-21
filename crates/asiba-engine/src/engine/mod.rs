@@ -5,6 +5,7 @@ mod workers;
 
 use std::collections::HashMap;
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
 use asiba_config::AiConfig;
@@ -67,6 +68,7 @@ pub struct EngineDeps {
     pub storage: Option<StorageWriter>,
     pub history_path: Option<PathBuf>,
     pub geo_cache: Option<PathBuf>,
+    pub geolocation: bool,
     pub alert_settings: AlertSettings,
     pub intervals: Intervals,
     pub ai: AiConfig,
@@ -81,6 +83,7 @@ struct Engine {
     storage: Option<StorageWriter>,
     history_path: Option<PathBuf>,
     geo_cache: Option<PathBuf>,
+    geolocation: Arc<AtomicBool>,
     intervals: Intervals,
     notify: RepaintNotifier,
     events: mpsc::UnboundedSender<EngineEvent>,
@@ -107,8 +110,19 @@ impl Engine {
     fn geo_request(&self) -> geo::GeoRequest {
         geo::GeoRequest {
             cache: self.geo_cache.clone(),
+            enabled: Arc::clone(&self.geolocation),
             state: Arc::clone(&self.state),
             notify: Arc::clone(&self.notify),
+        }
+    }
+
+    fn set_geolocation(&self, enabled: bool) {
+        let was_enabled = self.geolocation.swap(enabled, Ordering::Relaxed);
+        if enabled && !was_enabled {
+            geo::resolve_self(self.geo_request());
+            for entry in self.workers.values() {
+                geo::resolve_server(self.geo_request(), entry.spec.clone());
+            }
         }
     }
 
@@ -194,6 +208,7 @@ impl Engine {
                 let _ = self.alert_settings.send(settings);
             }
             Command::SetIntervals(intervals) => self.set_intervals(intervals),
+            Command::SetGeolocation(enabled) => self.set_geolocation(enabled),
             Command::SetRetention(retention) => {
                 if let Some(storage) = &self.storage
                     && storage.set_retention(retention).is_err()

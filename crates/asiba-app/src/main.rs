@@ -38,6 +38,7 @@ fn main() -> anyhow::Result<()> {
         storage,
         history_path,
         geo_cache: Some(paths.geo_cache()),
+        geolocation: config.geolocation,
         alert_settings,
         intervals: config.intervals,
         ai: config.ai.clone(),

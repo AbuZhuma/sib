@@ -53,6 +53,13 @@ impl AsibaApp {
                 })
             }
             Action::SetTheme(choice) => self.set_theme(ctx, choice),
+            Action::SetGeolocation(enabled) => {
+                self.config.geolocation = enabled;
+                self.engine.send(Command::SetGeolocation(enabled));
+                if let Err(error) = self.config.save(&self.paths) {
+                    self.notices.push(Notice::new(error.to_string()));
+                }
+            }
             Action::Query {
                 server,
                 module,
