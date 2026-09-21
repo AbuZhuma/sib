@@ -1,4 +1,5 @@
 mod actions;
+mod bans;
 mod events;
 mod hardening;
 mod journal;

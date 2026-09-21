@@ -3,6 +3,7 @@ mod collection;
 mod firewall;
 mod hardening;
 mod kernel;
+mod kernel_protection;
 mod logs;
 mod network;
 mod reliability;
@@ -24,6 +25,7 @@ pub fn all() -> impl Iterator<Item = &'static Pattern> {
         .chain(access::PATTERNS)
         .chain(firewall::PATTERNS)
         .chain(kernel::PATTERNS)
+        .chain(kernel_protection::PATTERNS)
         .chain(hardening::PATTERNS)
         .chain(resources::PATTERNS)
         .chain(reliability::PATTERNS)

@@ -1,13 +1,11 @@
 use std::collections::HashMap;
 
-use asiba_core::{
-    Alert, AlertRule, AppState, ConnectionStatus, IncidentKind, METRIC_OFFLINE, ServerId,
-    ServerState, Severity,
-};
+use asiba_core::{Alert, AlertRule, AppState, IncidentKind, ServerId, ServerState};
 use asiba_modules::{anomalies, cpu, logs, network, processes, security};
 use chrono::{DateTime, Utc};
 
-use crate::baseline::{Baseline, Deviation};
+use crate::baseline::Baseline;
+use crate::check::{Check, baseline_check, metric_value};
 
 const BASELINE_METRICS: [&str; 8] = [
     cpu::KEY_TOTAL,
@@ -19,9 +17,6 @@ const BASELINE_METRICS: [&str; 8] = [
     security::KEY_FAILED_LOGINS,
     anomalies::KEY_PPS_IN,
 ];
-const BASELINE_FOR_SECS: u64 = 60;
-const MAX_VALUE_AGE: chrono::Duration = chrono::Duration::hours(1);
-const BASELINE_RULE_PREFIX: &str = "baseline:";
 
 type Key = (ServerId, String);
 
@@ -167,64 +162,12 @@ impl Evaluator {
     }
 }
 
-struct Check {
-    rule_id: String,
-    rule_name: String,
-    metric: String,
-    severity: Severity,
-    for_secs: u64,
-    value: f64,
-    holds: bool,
-    message: String,
-}
-
-fn baseline_check(metric: &str, value: f64, deviation: Option<Deviation>) -> Check {
-    let message = deviation
-        .map(|d| {
-            format!(
-                "{metric} = {value:.1}, обычно ≈ {:.1} ({:+.1}σ)",
-                d.mean, d.sigmas
-            )
-        })
-        .unwrap_or_default();
-    Check {
-        rule_id: format!("{BASELINE_RULE_PREFIX}{metric}"),
-        rule_name: format!("Аномалия {metric}"),
-        metric: metric.to_owned(),
-        severity: Severity::Warning,
-        for_secs: BASELINE_FOR_SECS,
-        value,
-        holds: deviation.is_some(),
-        message,
-    }
-}
-
-fn metric_value(server: &ServerState, metric: &str, now: DateTime<Utc>) -> Option<f64> {
-    if metric == METRIC_OFFLINE {
-        return Some(match &server.connection {
-            ConnectionStatus::Offline { .. } => 1.0,
-            _ => 0.0,
-        });
-    }
-    if !server.connection.is_online() || is_module_failing(server, metric) {
-        return None;
-    }
-    let point = server.series.get(metric)?.latest()?;
-    (now - point.at <= MAX_VALUE_AGE).then_some(point.value)
-}
-
-fn is_module_failing(server: &ServerState, metric: &str) -> bool {
-    let module = metric.split('.').next().unwrap_or_default();
-    server
-        .modules
-        .iter()
-        .any(|(id, state)| id.0 == module && state.last_error.is_some())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use asiba_core::{AlertRule, AuthMethod, Condition, Point, ServerSpec, SudoMode};
+    use asiba_core::{
+        AlertRule, AuthMethod, Condition, ConnectionStatus, Point, ServerSpec, Severity, SudoMode,
+    };
     use chrono::Duration;
 
     fn spec(id: ServerId) -> ServerSpec {

@@ -1,4 +1,5 @@
 mod baseline;
+mod check;
 mod evaluator;
 mod notify;
 mod rules;

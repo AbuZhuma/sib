@@ -1,9 +1,10 @@
 use asiba_core::ModuleError;
 use chrono::{DateTime, Utc};
 
+use super::bans::{iptables_bans, jail_bans, jails, nft_bans, ufw_bans};
 use super::hardening;
 use super::journal;
-use super::model::{Ban, BanBackend, FirewallState, Jail, SecuritySnapshot, SshdSettings, Switch};
+use super::model::{BanBackend, FirewallState, SecuritySnapshot, SshdSettings, Switch};
 use crate::common::sections::Sections;
 
 const FIREWALL_UNITS: [&str; 5] = [
@@ -13,7 +14,6 @@ const FIREWALL_UNITS: [&str; 5] = [
     "iptables",
     "netfilter-persistent",
 ];
-const JAIL_MARKER: &str = "@@ ";
 const MAX_LOGINS: usize = 50;
 const MAX_SUDO_CALLS: usize = 50;
 
@@ -98,102 +98,6 @@ fn ban_backend(tools: &[String]) -> Option<BanBackend> {
         return Some(BanBackend::Iptables);
     }
     has("ufw").then_some(BanBackend::Ufw)
-}
-
-fn jails(raw: &str) -> Vec<Jail> {
-    let mut jails = Vec::new();
-    for block in raw.split(JAIL_MARKER).skip(1) {
-        let Some((name, body)) = block.split_once('\n') else {
-            continue;
-        };
-        jails.push(Jail {
-            name: name.trim().to_owned(),
-            currently_failed: status_number(body, "Currently failed:"),
-            total_banned: status_number(body, "Total banned:"),
-            banned: status_value(body, "Banned IP list:")
-                .split_whitespace()
-                .map(str::to_owned)
-                .collect(),
-        });
-    }
-    jails
-}
-
-fn status_value<'a>(body: &'a str, label: &str) -> &'a str {
-    body.lines()
-        .find_map(|l| l.split_once(label))
-        .map(|(_, v)| v.trim())
-        .unwrap_or_default()
-}
-
-fn status_number(body: &str, label: &str) -> u64 {
-    status_value(body, label).parse().unwrap_or(0)
-}
-
-fn jail_bans(jails: &[Jail]) -> Vec<Ban> {
-    jails
-        .iter()
-        .flat_map(|jail| {
-            jail.banned.iter().map(|ip| Ban {
-                ip: ip.clone(),
-                source: format!("fail2ban/{}", jail.name),
-                expires: None,
-            })
-        })
-        .collect()
-}
-
-fn nft_bans(raw: &str) -> Vec<Ban> {
-    let Some(start) = raw.find("elements = {") else {
-        return Vec::new();
-    };
-    let body = &raw[start + "elements = {".len()..];
-    let body = body.split('}').next().unwrap_or_default();
-    body.split(',')
-        .map(str::trim)
-        .filter(|e| !e.is_empty())
-        .filter_map(|element| {
-            let mut tokens = element.split_whitespace();
-            let ip = tokens.next()?;
-            let expires = element
-                .split_once("expires ")
-                .map(|(_, e)| e.split_whitespace().next().unwrap_or_default().to_owned());
-            Some(Ban {
-                ip: ip.to_owned(),
-                source: "nftables".to_owned(),
-                expires,
-            })
-        })
-        .collect()
-}
-
-fn iptables_bans(raw: &str) -> Vec<Ban> {
-    raw.lines()
-        .filter(|l| l.starts_with("-A ASIBA") && l.contains("-j DROP"))
-        .filter_map(|l| l.split_once("-s ").map(|(_, rest)| rest))
-        .filter_map(|rest| rest.split_whitespace().next())
-        .map(|ip| Ban {
-            ip: ip
-                .trim_end_matches("/32")
-                .trim_end_matches("/128")
-                .to_owned(),
-            source: "iptables".to_owned(),
-            expires: None,
-        })
-        .collect()
-}
-
-fn ufw_bans(raw: &str) -> Vec<Ban> {
-    raw.lines()
-        .filter(|l| l.contains("DENY"))
-        .filter_map(|l| l.split_whitespace().last())
-        .filter(|ip| ip.chars().next().is_some_and(|c| c.is_ascii_hexdigit()))
-        .map(|ip| Ban {
-            ip: ip.to_owned(),
-            source: "ufw".to_owned(),
-            expires: None,
-        })
-        .collect()
 }
 
 fn sshd_settings(raw: &str) -> SshdSettings {
@@ -319,11 +223,5 @@ mod tests {
         assert_eq!(fresh.sshd, previous.sshd);
         assert_eq!(fresh.file_hashes, previous.file_hashes);
         assert_eq!(fresh.slow_collected_at, previous.slow_collected_at);
-    }
-
-    #[test]
-    fn iptables_chain_lines_yield_bans() {
-        let bans = iptables_bans("-N ASIBA\n-A ASIBA -s 10.0.0.5/32 -j DROP\n");
-        assert_eq!(bans[0].ip, "10.0.0.5");
     }
 }

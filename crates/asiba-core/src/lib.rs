@@ -7,6 +7,7 @@ pub mod module;
 pub mod registry;
 pub mod series;
 pub mod server;
+pub mod server_state;
 pub mod snapshot;
 pub mod state;
 pub mod transport;
@@ -26,6 +27,7 @@ pub use server::{
     AuthMethod, Credentials, Environment, JumpHost, Location, LocationSource, ManualLocation,
     ModuleSettings, ServerDescription, ServerId, ServerSpec, SudoMode,
 };
+pub use server_state::{ConnectionStatus, ModuleState, PingStatus, ServerState};
 pub use snapshot::{CollectContext, ModuleData, Sample, Snapshot};
-pub use state::{AppState, ConnectionStatus, ModuleState, PingStatus, ServerState, SharedState};
+pub use state::{AppState, SharedState};
 pub use transport::{CommandOutput, Transport, TransportError};

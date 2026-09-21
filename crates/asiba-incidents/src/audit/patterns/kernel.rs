@@ -11,17 +11,17 @@ const ADVICE_SYSCTL: &str =
     "Задайте параметр в /etc/sysctl.d/99-hardening.conf и примените sysctl --system.";
 const ADVICE_FORWARD: &str = "Если сервер не маршрутизатор и не хост контейнеров, выключите net.ipv4.ip_forward=0 в /etc/sysctl.d/.";
 
-struct SysctlRule {
-    key: &'static str,
-    wanted: Wanted,
+pub(super) struct SysctlRule {
+    pub(super) key: &'static str,
+    pub(super) wanted: Wanted,
 }
 
-enum Wanted {
+pub(super) enum Wanted {
     Exactly(&'static str),
     AtLeast(u32),
 }
 
-const fn sysctl_pattern(
+pub(super) const fn sysctl_pattern(
     id: &'static str,
     subject: &'static str,
     description: &'static str,
@@ -67,21 +67,6 @@ pub static PATTERNS: &[Pattern] = &[
                 SysctlRule {
                     key: "net.ipv4.conf.all.rp_filter",
                     wanted: Wanted::Exactly("1"),
-                },
-            )
-        },
-    ),
-    sysctl_pattern(
-        "kernel.aslr",
-        "ASLR",
-        "kernel.randomize_va_space=2 рандомизирует адреса стека, кучи и библиотек - без этого эксплойты переполнений работают надёжно.",
-        Weight::Medium,
-        |ctx| {
-            rule(
-                ctx,
-                SysctlRule {
-                    key: "kernel.randomize_va_space",
-                    wanted: Wanted::Exactly("2"),
                 },
             )
         },
@@ -153,103 +138,6 @@ pub static PATTERNS: &[Pattern] = &[
             )
         },
     ),
-    sysctl_pattern(
-        "kernel.kptr_restrict",
-        "Скрытие адресов ядра",
-        "kernel.kptr_restrict>=1 прячет адреса ядра из /proc и dmesg - они нужны для обхода KASLR.",
-        Weight::Low,
-        |ctx| {
-            rule(
-                ctx,
-                SysctlRule {
-                    key: "kernel.kptr_restrict",
-                    wanted: Wanted::AtLeast(1),
-                },
-            )
-        },
-    ),
-    sysctl_pattern(
-        "kernel.dmesg_restrict",
-        "Доступ к dmesg",
-        "kernel.dmesg_restrict=1 закрывает журнал ядра от обычных пользователей - там адреса, железо и ошибки драйверов.",
-        Weight::Low,
-        |ctx| {
-            rule(
-                ctx,
-                SysctlRule {
-                    key: "kernel.dmesg_restrict",
-                    wanted: Wanted::Exactly("1"),
-                },
-            )
-        },
-    ),
-    sysctl_pattern(
-        "kernel.ptrace_scope",
-        "Ограничение ptrace",
-        "kernel.yama.ptrace_scope>=1 запрещает процессам подключаться отладчиком к чужим процессам того же пользователя и красть из них секреты.",
-        Weight::Low,
-        |ctx| {
-            rule(
-                ctx,
-                SysctlRule {
-                    key: "kernel.yama.ptrace_scope",
-                    wanted: Wanted::AtLeast(1),
-                },
-            )
-        },
-    ),
-    sysctl_pattern(
-        "kernel.sysrq",
-        "Магический SysRq",
-        "kernel.sysrq=0 отключает комбинации, которыми можно перезагрузить или убить процессы с консоли.",
-        Weight::Low,
-        |ctx| {
-            rule(
-                ctx,
-                SysctlRule {
-                    key: "kernel.sysrq",
-                    wanted: Wanted::Exactly("0"),
-                },
-            )
-        },
-    ),
-    sysctl_pattern(
-        "kernel.unprivileged_bpf",
-        "BPF без привилегий",
-        "kernel.unprivileged_bpf_disabled=1 закрывает обычным пользователям загрузку BPF-программ - частый вектор эскалации.",
-        Weight::Low,
-        |ctx| {
-            rule(
-                ctx,
-                SysctlRule {
-                    key: "kernel.unprivileged_bpf_disabled",
-                    wanted: Wanted::AtLeast(1),
-                },
-            )
-        },
-    ),
-    sysctl_pattern(
-        "kernel.perf_paranoid",
-        "Доступ к perf",
-        "kernel.perf_event_paranoid>=2 не даёт обычным пользователям профилировать ядро и чужие процессы.",
-        Weight::Low,
-        |ctx| {
-            rule(
-                ctx,
-                SysctlRule {
-                    key: "kernel.perf_event_paranoid",
-                    wanted: Wanted::AtLeast(2),
-                },
-            )
-        },
-    ),
-    sysctl_pattern(
-        "kernel.protected_links",
-        "Защита символических ссылок",
-        "fs.protected_symlinks и fs.protected_hardlinks закрывают классические атаки через ссылки в /tmp.",
-        Weight::Low,
-        protected_links,
-    ),
     Pattern {
         id: "kernel.ip_forward",
         area: Area::Kernel,
@@ -262,11 +150,11 @@ pub static PATTERNS: &[Pattern] = &[
     },
 ];
 
-fn rule(ctx: &AuditContext<'_>, rule: SysctlRule) -> Vec<Verdict> {
+pub(super) fn rule(ctx: &AuditContext<'_>, rule: SysctlRule) -> Vec<Verdict> {
     with_security(ctx, |s: &SecuritySnapshot| verdict(s, &rule))
 }
 
-fn verdict(snapshot: &SecuritySnapshot, rule: &SysctlRule) -> Verdict {
+pub(super) fn verdict(snapshot: &SecuritySnapshot, rule: &SysctlRule) -> Verdict {
     let Some(value) = snapshot.hardening.sysctl(rule.key) else {
         return Verdict::skipped(format!("{} не прочитан", rule.key));
     };
@@ -301,30 +189,6 @@ fn accept_redirects(ctx: &AuditContext<'_>) -> Vec<Verdict> {
             },
         );
         if v6.outcome > v4.outcome { v6 } else { v4 }
-    })
-}
-
-fn protected_links(ctx: &AuditContext<'_>) -> Vec<Verdict> {
-    with_security(ctx, |s| {
-        let symlinks = verdict(
-            s,
-            &SysctlRule {
-                key: "fs.protected_symlinks",
-                wanted: Wanted::Exactly("1"),
-            },
-        );
-        let hardlinks = verdict(
-            s,
-            &SysctlRule {
-                key: "fs.protected_hardlinks",
-                wanted: Wanted::Exactly("1"),
-            },
-        );
-        if symlinks.outcome >= hardlinks.outcome {
-            symlinks
-        } else {
-            hardlinks
-        }
     })
 }
 
