@@ -1,5 +1,5 @@
 use asiba_core::{ModuleId, ServerState};
-use asiba_modules::anomalies::{self, AnomaliesSnapshot, AttackSign};
+use asiba_modules::anomalies::{self, AnomaliesSnapshot, AttackSign, Peer, Rates};
 use asiba_modules::security;
 use egui::{RichText, Ui};
 
@@ -119,6 +119,16 @@ fn signs_table(ui: &mut Ui, snapshot: &AnomaliesSnapshot) -> Option<ViewAction> 
     action
 }
 
+type RateField = fn(&Rates) -> f64;
+
+const RATE_ROWS: [(&str, RateField); 5] = [
+    (text::ANOM_NEW_CONN, |r| r.new_connections),
+    (text::ANOM_FAILED_CONN, |r| r.failed_connections),
+    (text::ANOM_SYNCOOKIES, |r| r.syncookies),
+    (text::ANOM_LISTEN_DROPS, |r| r.listen_drops),
+    (text::ANOM_UDP, |r| r.udp_in),
+];
+
 fn counters(ui: &mut Ui, snapshot: &AnomaliesSnapshot) {
     let p = Palette::current(ui.ctx());
     let rate = |value: Option<f64>| {
@@ -139,15 +149,10 @@ fn counters(ui: &mut Ui, snapshot: &AnomaliesSnapshot) {
                 rate(rates.map(|r| r.pps_out))
             ),
         ),
-        (text::ANOM_NEW_CONN, rate(rates.map(|r| r.new_connections))),
-        (
-            text::ANOM_FAILED_CONN,
-            rate(rates.map(|r| r.failed_connections)),
-        ),
-        (text::ANOM_SYNCOOKIES, rate(rates.map(|r| r.syncookies))),
-        (text::ANOM_LISTEN_DROPS, rate(rates.map(|r| r.listen_drops))),
-        (text::ANOM_UDP, rate(rates.map(|r| r.udp_in))),
     ];
+    for (label, field) in RATE_ROWS {
+        rows.push((label, rate(rates.as_ref().map(field))));
+    }
     if let Some((count, max)) = snapshot.conntrack {
         rows.push((text::ANOM_CONNTRACK, format!("{count} / {max}")));
     }
@@ -188,6 +193,13 @@ fn plots(ui: &mut Ui, server: &ServerState, p: &Palette) {
     ui.add_space(GAP);
 }
 
+fn peer_share(snapshot: &AnomaliesSnapshot, peer: &Peer) -> f64 {
+    if snapshot.total_connections == 0 {
+        return 0.0;
+    }
+    peer.connections as f64 * 100.0 / snapshot.total_connections as f64
+}
+
 fn peers_table(
     ui: &mut Ui,
     snapshot: &AnomaliesSnapshot,
@@ -203,6 +215,7 @@ fn peers_table(
     let suspicious = snapshot.suspicious_peers();
     let columns = [
         "IP",
+        text::SEC_COUNTRY,
         text::ANOM_CONNECTIONS,
         "SYN-RECV",
         text::ANOM_SHARE,
@@ -219,12 +232,7 @@ fn peers_table(
             ui.monospace(shared.country(&peer.ip));
             ui.monospace(peer.connections.to_string());
             ui.monospace(peer.syn_recv.to_string());
-            let share = if snapshot.total_connections > 0 {
-                peer.connections as f64 * 100.0 / snapshot.total_connections as f64
-            } else {
-                0.0
-            };
-            ui.monospace(format!("{share:.0}%"));
+            ui.monospace(format!("{:.0}%", peer_share(snapshot, peer)));
             if let Some(next) = action_button(ui, text::ACT_BAN, security::SPEC_BAN, &peer.ip) {
                 action = Some(next);
             }
