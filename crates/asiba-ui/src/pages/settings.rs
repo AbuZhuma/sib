@@ -25,52 +25,47 @@ pub fn show(ui: &mut Ui, ctx: &SettingsContext<'_>) -> Option<Action> {
 fn sections(ui: &mut Ui, ctx: &SettingsContext<'_>) -> Option<Action> {
     let (paths, config) = (ctx.paths, ctx.config);
     let mut action = None;
-    panel(ui, text::SETTINGS_SECTION_APPEARANCE, |ui| {
-        action = theme_picker(ui, config.theme);
+    let mut section =
+        |ui: &mut Ui, title: &str, body: &mut dyn FnMut(&mut Ui) -> Option<Action>| {
+            if let Some(next) = panel(ui, title, |ui| body(ui)) {
+                action = Some(next);
+            }
+            ui.add_space(GAP);
+        };
+    section(ui, text::SETTINGS_SECTION_APPEARANCE, &mut |ui| {
+        theme_picker(ui, config.theme)
     });
-    ui.add_space(GAP);
-    let privacy = panel(ui, text::SETTINGS_SECTION_PRIVACY, |ui| {
+    section(ui, text::SETTINGS_SECTION_PRIVACY, &mut |ui| {
         geolocation_toggle(ui, config.geolocation)
     });
-    if privacy.is_some() {
-        action = privacy;
-    }
-    ui.add_space(GAP);
-    panel(ui, text::SETTINGS_SECTION_PATHS, |ui| {
-        paths_grid(ui, paths, config)
+    section(ui, text::SETTINGS_SECTION_PATHS, &mut |ui| {
+        paths_grid(ui, paths, config);
+        None
     });
-    ui.add_space(GAP);
-    let collection = panel(ui, text::SETTINGS_SECTION_COLLECTION, |ui| {
+    section(ui, text::SETTINGS_SECTION_COLLECTION, &mut |ui| {
         super::collection_settings::show(ui, config)
     });
-    if collection.is_some() {
-        action = collection;
-    }
-    ui.add_space(GAP);
-    let ai = panel(ui, text::SETTINGS_SECTION_AI, |ui| {
+    section(ui, text::SETTINGS_SECTION_AI, &mut |ui| {
         super::ai_settings::show(ui, config, ctx.state)
     });
-    if ai.is_some() {
-        action = ai;
-    }
-    ui.add_space(GAP);
-    let rules = panel(ui, text::SETTINGS_SECTION_ALERTS, |ui| {
+    section(ui, text::SETTINGS_SECTION_ALERTS, &mut |ui| {
         super::alert_rules::show(ui, config)
     });
-    if rules.is_some() {
-        action = rules;
-    }
-    ui.add_space(GAP);
-    panel(ui, text::SETTINGS_SECTION_JOURNAL, |ui| {
-        super::journal::show(ui, ctx.state)
+    section(ui, text::SETTINGS_SECTION_JOURNAL, &mut |ui| {
+        super::journal::show(ui, ctx.state);
+        None
     });
-    ui.add_space(GAP);
-    panel(ui, text::SETTINGS_SECTION_ABOUT, |ui| {
-        let p = Palette::current(ui.ctx());
-        ui.label(format!("Asiba {}", env!("CARGO_PKG_VERSION")));
-        ui.label(RichText::new(text::ABOUT_LINE).color(p.text_secondary));
+    section(ui, text::SETTINGS_SECTION_ABOUT, &mut |ui| {
+        about(ui);
+        None
     });
     action
+}
+
+fn about(ui: &mut Ui) {
+    let p = Palette::current(ui.ctx());
+    ui.label(format!("Asiba {}", env!("CARGO_PKG_VERSION")));
+    ui.label(RichText::new(text::ABOUT_LINE).color(p.text_secondary));
 }
 
 fn theme_picker(ui: &mut Ui, current: ThemeChoice) -> Option<Action> {

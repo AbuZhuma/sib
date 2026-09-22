@@ -1,5 +1,5 @@
 use asiba_core::ActionRequest;
-use asiba_modules::security::{self, SecuritySnapshot};
+use asiba_modules::security::{self, Attacker, SecuritySnapshot};
 use egui::{RichText, Ui};
 
 use super::super::{ViewAction, ViewShared};
@@ -41,22 +41,7 @@ pub fn attackers(
     ];
     Table::new("security-attackers", &columns).show(ui, |ui| {
         for attacker in &snapshot.attackers {
-            ui.monospace(&attacker.ip);
-            ui.monospace(shared.country(&attacker.ip));
-            ui.monospace(attacker.failures.to_string());
-            let color = if attacker.is_brute_force() {
-                p.critical
-            } else {
-                p.text
-            };
-            ui.label(
-                RichText::new(attacker.recent_failures.to_string())
-                    .monospace()
-                    .color(color),
-            );
-            ui.label(RichText::new(attacker.users_label()).color(p.text_secondary));
-            ui.monospace(format::date_time(attacker.first_at));
-            ui.monospace(format::date_time(attacker.last_at));
+            attacker_cells(ui, attacker, shared.country(&attacker.ip), &p);
             if snapshot.is_banned(&attacker.ip) {
                 badge(ui, text::SEC_BANNED, p.text_muted);
             } else if ui.small_button(text::ACT_BAN).clicked() {
@@ -66,6 +51,25 @@ pub fn attackers(
         }
     });
     action
+}
+
+fn attacker_cells(ui: &mut Ui, attacker: &Attacker, country: &str, p: &Palette) {
+    ui.monospace(&attacker.ip);
+    ui.monospace(country);
+    ui.monospace(attacker.failures.to_string());
+    let color = if attacker.is_brute_force() {
+        p.critical
+    } else {
+        p.text
+    };
+    ui.label(
+        RichText::new(attacker.recent_failures.to_string())
+            .monospace()
+            .color(color),
+    );
+    ui.label(RichText::new(attacker.users_label()).color(p.text_secondary));
+    ui.monospace(format::date_time(attacker.first_at));
+    ui.monospace(format::date_time(attacker.last_at));
 }
 
 pub fn bans(ui: &mut Ui, snapshot: &SecuritySnapshot) -> Option<ViewAction> {

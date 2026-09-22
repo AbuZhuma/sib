@@ -53,15 +53,7 @@ pub fn table(
         .column(Column::remainder().clip(true))
         .min_scrolled_height(body_height)
         .header(ROW_HEIGHT, |mut header| {
-            for label in headers {
-                header.col(|ui| {
-                    ui.label(
-                        RichText::new(label.to_uppercase())
-                            .small()
-                            .color(p.text_secondary),
-                    );
-                });
-            }
+            header_cells(&mut header, &headers, &p)
         })
         .body(|body| {
             body.rows(ROW_HEIGHT, rows.len(), |mut row| {
@@ -73,6 +65,18 @@ pub fn table(
             });
         });
     request_older(ui, server, snapshot, is_end_visible)
+}
+
+fn header_cells(header: &mut TableRow<'_, '_>, labels: &[&str], p: &Palette) {
+    for label in labels {
+        header.col(|ui| {
+            ui.label(
+                RichText::new(label.to_uppercase())
+                    .small()
+                    .color(p.text_secondary),
+            );
+        });
+    }
 }
 
 fn row_cells(row: &mut TableRow<'_, '_>, entry: &LogEntry, p: &Palette) -> bool {
