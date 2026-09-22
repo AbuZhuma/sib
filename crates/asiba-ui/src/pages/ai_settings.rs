@@ -93,6 +93,20 @@ pub fn show(ui: &mut Ui, config: &AppConfig, state: &AppState) -> Option<Action>
         .spacing([12.0, 4.0])
         .show(ui, |ui| fields(ui, &mut draft));
     ui.add_space(GAP);
+    auto_audit_fields(ui, &mut draft, &p);
+    ui.add_space(GAP);
+    section_picker(ui, &mut draft, &p);
+    ui.label(RichText::new(text::AI_HINT).small().color(p.text_muted));
+    ui.add_space(GAP);
+    let action = apply_button(ui, &draft, config, state);
+    ui.ctx().data_mut(|d| d.insert_temp(id, draft));
+    if action.is_some() {
+        ui.ctx().data_mut(|d| d.remove::<Draft>(id));
+    }
+    action
+}
+
+fn auto_audit_fields(ui: &mut Ui, draft: &mut Draft, p: &Palette) {
     ui.checkbox(&mut draft.auto_audit, text::AI_AUTO_AUDIT);
     ui.horizontal(|ui| {
         ui.label(RichText::new(text::AI_MIN_SEVERITY).color(p.text_secondary));
@@ -109,16 +123,6 @@ pub fn show(ui: &mut Ui, config: &AppConfig, state: &AppState) -> Option<Action>
             text::SEVERITY_CRITICAL,
         );
     });
-    ui.add_space(GAP);
-    section_picker(ui, &mut draft, &p);
-    ui.label(RichText::new(text::AI_HINT).small().color(p.text_muted));
-    ui.add_space(GAP);
-    let action = apply_button(ui, &draft, config, state);
-    ui.ctx().data_mut(|d| d.insert_temp(id, draft));
-    if action.is_some() {
-        ui.ctx().data_mut(|d| d.remove::<Draft>(id));
-    }
-    action
 }
 
 fn section_picker(ui: &mut Ui, draft: &mut Draft, p: &Palette) {
