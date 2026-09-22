@@ -10,6 +10,7 @@ use crate::theme::{GAP, Palette, SECONDARY_PLOT_HEIGHT, SUMMARY_SPARKLINE_HEIGHT
 const CORE_COLUMNS: usize = 4;
 const CORE_CELL: f32 = 22.0;
 const BIG_NUMBER_WIDTH: f32 = 96.0;
+const BIG_NUMBER_SIZE: f32 = 32.0;
 
 pub struct CpuView;
 
@@ -31,28 +32,7 @@ impl ModuleView for CpuView {
         let Some(snapshot) = server.data::<CpuSnapshot>(cpu::ID) else {
             return;
         };
-        let busy = server.latest_value(cpu::KEY_TOTAL);
-        ui.horizontal(|ui| {
-            let value = busy
-                .map(|v| format!("{v:.0}%"))
-                .unwrap_or_else(|| "-".to_owned());
-            ui.allocate_ui(
-                Vec2::new(BIG_NUMBER_WIDTH, SUMMARY_SPARKLINE_HEIGHT),
-                |ui| {
-                    ui.centered_and_justified(|ui| {
-                        ui.label(RichText::new(value).size(32.0).monospace())
-                    });
-                },
-            );
-            let series = server.series.get(cpu::KEY_TOTAL);
-            sparkline_fill(
-                ui,
-                series,
-                SUMMARY_SPARKLINE_HEIGHT,
-                p.chart[0],
-                Some(100.0),
-            );
-        });
+        big_number_with_sparkline(ui, server, &p);
         ui.horizontal_wrapped(|ui| {
             ui.monospace(format!("{} {}", snapshot.core_count(), text::CPU_CORES));
             if let Some(freq) = snapshot.frequency_mhz {
@@ -104,6 +84,31 @@ impl ModuleView for CpuView {
         details(ui, snapshot);
         None
     }
+}
+
+fn big_number_with_sparkline(ui: &mut Ui, server: &ServerState, p: &Palette) {
+    let value = server
+        .latest_value(cpu::KEY_TOTAL)
+        .map(|v| format!("{v:.0}%"))
+        .unwrap_or_else(|| "-".to_owned());
+    ui.horizontal(|ui| {
+        ui.allocate_ui(
+            Vec2::new(BIG_NUMBER_WIDTH, SUMMARY_SPARKLINE_HEIGHT),
+            |ui| {
+                ui.centered_and_justified(|ui| {
+                    ui.label(RichText::new(value).size(BIG_NUMBER_SIZE).monospace())
+                });
+            },
+        );
+        let series = server.series.get(cpu::KEY_TOTAL);
+        sparkline_fill(
+            ui,
+            series,
+            SUMMARY_SPARKLINE_HEIGHT,
+            p.chart[0],
+            Some(100.0),
+        );
+    });
 }
 
 fn cores_grid(ui: &mut Ui, cores: impl Iterator<Item = f64>) {

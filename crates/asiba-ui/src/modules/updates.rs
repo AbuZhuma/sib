@@ -47,23 +47,26 @@ impl ModuleView for UpdatesView {
             ui.label(RichText::new(text::UPD_REBOOT).color(p.warning));
         }
         if !snapshot.packages.is_empty() {
-            let shown: Vec<&str> = snapshot
-                .packages
-                .iter()
-                .take(SHOWN_PACKAGES)
-                .map(String::as_str)
-                .collect();
-            let more = snapshot.packages.len().saturating_sub(SHOWN_PACKAGES);
-            let suffix = if more > 0 {
-                format!(" +{more}")
-            } else {
-                String::new()
-            };
             ui.label(
-                RichText::new(format!("{}{suffix}", shown.join(", ")))
+                RichText::new(packages_line(&snapshot.packages))
                     .small()
                     .color(p.text_muted),
             );
         }
     }
+}
+
+fn packages_line(packages: &[String]) -> String {
+    let shown: Vec<&str> = packages
+        .iter()
+        .take(SHOWN_PACKAGES)
+        .map(String::as_str)
+        .collect();
+    let more = packages.len().saturating_sub(SHOWN_PACKAGES);
+    let suffix = if more > 0 {
+        format!(" +{more}")
+    } else {
+        String::new()
+    };
+    format!("{}{suffix}", shown.join(", "))
 }
