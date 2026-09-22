@@ -1,6 +1,6 @@
 # Asiba — справочник возможностей
 
-Что умеет приложение и как каждая возможность устроена внутри. Документ описывает рабочее дерево на 2026-09-21 (включая незакоммиченные модуль `files` и реестр паттернов аудита). Архитектурные принципы — в `ARCHITECTURE.md`, команды модулей — в `MODULE_GUIDE.md`, история решений — в `DECISIONS.md`, ИИ — в `AI-PLAN.md`. Здесь — полная карта: возможность → как работает → где код.
+Что умеет приложение и как каждая возможность устроена внутри. Документ описывает состояние на 2026-09-22 (после исправлений по `AUDIT-2026-09-21.md`). Архитектурные принципы — в `ARCHITECTURE.md`, команды модулей — в `MODULE_GUIDE.md`, история решений — в `DECISIONS.md`, ИИ — в `AI-PLAN.md`. Здесь — полная карта: возможность → как работает → где код.
 
 ## 1. Общая картина
 
@@ -8,20 +8,20 @@ Asiba — настольное приложение (Rust, egui) для мони
 
 | Слой | Крейт | Строк | Что делает |
 |---|---|---|---|
-| Домен | `asiba-core` | 1 477 | Типы: `ServerSpec`, `Transport`, `Module`, `Snapshot`, `AppState`, `Incident`, `Alert`, `AuditReport` |
+| Домен | `asiba-core` | 1 625 | Типы: `ServerSpec`, `Transport`, `Module`, `Snapshot`, `AppState`, `Incident`, `Alert`, `AuditReport` |
 | Транспорт | `asiba-transport` | 733 | SSH через `russh`, локальный транспорт, sudo, known_hosts, `~/.ssh/config` |
-| Конфигурация | `asiba-config` | 882 | XDG-пути, `config.toml`, `servers/<id>.toml`, keyring, раскладка, архив инцидентов |
-| Хранилище | `asiba-storage` | 568 | SQLite: метрики (3 уровня), журнал действий, поток записи |
-| Модули | `asiba-modules` | 9 880 | 18 сборщиков данных, парсеры, действия, запросы |
-| Инциденты | `asiba-incidents` | 3 330 | 12 детекторов, 77 паттернов аудита, оценка безопасности, `reconcile` |
-| Документы | `asiba-docgen` | 2 723 | 18 секций → `servers/<id>.md` (человек) и `<id>.llm.md` (модель) |
-| Алерты | `asiba-alerts` | 604 | 10 встроенных правил, пользовательские, базовая линия EWMA, уведомления |
+| Конфигурация | `asiba-config` | 968 | XDG-пути, `config.toml`, `servers/<id>.toml`, keyring, раскладка, архив инцидентов |
+| Хранилище | `asiba-storage` | 625 | SQLite: метрики (3 уровня), журнал действий, поток записи |
+| Модули | `asiba-modules` | 10 192 | 18 сборщиков данных, парсеры, действия, запросы |
+| Инциденты | `asiba-incidents` | 3 397 | 12 детекторов, 77 паттернов аудита, оценка безопасности, `reconcile` |
+| Документы | `asiba-docgen` | 2 760 | 18 секций → `servers/<id>.md` (человек) и `<id>.llm.md` (модель) |
+| Алерты | `asiba-alerts` | 657 | 10 встроенных правил, пользовательские, базовая линия EWMA, уведомления |
 | ИИ | `asiba-ai` | 1 208 | Бэкенды Gemini / OpenAI / Anthropic, контекст с бюджетом, плейбуки, промпт, ретраи |
-| Движок | `asiba-engine` | 2 662 | Воркеры серверов, циклы сбора, пинг, геолокация, алерты, действия, ИИ-очередь |
-| UI | `asiba-ui` | 12 948 | Тема, страницы, представления модулей, файловый менеджер, карта |
-| Приложение | `asiba-app` | 78 | Точка входа, tokio runtime, сборка зависимостей |
+| Движок | `asiba-engine` | 2 976 | Воркеры серверов, циклы сбора, пинг, геолокация, алерты, действия, ИИ-очередь |
+| UI | `asiba-ui` | 13 349 | Тема, страницы, представления модулей, файловый менеджер, карта |
+| Приложение | `asiba-app` | 82 | Точка входа, tokio runtime, сборка зависимостей |
 
-Итого 37 093 строки, 275 тестов, 0 комментариев в коде (по правилам `CLAUDE.md`).
+Итого 38 572 строки в 340 файлах, 277 тестов (плюс 3 live-теста под `--ignored`), 0 комментариев в коде (по правилам `CLAUDE.md`). CI — `.github/workflows/ci.yml` (fmt, clippy, tests, cargo-deny).
 
 ## 2. Серверы
 
@@ -36,7 +36,7 @@ Asiba — настольное приложение (Rust, egui) для мони
 
 `~/.ssh/config` (`ssh_config.rs`, крейт `ssh2-config`): для алиаса берутся `HostName` и `IdentityFile`; `Port` и `User` из формы имеют приоритет; `ProxyJump` не читается — jump host задаётся в форме и всегда входит по `auto`.
 
-**Хранение**: спецификация — `~/.config/asiba/servers/<id>.toml` (`ServerStore`), секреты (пароль, passphrase, пароль sudo) — системный keyring, сервис `asiba`, аккаунты `<id>/password`, `<id>/passphrase`, `<id>/sudo` (`KeyringSecretStore`). Без Secret Service приложение работает, но входит без секретов (предупреждение в лог). При редактировании незаполненные секреты берутся из текущих (`Credentials::fill_missing_from`).
+**Хранение**: спецификация — `~/.config/asiba/servers/<id>.toml` (`ServerStore`); переименование сервера в форме переносит файлы `.md`/`.llm.md`, секреты, раскладку, архив инцидентов и состояние в памяти под новое имя (`Command::UpdateServer { previous }`), удаление стирает toml, оба документа, секреты и историю в SQLite. Секреты (пароль, passphrase, пароль sudo) — системный keyring, сервис `asiba`, аккаунты `<id>/password`, `<id>/passphrase`, `<id>/sudo` (`KeyringSecretStore`). Без Secret Service приложение работает, но входит без секретов (предупреждение в лог). При редактировании незаполненные секреты берутся из текущих (`Credentials::fill_missing_from`).
 
 ### 2.2 Жизненный цикл соединения
 
@@ -49,8 +49,10 @@ connect (таймаут 15 с)
   ├─ ошибка → Offline { reason, retry_at }, backoff 5 → 10 → 30 → 60 с, повтор
   └─ ok → Online, detect_all (параллельно, JoinSet) → задача на каждый доступный модуль
         ├─ каждые 10 мин: все задачи останавливаются, detect_all заново
-        └─ TransportError::Disconnected в любой задаче → watch-канал → все задачи стоп → Offline → backoff
+        └─ TransportError::Disconnected в любой задаче или в detect → все задачи стоп → Offline → backoff
 ```
+
+При перезапуске воркера (переподключение, смена интервалов, правка сервера с тем же хостом) снимки, серии и лента событий сохраняются (`ServerState::restarted`).
 
 Хост `localhost` / `127.0.0.1` / `::1` идёт через `LocalTransport` (`sh -c`, без SSH). SSH-сессия: keepalive 15 с × 3, `nodelay`, семафор на 4 одновременных канала (у `sshd` по умолчанию `MaxSessions 10`), таймаут команды 60 с. `ChannelOpenFailure` — ошибка команды, не обрыв; обрыв только `Disconnected`.
 
@@ -93,7 +95,7 @@ connect (таймаут 15 с)
 |---|---|---|---|---|---|
 | `system` | всегда | hostname, ОС, ядро, архитектура, uptime, load, CPU-модель и ядра, RAM/swap, виртуализация, часовой пояс, расхождение часов | — | — | — |
 | `cpu` | всегда | `/proc/stat` по ядрам, PSI, частота, температура (thermal_zone, hwmon); загрузка считается по дельте с прошлым снимком | `cpu.total/user/system/iowait/steal`, `cpu.core.N`, `cpu.temperature` | — | — |
-| `memory` | всегда | `/proc/meminfo`, PSI, `pswpin/pswpout`, `oom_kill` | `memory.used_pct/used_bytes/available_bytes/cached_bytes/swap_used_pct/swap_in_ps/swap_out_ps/pressure_some10` | OOM kill (critical) | — |
+| `memory` | всегда | `/proc/meminfo`, PSI, `pswpin/pswpout`, `oom_kill` (плюс число OOM, замеченных с момента подключения, и время последнего) | `memory.used_pct/used_bytes/available_bytes/cached_bytes/swap_used_pct/swap_in_ps/swap_out_ps/pressure_some10` | OOM kill (critical) | — |
 | `disk` | есть `df` | `df -P -B1` без tmpfs/overlay/…, inode, `/proc/diskstats` (скорости, IOPS, util), PSI io | `disk.root_used_pct`, `disk.fs.<mount>.used_pct`, `disk.io.<dev>.read_bps/write_bps/util_pct`, `disk.read_bps/write_bps/pressure_some10` | — | — |
 | `network` | всегда | `/proc/net/dev`, `ip -o addr/link`, operstate/speed, соединения по состояниям (`ss`), шлюз | `network.rx_bps/tx_bps/rx_pps/tx_pps`, `network.<if>.rx_bps/tx_bps`, `network.conn.established/time_wait/syn_recv` | — | — |
 | `processes` | всегда | все `/proc/[pid]/stat`, cmdline, io, пользователи (`ps`), CLK_TCK, PAGESIZE; CPU % и IO по дельте | `processes.count/running/zombies` | — | **terminate** (SIGTERM), **kill** (SIGKILL, опасное); PID > 1 |
@@ -103,12 +105,12 @@ connect (таймаут 15 с)
 | `logs` | `journalctl`; без доступа к системному журналу — Partial | `journalctl -p warning -o json`: первый раз за час (300 записей), дальше `--after-cursor`; окно 24 ч / 2 000 записей, группировка одинаковых сообщений (цифры → `#`) | `logs.warnings_per_min/errors_per_min` (за 5 мин) | записи с priority ≤ 2 (critical), всплеск ≥ 30 за цикл (warning) | **backfill**: прокрутка вниз подгружает ещё 300 более старых (`--until=@…`) |
 | `users` | всегда | `who`, `last -F -n 30`, `getent passwd`, группы sudo/wheel/admin, число ключей в `authorized_keys` | `users.sessions` | новый вход (info), новый пользователь (warning), новый ключ (warning) | запрос **activity `<user>`**: `.bash_history`, `.zsh_history` (хвост 300), `sudo` из журнала за 30 дней, `journalctl _UID=` (200 строк) |
 | `updates` | apt-get / dnf / yum / pacman / zypper / apk | число обновлений, из них security, нужна ли перезагрузка (`/var/run/reboot-required`, `needs-restarting -r`) | `updates.pending/reboot_required` | — | — |
-| `security` | всегда; без root — Partial | неудачные и успешные входы SSH за 24 ч (journal или `auth.log`/`secure`), sudo-вызовы, fail2ban и джейлы, `sshd -T` (fallback — grep конфига), sha256 `/etc/passwd`, `/etc/group`, `/etc/sudoers`, `sudoers.d/*`, баны приложения (nft set `asiba`, цепочка `ASIBA`, ufw DENY), hardening: 18 ключей sysctl, SELinux/AppArmor, NTP, UID 0, пустые пароли, NOPASSWD, права `authorized_keys`, world-writable в `/etc`, опасные порты (21, 23, 512–514, 2375/2376, 6379, 27017, 9200), auditd, автообновления | `security.failed_logins/attackers/brute_force/bans` | брутфорс ≥ 10 неудач за 10 мин с IP (warning), вход (info; с нового адреса или root — warning), изменение passwd/group/sudoers (critical) | **ban** (`argument` — срок `30m`/`12h`/`7d` или навсегда) / **unban**: fail2ban (если есть джейл) → nftables (таблица `inet asiba`, set с timeout) → iptables (цепочка `ASIBA`) → ufw |
+| `security` | всегда; без root — Partial | два яруса: журнал, sudo, fail2ban и баны — каждый сбор; `sshd -T`, хеши, hardening — раз в 5 мин. Неудачные и успешные входы SSH за 24 ч (journal или `auth.log`/`secure`), sudo-вызовы, fail2ban и джейлы, `sshd -T` (fallback — grep конфига), sha256 `/etc/passwd`, `/etc/group`, `/etc/sudoers`, `sudoers.d/*`, баны приложения (nft set `asiba`, цепочка `ASIBA`, ufw DENY), hardening: 18 ключей sysctl, SELinux/AppArmor, NTP, UID 0, пустые пароли, NOPASSWD, права `authorized_keys`, world-writable в `/etc`, опасные порты (21, 23, 512–514, 2375/2376, 6379, 27017, 9200), auditd, автообновления | `security.failed_logins/attackers/brute_force/bans` | брутфорс ≥ 10 неудач за 10 мин с IP (warning), вход (info; с нового адреса или root — warning), изменение passwd/group/sudoers (critical) | **ban** (`argument` — срок `30m`/`12h`/`7d` или навсегда; адрес, с которого Asiba подключена (`SSH_CLIENT`), забанить нельзя) / **unban**: fail2ban (если есть джейл) → nftables (таблица `inet asiba`, set с timeout) → iptables (цепочка `ASIBA`) → ufw |
 | `anomalies` | `ss` и `/proc/net/snmp` | `ss -Htan` (состояния, топ-10 IP по соединениям и SYN-RECV), `/proc/net/netstat` (SyncookiesSent, ListenDrops/Overflows), `/proc/net/snmp` (PassiveOpens, AttemptFails, UDP), pps из `/proc/net/dev`, conntrack | `anomalies.syn_recv/pps_in/pps_out/new_conn_per_s/top_share_pct/peers/attack` | новый признак атаки (уровень признака) | бан IP из ленты — действие модуля `security` |
 | `deploy` | docker/podman, или юнит `deploy*`, или процесс CI-раннера; иначе скрыт | compose: `docker events` за окно с прошлого сбора (первый раз 24 ч) → стадии pull/create/start/healthy; systemd: `deploy*` юниты + `journalctl -u` (60 строк); лог-файлы из `[modules.deploy] logs = "a,b"` (`stat` + `tail -n 400`, стадии и ошибки регулярками: docker compose, npm, cargo, pip, git, systemctl); раннер GitHub Actions / GitLab (`pgrep`, cwd, `_diag/Worker_*.log`) | `deploy.active/failed` | начался (info), завершён (info), упал на стадии (critical) | — |
 | `git` | `git` и хотя бы один `.git` в `/opt /srv /var/www /home/* /root /app /docker /data` (глубина 3) | по каждому репозиторию: ветка, HEAD, origin, ahead/behind, `status --porcelain` (≤200), stash, ветки (≤50), теги (≤20), 100 коммитов; `GIT_OPTIONAL_LOCKS=0`, `safe.directory=*` | `git.repositories/dirty` | новый коммит (info), переключение ветки (info) | запрос **history `<path>`** — `git log -2000` |
 | `gpu` | `nvidia-smi` или AMD `gpu_busy_percent` | загрузка, память, температура, мощность, процессы на GPU | `gpu.util_pct`, `gpu.<i>.util_pct/mem_pct/temp_c/power_w` | ≥ 85 °C (warning), память ≥ 95 % (warning) | — |
-| `files` | GNU `find -printf` и `stat` | ничего по расписанию | — | — | запросы **list `<dir>`** (≤1000 записей), **read `<file>`** (≤200 КБ, не бинарный), **search `<pattern>`** (`find / -iname`, `nice`, 15 с, ≤200); действия **write, mkdir, create, move, copy, chmod, chown, delete** (`rm -rf`, опасное); всё через sudo, если настроен |
+| `files` | GNU `find -printf` и `stat` | ничего по расписанию | — | — | запросы **list `<dir>`** (≤1000 записей), **read `<file>`** (≤200 КБ, не бинарный), **search `<pattern>`** (`find / -iname`, `nice`, 15 с, ≤200); действия **write** (атомарно через временный файл; под системными каталогами — опасное), **mkdir, create, move, copy, chmod, chown, delete** (`rm -rf`, опасное); всё через sudo, если настроен |
 
 ### 3.2 Дельты и скорости
 
@@ -123,7 +125,7 @@ connect (таймаут 15 с)
 ## 4. Графики и история
 
 - **В памяти**: `ServerState.series[key]` — кольцо на 900 точек (`asiba-core/src/series.rs`). UI рисует `TimeSeriesPlot` (`egui_plot`) и sparkline (`components/plot.rs`, `sparkline.rs`).
-- **SQLite** (`~/.local/share/asiba/history.db`, WAL): поток `asiba-storage` в отдельном потоке ОС, батч раз в 5 с или 5 000 сэмплов. Таблицы `samples` (сырые, 48 ч) → `samples_1m` (avg/min/max, 30 дней) → `samples_1h` (365 дней); даунсэмплинг раз в час (`maintenance.rs`). Сроки — `[retention]` в `config.toml`.
+- **SQLite** (`~/.local/share/asiba/history.db`, WAL): поток `asiba-storage` в отдельном потоке ОС, батч раз в 5 с или 5 000 сэмплов. Таблицы `samples` (сырые, 48 ч) → `samples_1m` (avg/min/max, 30 дней) → `samples_1h` (365 дней); даунсэмплинг при старте, затем раз в час и при смене сроков (`maintenance.rs`). Сроки — `[retention]` в `config.toml`, тип `Retention` в `asiba-core`, применяются на лету (`Command::SetRetention`). Удаление сервера стирает его строки.
 - **При старте воркера** (`engine/history.rs`): последние 30 минут сырых сэмплов из базы подставляются перед живыми точками (`Series::prepend_history`).
 - **Пинг** (`worker/ping.rs`): TCP-connect на SSH-порт раз в 5 с (таймаут 3 с) с локальной машины → `ServerState.ping` и серия `ping.rtt_ms` (только в памяти). Для сервера за jump host пингуется сам jump host (в UI подпись «пинг (jump host)»).
 - **Пауза**: кнопка в статусбаре замораживает копию `AppState` для UI; сбор продолжается.
@@ -139,7 +141,7 @@ connect (таймаут 15 с)
 ### 5.2 Алерты
 
 `asiba-alerts`, цикл движка раз в 5 с (`engine/alerts.rs`):
-- **Правила** `AlertRule { metric, condition Above/Below, threshold, for_secs, severity }` — по последнему значению серии. Встроенные (`rules.rs`): offline (виртуальная метрика `connection.offline`, 60 с, critical), cpu-high (90 %, 5 мин), memory-high (90 %, 2 мин), disk-full (90 %, critical), disk-warning (80 %), services-failed, log-errors (30/мин), attack, brute-force, reboot-required (info). Пользовательские — Настройки → Алерты (`alert_rules.rs`), хранятся в `config.toml` `[[alert_rules]]`, правило с id встроенного его заменяет.
+- **Правила** `AlertRule { metric, condition Above/Below, threshold, for_secs, severity }` — по последнему значению серии; значение не учитывается (правило считается не сработавшим), если сервер не online, модуль метрики в ошибке или точка старше часа. Встроенные (`rules.rs`): offline (виртуальная метрика `connection.offline`, 60 с, critical), cpu-high (90 %, 5 мин), memory-high (90 %, 2 мин), disk-full (90 %, critical), disk-warning (80 %), services-failed, log-errors (30/мин), attack, brute-force, reboot-required (info). Пользовательские — Настройки → Алерты (`alert_rules.rs`), хранятся в `config.toml` `[[alert_rules]]`, правило с id встроенного его заменяет.
 - **Базовая линия** (`baseline.rs`): EWMA среднего и дисперсии (полураспад 720 сэмплов, прогрев 120) по 8 метрикам (`cpu.total`, `network.rx_bps/tx_bps/conn.established`, `processes.count`, `logs.errors_per_min`, `security.failed_logins`, `anomalies.pps_in`); отклонение ≥ 4σ (σ не меньше 5 % от среднего и не меньше 1) дольше 60 с → warning «Аномалия <metric>».
 - Активные и история (300) — страница «Алерты»: подтвердить, заглушить на N часов, перейти к серверу/вкладке. Уведомления на рабочий стол (`notify-rust`) для warning/critical, если включены. Алерты живут только в памяти.
 
@@ -154,10 +156,10 @@ connect (таймаут 15 с)
 | BruteForce | атакующие ≥ 10 неудач / 10 мин (+ страна, забанен ли) | critical |
 | SecurityCheck | провалы паттернов аудита областей безопасности | Fail+High → critical, Fail / Warn+High → warning, Warn → info |
 | UnitFailed | юниты в `failed` | critical |
-| ContainerDown | остановлен с политикой перезапуска или exit≠0 (critical); unhealthy или ≥ 5 рестартов (warning) | |
+| ContainerDown | остановлен с политикой перезапуска (critical); exit≠0 без политики (warning, пока статус не «days ago»); unhealthy или ≥ 5 рестартов (warning) | |
 | DeployFailed | последний деплой проекта упал (+ 10 строк лога) | critical |
 | DiskFull | ФС ≥ 90 % (critical), ≥ 80 % (warning), inode ≥ 90 % | |
-| Memory | OOM kill с загрузки > 0, swap ≥ 80 % | warning |
+| Memory | OOM kill, замеченный за последние 24 ч, swap ≥ 80 % | warning |
 | Updates | security-обновления (warning), нужна перезагрузка (info) | |
 | ModuleError | модуль с `last_error` | warning |
 | Clock | расхождение часов > 60 с | warning |
@@ -168,11 +170,11 @@ connect (таймаут 15 с)
 
 `asiba-incidents/src/audit/`: 77 паттернов `Pattern { id, area, subject, description, weight, advice, evidence, evaluate }` в 11 областях: SSH (11), доступ и права (8), сеть и файрвол (8), ядро (17 sysctl), защита системы (4), ресурсы (9), надёжность (8), сетевые интерфейсы (2), обновления (4), журнал (3), сбор данных (3). `system_audit(server, state)` прогоняет все и даёт `AuditCheck` с исходом Pass / Warn / Fail / Skipped. `security_score` по областям безопасности: буква A–F (A ≥ 90 % без провалов High, B ≥ 75 %, C ≥ 60 %, D ≥ 40 %), Warn даёт половину веса.
 
-Вкладка «Безопасность» (`pages/server_detail/security/`): подразделы «Аудит» (по умолчанию только проблемы, фильтр), «Входы и sudo», «Атаки и баны»; клик по проверке → страница проблемы: состояние, описание, совет, улика (содержимое файла через `files`, запрос модуля в «Просмотр» или переход на вкладку). Внизу — блок ИИ «Аудит».
+Вкладка «Безопасность» (`pages/server_detail/security/`; результат `system_audit` кешируется на секунду, `components/audit_cache.rs`): подразделы «Аудит» (по умолчанию только проблемы, фильтр), «Входы и sudo», «Атаки и баны»; клик по проверке → страница проблемы: состояние, описание, совет, улика (содержимое файла через `files`, запрос модуля в «Просмотр» или переход на вкладку). Внизу — блок ИИ «Аудит».
 
 ## 6. Файл сервера
 
-`asiba-docgen`: 18 секций (`sections/`), каждая умеет `human` (русский markdown) и `llm` (английский `key: value`, ограниченные списки): findings, description, system, resources (текущее + средние/макс за час и сутки по кольцу), alerts, security, anomalies, services, docker, deploy, processes, ports, users, updates, logs, gpu, actions, events. `DocWriter` (`worker/docs.rs`) после каждого снимка любого модуля, не чаще раза в 10 с и только при изменении тела (без строки времени), пишет `servers/<id>.md` (блок между `<!-- notes:start -->` и `<!-- notes:end -->` сохраняется) и `servers/<id>.llm.md`. Пишется только когда есть снимок `system`.
+`asiba-docgen`: 18 секций (`sections/`), каждая умеет `human` (русский markdown) и `llm` (английский `key: value`, ограниченные списки): findings, description, system, resources (текущее + средние/макс за час и сутки; окно выводится только если серия реально его покрывает — иначе «—»), alerts, security, anomalies, services, docker, deploy, processes, ports, users, updates, logs, gpu, actions, events. `DocWriter` (`worker/docs.rs`) после каждого снимка любого модуля, не чаще раза в 10 с и только при изменении тела (без строки времени), пишет `servers/<id>.md` (блок между `<!-- notes:start -->` и `<!-- notes:end -->` сохраняется) и `servers/<id>.llm.md`. Пишется только когда есть снимок `system`.
 
 ## 7. Карта и геолокация
 
@@ -205,7 +207,7 @@ connect (таймаут 15 с)
 ## 11. Безопасность приложения
 
 - Host key проверяется по `~/.ssh/known_hosts`; неизвестный или изменившийся показывается с отпечатком и требует явного доверия; после доверия ключ дописывается в `known_hosts`.
-- Все команды модулей — чтение; записи только через `Module::perform` с подтверждением и журналом. Цели действий валидируются (`validate_ip`, `validate_name`, PID > 1, абсолютный путь без `..`, восьмеричный режим, срок бана `\d+[smhd]`), всё экранируется `shell_quote`.
+- Все команды модулей — чтение; записи только через `Module::perform` с подтверждением и журналом (содержимое записываемого файла в журнал не попадает — только размер). Запись файла — атомарная через временный файл; под `/etc`, `/boot`, `/usr`, `/bin`, `/sbin`, `/lib` требует ввода имени сервера. Цели действий валидируются (`validate_ip`, `validate_name`, PID > 1, абсолютный путь без `..`, восьмеричный режим, срок бана `\d+[smhd]`), всё экранируется `shell_quote`.
 - Секреты — только в keyring; в toml не попадают. Команды с паролем sudo не логируются.
 - Наружу без включения ИИ уходят только запросы к `ip-api.com` (IP серверов и атакующих; переключатель Настройки → Приватность, `geolocation` в `config.toml`) и OSM-тайлы карты.
 

@@ -149,7 +149,7 @@ pub trait Module: Send + Sync {
 | Секреты | системный keyring; fallback `~/.config/asiba/secrets.enc` |
 | История метрик и событий | `~/.local/share/asiba/history.db` |
 | Кеш (геолокация, тайлы карты) | `~/.cache/asiba/` |
-| Логи приложения | `~/.local/state/asiba/logs/` |
+| Логи приложения | stderr через `tracing` (`RUST_LOG`); файл в `~/.local/state/asiba/logs/` не реализован |
 
 Хранение истории: сырые сэмплы 48 часов, поминутные агрегаты 30 дней, почасовые 1 год. Даунсэмплинг фоновой задачей. Размер базы ограничен настройкой.
 
