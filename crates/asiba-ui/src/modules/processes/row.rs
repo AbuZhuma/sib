@@ -15,42 +15,11 @@ pub fn cells(
     process: &Process,
     p: &Palette,
 ) -> Option<ViewAction> {
-    let mono = |row: &mut TableRow<'_, '_>, value: String| {
+    for value in metric_cells(snapshot, process) {
         row.col(|ui| {
             ui.monospace(value);
         });
-    };
-    mono(row, process.pid.to_string());
-    mono(row, process.user.clone());
-    mono(
-        row,
-        process
-            .cpu_pct
-            .map(|v| format!("{v:.1}%"))
-            .unwrap_or_else(|| "-".to_owned()),
-    );
-    mono(
-        row,
-        format!(
-            "{} ({:.1}%)",
-            format::bytes(process.rss_bytes),
-            snapshot.memory_pct(process)
-        ),
-    );
-    mono(
-        row,
-        process
-            .read_bps
-            .map(format::bytes_per_second)
-            .unwrap_or_else(|| "-".to_owned()),
-    );
-    mono(
-        row,
-        process
-            .write_bps
-            .map(format::bytes_per_second)
-            .unwrap_or_else(|| "-".to_owned()),
-    );
+    }
     row.col(|ui| {
         let color = if process.is_zombie() {
             p.warning
@@ -63,10 +32,9 @@ pub fn cells(
                 .color(color),
         );
     });
-    mono(
-        row,
-        format::duration_short(snapshot.started_secs_ago(process)),
-    );
+    row.col(|ui| {
+        ui.monospace(format::duration_short(snapshot.started_secs_ago(process)));
+    });
     let mut action = None;
     row.col(|ui| {
         action = process_buttons(ui, process);
@@ -75,6 +43,22 @@ pub fn cells(
         ui.label(truncate(process.display_name(), CMD_MAX_CHARS));
     });
     action
+}
+
+fn metric_cells(snapshot: &ProcessSnapshot, process: &Process) -> [String; 6] {
+    let or_dash = |value: Option<String>| value.unwrap_or_else(|| "-".to_owned());
+    [
+        process.pid.to_string(),
+        process.user.clone(),
+        or_dash(process.cpu_pct.map(|v| format!("{v:.1}%"))),
+        format!(
+            "{} ({:.1}%)",
+            format::bytes(process.rss_bytes),
+            snapshot.memory_pct(process)
+        ),
+        or_dash(process.read_bps.map(format::bytes_per_second)),
+        or_dash(process.write_bps.map(format::bytes_per_second)),
+    ]
 }
 
 fn process_buttons(ui: &mut Ui, process: &Process) -> Option<ViewAction> {

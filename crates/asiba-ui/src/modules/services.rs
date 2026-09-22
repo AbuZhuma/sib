@@ -130,31 +130,7 @@ fn units_table(ui: &mut Ui, snapshot: &ServicesSnapshot, filters: Filters) -> Op
             _ => SortKey::number(unit.main_pid as f64),
         });
         for unit in rows {
-            ui.monospace(unit.short_name());
-            let color = if unit.is_failed() {
-                p.critical
-            } else if unit.is_active() {
-                p.ok
-            } else {
-                p.text_muted
-            };
-            badge(ui, &format!("{} / {}", unit.active, unit.sub), color);
-            let restarts_color = if unit.restarts > 0 {
-                p.warning
-            } else {
-                p.text_muted
-            };
-            ui.label(
-                RichText::new(unit.restarts.to_string())
-                    .monospace()
-                    .color(restarts_color),
-            );
-            ui.monospace(if unit.main_pid > 0 {
-                unit.main_pid.to_string()
-            } else {
-                "-".to_owned()
-            });
-            ui.label(&unit.description);
+            unit_cells(ui, unit, &p);
             ui.horizontal(|ui| {
                 if ui.small_button(text::SVC_JOURNAL).clicked() {
                     action = Some(ViewAction::Query(QueryRequest::new(
@@ -170,6 +146,34 @@ fn units_table(ui: &mut Ui, snapshot: &ServicesSnapshot, filters: Filters) -> Op
         }
     });
     action
+}
+
+fn unit_cells(ui: &mut Ui, unit: &Unit, p: &Palette) {
+    ui.monospace(unit.short_name());
+    let color = if unit.is_failed() {
+        p.critical
+    } else if unit.is_active() {
+        p.ok
+    } else {
+        p.text_muted
+    };
+    badge(ui, &format!("{} / {}", unit.active, unit.sub), color);
+    let restarts_color = if unit.restarts > 0 {
+        p.warning
+    } else {
+        p.text_muted
+    };
+    ui.label(
+        RichText::new(unit.restarts.to_string())
+            .monospace()
+            .color(restarts_color),
+    );
+    ui.monospace(if unit.main_pid > 0 {
+        unit.main_pid.to_string()
+    } else {
+        "-".to_owned()
+    });
+    ui.label(&unit.description);
 }
 
 fn timers_table(ui: &mut Ui, snapshot: &ServicesSnapshot) {
