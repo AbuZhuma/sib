@@ -142,20 +142,7 @@ impl Evaluator {
         if (now - since).num_seconds() < check.for_secs as i64 {
             return None;
         }
-        let alert = Alert {
-            id: self.next_id,
-            server: server.clone(),
-            rule_id: check.rule_id,
-            rule_name: check.rule_name,
-            metric: check.metric,
-            severity: check.severity,
-            value: check.value,
-            message: check.message,
-            started_at: since,
-            resolved_at: None,
-            acknowledged: false,
-            muted_until: None,
-        };
+        let alert = check.into_alert(self.next_id, server.clone(), since);
         self.next_id += 1;
         state.alerts.insert(0, alert.clone());
         Some(alert)

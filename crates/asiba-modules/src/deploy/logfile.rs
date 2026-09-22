@@ -9,6 +9,7 @@ use super::model::{
 
 pub const SETTING_LOGS: &str = "logs";
 const TAIL_LINES: u32 = 400;
+const TAIL_KEPT: usize = 40;
 const FILE_MARKER: &str = "@@ ";
 const ACTIVE_WINDOW: Duration = Duration::seconds(120);
 
@@ -75,14 +76,7 @@ fn file_deploy(block: &str, previous: &[Deploy], now: DateTime<Utc>) -> Option<D
     let lines: Vec<&str> = body.lines().collect();
     let key = format!("log:{path}");
     let analysis = analyze(&lines);
-    let is_active = now - modified < ACTIVE_WINDOW;
-    let status = if analysis.error_index.is_some() {
-        DeployStatus::Failed
-    } else if analysis.is_finished || !is_active {
-        DeployStatus::Success
-    } else {
-        DeployStatus::InProgress
-    };
+    let status = file_status(&analysis, now - modified < ACTIVE_WINDOW);
     let earlier = previous.iter().find(|d| d.key == key);
     let started_at = match earlier {
         Some(d) if d.status == DeployStatus::InProgress => d.started_at,
@@ -104,14 +98,23 @@ fn file_deploy(block: &str, previous: &[Deploy], now: DateTime<Utc>) -> Option<D
         stages,
         status,
         error: analysis.error_index.map(|i| error_at(&lines, i)),
-        log_tail: lines
-            .iter()
-            .rev()
-            .take(40)
-            .rev()
-            .map(|l| (*l).to_owned())
-            .collect(),
+        log_tail: tail(&lines, TAIL_KEPT),
     })
+}
+
+fn file_status(analysis: &Analysis, is_active: bool) -> DeployStatus {
+    if analysis.error_index.is_some() {
+        DeployStatus::Failed
+    } else if analysis.is_finished || !is_active {
+        DeployStatus::Success
+    } else {
+        DeployStatus::InProgress
+    }
+}
+
+fn tail(lines: &[&str], count: usize) -> Vec<String> {
+    let start = lines.len().saturating_sub(count);
+    lines[start..].iter().map(|l| (*l).to_owned()).collect()
 }
 
 struct Analysis {

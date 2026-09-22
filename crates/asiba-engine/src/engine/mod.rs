@@ -157,16 +157,7 @@ impl Engine {
                 previous,
                 spec,
                 credentials,
-            } => {
-                let merged = match self.workers.get(&previous) {
-                    Some(entry) => credentials.fill_missing_from(&entry.credentials),
-                    None => credentials,
-                };
-                if previous != spec.id {
-                    self.rename(&previous, &spec.id).await;
-                }
-                self.save_and_start(spec, merged).await;
-            }
+            } => self.update(previous, spec, credentials).await,
             Command::RemoveServer(id) => self.remove(id).await,
             Command::Reconnect(id) => self.restart(&id, HostKeyPolicy::KnownHostsOnly),
             Command::TrustHostKey {
@@ -192,6 +183,17 @@ impl Engine {
             } => self.perform(&server, module, request),
             other => self.handle_settings(other),
         }
+    }
+
+    async fn update(&mut self, previous: ServerId, spec: ServerSpec, credentials: Credentials) {
+        let merged = match self.workers.get(&previous) {
+            Some(entry) => credentials.fill_missing_from(&entry.credentials),
+            None => credentials,
+        };
+        if previous != spec.id {
+            self.rename(&previous, &spec.id).await;
+        }
+        self.save_and_start(spec, merged).await;
     }
 
     fn handle_settings(&mut self, command: Command) {

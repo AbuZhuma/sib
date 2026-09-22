@@ -1,4 +1,4 @@
-use asiba_core::{ConnectionStatus, METRIC_OFFLINE, ServerState, Severity};
+use asiba_core::{Alert, ConnectionStatus, METRIC_OFFLINE, ServerId, ServerState, Severity};
 use chrono::{DateTime, Utc};
 
 use crate::baseline::Deviation;
@@ -16,6 +16,25 @@ pub struct Check {
     pub value: f64,
     pub holds: bool,
     pub message: String,
+}
+
+impl Check {
+    pub fn into_alert(self, id: u64, server: ServerId, since: DateTime<Utc>) -> Alert {
+        Alert {
+            id,
+            server,
+            rule_id: self.rule_id,
+            rule_name: self.rule_name,
+            metric: self.metric,
+            severity: self.severity,
+            value: self.value,
+            message: self.message,
+            started_at: since,
+            resolved_at: None,
+            acknowledged: false,
+            muted_until: None,
+        }
+    }
 }
 
 pub fn baseline_check(metric: &str, value: f64, deviation: Option<Deviation>) -> Check {
