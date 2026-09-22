@@ -2,7 +2,7 @@ use asiba_core::{QueryRequest, ServerId};
 use asiba_modules::files::{self, Entry, EntryKind};
 use egui::{Label, RichText, Sense, TextEdit, Ui, UiBuilder};
 
-use super::browser::FileBrowser;
+use super::browser::{FileBrowser, SearchResult};
 use super::state::TreeState;
 use crate::components::{FileIcon, file_icon, scroll};
 use crate::pages::Action;
@@ -45,6 +45,30 @@ pub fn bar(
     action
 }
 
+fn summary_labels(ui: &mut Ui, result: &SearchResult, p: &Palette) {
+    ui.label(
+        RichText::new(format!(
+            "{} «{}»: {}",
+            text::FILES_SEARCH_RESULTS,
+            result.pattern,
+            result.listing.entries.len()
+        ))
+        .small()
+        .color(p.text_secondary),
+    );
+    if result.listing.is_truncated {
+        ui.label(
+            RichText::new(format!(
+                "{} {}",
+                text::FILES_TRUNCATED,
+                files::MAX_SEARCH_RESULTS
+            ))
+            .small()
+            .color(p.text_muted),
+        );
+    }
+}
+
 pub fn results(
     ui: &mut Ui,
     server: &ServerId,
@@ -58,27 +82,7 @@ pub fn results(
     let result = browser.search()?;
     let mut action = None;
     ui.horizontal(|ui| {
-        ui.label(
-            RichText::new(format!(
-                "{} «{}»: {}",
-                text::FILES_SEARCH_RESULTS,
-                result.pattern,
-                result.listing.entries.len()
-            ))
-            .small()
-            .color(p.text_secondary),
-        );
-        if result.listing.is_truncated {
-            ui.label(
-                RichText::new(format!(
-                    "{} {}",
-                    text::FILES_TRUNCATED,
-                    files::MAX_SEARCH_RESULTS
-                ))
-                .small()
-                .color(p.text_muted),
-            );
-        }
+        summary_labels(ui, result, &p);
         if ui.small_button(text::FILES_SEARCH_CLOSE).clicked() {
             action = Some(Action::FilesClearSearch {
                 server: server.clone(),

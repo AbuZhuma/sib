@@ -129,37 +129,41 @@ fn interfaces_table(ui: &mut Ui, snapshot: &NetworkSnapshot) {
             interface_key(interface, column)
         });
         for interface in rows {
-            ui.monospace(&interface.name);
-            let color = if interface.is_up() { p.ok } else { p.offline };
-            ui.label(RichText::new(&interface.state).color(color));
-            ui.monospace(interface.addresses.join(" "));
-            ui.monospace(
-                interface
-                    .speed_mbps
-                    .map(|s| format!("{s} Mb/s"))
-                    .unwrap_or_else(|| "-".to_owned()),
-            );
-            match &interface.rates {
-                Some(rates) => {
-                    ui.monospace(format::bytes_per_second(rates.rx_bps));
-                    ui.monospace(format::bytes_per_second(rates.tx_bps));
-                }
-                None => {
-                    ui.monospace(format::bytes(interface.rx.bytes));
-                    ui.monospace(format::bytes(interface.tx.bytes));
-                }
-            }
-            let errors =
-                interface.rx.errors + interface.tx.errors + interface.rx.drops + interface.tx.drops;
-            let error_color = if errors > 0 { p.warning } else { p.text_muted };
-            ui.label(
-                RichText::new(errors.to_string())
-                    .color(error_color)
-                    .monospace(),
-            );
+            interface_cells(ui, interface, &p);
             ui.end_row();
         }
     });
+}
+
+fn interface_cells(ui: &mut Ui, interface: &Interface, p: &Palette) {
+    ui.monospace(&interface.name);
+    let color = if interface.is_up() { p.ok } else { p.offline };
+    ui.label(RichText::new(&interface.state).color(color));
+    ui.monospace(interface.addresses.join(" "));
+    ui.monospace(
+        interface
+            .speed_mbps
+            .map(|s| format!("{s} Mb/s"))
+            .unwrap_or_else(|| "-".to_owned()),
+    );
+    match &interface.rates {
+        Some(rates) => {
+            ui.monospace(format::bytes_per_second(rates.rx_bps));
+            ui.monospace(format::bytes_per_second(rates.tx_bps));
+        }
+        None => {
+            ui.monospace(format::bytes(interface.rx.bytes));
+            ui.monospace(format::bytes(interface.tx.bytes));
+        }
+    }
+    let errors =
+        interface.rx.errors + interface.tx.errors + interface.rx.drops + interface.tx.drops;
+    let error_color = if errors > 0 { p.warning } else { p.text_muted };
+    ui.label(
+        RichText::new(errors.to_string())
+            .color(error_color)
+            .monospace(),
+    );
 }
 
 fn interface_key(interface: &Interface, column: usize) -> SortKey {
