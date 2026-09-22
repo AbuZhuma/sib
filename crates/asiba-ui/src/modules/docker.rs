@@ -175,26 +175,7 @@ fn containers_table(ui: &mut Ui, id: &str, containers: &[&Container]) -> Option<
         for container in rows {
             ui.monospace(&container.name);
             status_cell(ui, container, &p);
-            match &container.stats {
-                Some(stats) => {
-                    ui.monospace(format!("{:.1}%", stats.cpu_pct));
-                    ui.monospace(format!(
-                        "{} / {}",
-                        format::bytes(stats.mem_usage),
-                        format::bytes(stats.mem_limit)
-                    ));
-                    ui.monospace(format!(
-                        "{} / {}",
-                        format::bytes(stats.net_rx),
-                        format::bytes(stats.net_tx)
-                    ));
-                }
-                None => {
-                    for _ in 0..3 {
-                        ui.monospace("-");
-                    }
-                }
-            }
+            stats_cells(ui, container);
             ui.label(RichText::new(&container.image).color(p.text_secondary));
             ui.monospace(&container.ports);
             ui.horizontal(|ui| {
@@ -212,6 +193,26 @@ fn containers_table(ui: &mut Ui, id: &str, containers: &[&Container]) -> Option<
         }
     });
     action
+}
+
+fn stats_cells(ui: &mut Ui, container: &Container) {
+    let Some(stats) = &container.stats else {
+        for _ in 0..3 {
+            ui.monospace("-");
+        }
+        return;
+    };
+    ui.monospace(format!("{:.1}%", stats.cpu_pct));
+    ui.monospace(format!(
+        "{} / {}",
+        format::bytes(stats.mem_usage),
+        format::bytes(stats.mem_limit)
+    ));
+    ui.monospace(format!(
+        "{} / {}",
+        format::bytes(stats.net_rx),
+        format::bytes(stats.net_tx)
+    ));
 }
 
 fn status_cell(ui: &mut Ui, container: &Container, p: &Palette) {

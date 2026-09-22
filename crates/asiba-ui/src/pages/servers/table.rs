@@ -46,27 +46,31 @@ pub fn show(ui: &mut Ui, servers: &[&ServerState], state: &AppState) -> Option<S
             ui.label(
                 RichText::new(server.spec.description.tags.join(", ")).color(p.text_secondary),
             );
-            for key in [
-                cpu::KEY_TOTAL,
-                memory::KEY_USED_PCT,
-                disk::KEY_ROOT_USED_PCT,
-            ] {
-                ui.monospace(
-                    server
-                        .latest_value(key)
-                        .map(|v| format!("{v:.0}%"))
-                        .unwrap_or_else(|| "-".to_owned()),
-                );
-            }
-            ui.monospace(
-                server
-                    .data::<SystemInfo>(system::ID)
-                    .map(|i| i.uptime_human())
-                    .unwrap_or_else(|| "-".to_owned()),
-            );
+            usage_cells(ui, server);
             alert_counts(ui, state, server);
             ui.end_row();
         }
     });
     clicked
+}
+
+fn usage_cells(ui: &mut Ui, server: &ServerState) {
+    for key in [
+        cpu::KEY_TOTAL,
+        memory::KEY_USED_PCT,
+        disk::KEY_ROOT_USED_PCT,
+    ] {
+        ui.monospace(
+            server
+                .latest_value(key)
+                .map(|v| format!("{v:.0}%"))
+                .unwrap_or_else(|| "-".to_owned()),
+        );
+    }
+    ui.monospace(
+        server
+            .data::<SystemInfo>(system::ID)
+            .map(|i| i.uptime_human())
+            .unwrap_or_else(|| "-".to_owned()),
+    );
 }
