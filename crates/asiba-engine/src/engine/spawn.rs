@@ -44,7 +44,29 @@ pub fn spawn(
     if let Ok(mut state) = deps.state.write() {
         state.ignored_incidents = deps.ignored.clone();
     }
-    let engine = Engine {
+    let senders = Senders {
+        events,
+        alert_settings,
+        ai_config,
+        cancellations,
+    };
+    let engine = engine(deps, notify, senders);
+    runtime.spawn(run(engine, receiver, background));
+    EngineHandle {
+        commands,
+        events: Mutex::new(event_receiver),
+    }
+}
+
+struct Senders {
+    events: mpsc::UnboundedSender<EngineEvent>,
+    alert_settings: watch::Sender<alerts::AlertSettings>,
+    ai_config: watch::Sender<asiba_config::AiConfig>,
+    cancellations: Cancellations,
+}
+
+fn engine(deps: EngineDeps, notify: RepaintNotifier, senders: Senders) -> Engine {
+    Engine {
         registry: deps.registry,
         state: deps.state,
         persistence: deps.persistence,
@@ -54,17 +76,12 @@ pub fn spawn(
         geolocation: Arc::new(AtomicBool::new(deps.geolocation)),
         intervals: deps.intervals.clamped(),
         notify,
-        events,
+        events: senders.events,
         workers: HashMap::new(),
-        alert_settings,
-        ai_config,
+        alert_settings: senders.alert_settings,
+        ai_config: senders.ai_config,
         audits: ai::spawn_detached(),
-        cancellations,
-    };
-    runtime.spawn(run(engine, receiver, background));
-    EngineHandle {
-        commands,
-        events: Mutex::new(event_receiver),
+        cancellations: senders.cancellations,
     }
 }
 

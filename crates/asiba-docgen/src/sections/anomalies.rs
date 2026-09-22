@@ -57,7 +57,32 @@ const RATE_ROWS: [(&str, &str, RateField); 5] = [
 
 fn counters(snapshot: &AnomaliesSnapshot) -> Vec<(&'static str, &'static str, String)> {
     let rates = snapshot.rates;
-    let mut rows = vec![
+    let mut rows = connection_rows(snapshot);
+    rows.push((
+        "Пакетов/с in / out",
+        "packets_per_s_in_out",
+        format!(
+            "{} / {}",
+            rate(rates.map(|r| r.pps_in)),
+            rate(rates.map(|r| r.pps_out))
+        ),
+    ));
+    for (label, key, field) in RATE_ROWS {
+        rows.push((label, key, rate(rates.as_ref().map(field))));
+    }
+    rows.push((
+        "Доля топ-10 адресов",
+        "top10_share_pct",
+        format!("{:.0}%", snapshot.top_share_pct()),
+    ));
+    if let Some((count, max)) = snapshot.conntrack {
+        rows.push(("conntrack", "conntrack", format!("{count} / {max}")));
+    }
+    rows
+}
+
+fn connection_rows(snapshot: &AnomaliesSnapshot) -> Vec<(&'static str, &'static str, String)> {
+    vec![
         (
             "Полуоткрытых (SYN-RECV)",
             "syn_recv",
@@ -73,28 +98,7 @@ fn counters(snapshot: &AnomaliesSnapshot) -> Vec<(&'static str, &'static str, St
             "distinct_peers",
             snapshot.distinct_peers.to_string(),
         ),
-        (
-            "Пакетов/с in / out",
-            "packets_per_s_in_out",
-            format!(
-                "{} / {}",
-                rate(rates.map(|r| r.pps_in)),
-                rate(rates.map(|r| r.pps_out))
-            ),
-        ),
-    ];
-    for (label, key, field) in RATE_ROWS {
-        rows.push((label, key, rate(rates.as_ref().map(field))));
-    }
-    rows.push((
-        "Доля топ-10 адресов",
-        "top10_share_pct",
-        format!("{:.0}%", snapshot.top_share_pct()),
-    ));
-    if let Some((count, max)) = snapshot.conntrack {
-        rows.push(("conntrack", "conntrack", format!("{count} / {max}")));
-    }
-    rows
+    ]
 }
 
 fn sign_rows(snapshot: &AnomaliesSnapshot) -> Vec<Vec<String>> {

@@ -31,15 +31,7 @@ pub fn perform(job: Perform) {
             .as_ref()
             .map(|m| m.id().to_string())
             .unwrap_or_default();
-        let result = match (&job.transport, &job.module) {
-            (Some(transport), Some(module)) => module
-                .perform(transport.as_ref(), &job.request)
-                .await
-                .map(|outcome| outcome.message)
-                .map_err(|e| e.to_string()),
-            (None, _) => Err("сервер не подключён".to_owned()),
-            (_, None) => Err("модуль не найден".to_owned()),
-        };
+        let result = execute(&job).await;
         let argument = job
             .request
             .argument
@@ -64,6 +56,18 @@ pub fn perform(job: Perform) {
         let _ = job.events.send(EngineEvent::ActionFinished(record));
         (job.notify)();
     });
+}
+
+async fn execute(job: &Perform) -> Result<String, String> {
+    match (&job.transport, &job.module) {
+        (Some(transport), Some(module)) => module
+            .perform(transport.as_ref(), &job.request)
+            .await
+            .map(|outcome| outcome.message)
+            .map_err(|e| e.to_string()),
+        (None, _) => Err("сервер не подключён".to_owned()),
+        (_, None) => Err("модуль не найден".to_owned()),
+    }
 }
 
 fn journaled_argument(module: &str, kind: &str, argument: String) -> String {
