@@ -141,24 +141,24 @@ fn firewall_label(snapshot: &SecuritySnapshot) -> String {
     }
 }
 
+fn score_label(audit: &SystemAudit) -> String {
+    let score = security_score(audit.checks.iter());
+    format!(
+        "{} ({}%, {} of {} checks passed, {} high-weight failures)",
+        score.grade.letter(),
+        score.percent,
+        score.passed,
+        score.known,
+        score.failed_high
+    )
+}
+
 fn overview(
     snapshot: &SecuritySnapshot,
     audit: &SystemAudit,
 ) -> Vec<(&'static str, &'static str, String)> {
-    let score = security_score(audit.checks.iter());
     vec![
-        (
-            "Оценка",
-            "score",
-            format!(
-                "{} ({}%, {} of {} checks passed, {} high-weight failures)",
-                score.grade.letter(),
-                score.percent,
-                score.passed,
-                score.known,
-                score.failed_high
-            ),
-        ),
+        ("Оценка", "score", score_label(audit)),
         (
             "Неудачных входов за 24 ч",
             "failed_logins_24h",
@@ -192,6 +192,45 @@ fn overview(
     ]
 }
 
+fn human_checks(out: &mut String, audit: &SystemAudit) {
+    for area in security_areas() {
+        let rows = check_rows(audit, area);
+        if rows.is_empty() {
+            continue;
+        }
+        subheading(out, area.label());
+        table(out, &["Статус", "Вес", "Проверка", "Детали"], &rows);
+    }
+}
+
+fn human_activity(out: &mut String, snapshot: &SecuritySnapshot, ctx: &DocContext<'_>) {
+    subheading(out, "Атакующие IP");
+    let attacker_columns = [
+        "IP",
+        "Страна",
+        "Ошибок",
+        "За 10 мин",
+        "Логины",
+        "Последняя",
+        "Пометки",
+    ];
+    table(out, &attacker_columns, &attacker_rows(snapshot, ctx));
+    subheading(out, "Баны");
+    table(out, &["IP", "Источник", "Истекает"], &ban_rows(snapshot));
+    subheading(out, "Последние входы");
+    table(
+        out,
+        &["Время", "Пользователь", "Откуда", "Метод"],
+        &login_rows(snapshot),
+    );
+    subheading(out, "Вызовы sudo");
+    table(
+        out,
+        &["Время", "Пользователь", "Как", "Результат", "Команда"],
+        &sudo_rows(snapshot),
+    );
+}
+
 impl Section for SecuritySection {
     fn id(&self) -> SectionId {
         SectionId::Security
@@ -211,42 +250,8 @@ impl Section for SecuritySection {
             bullet(out, label, value);
         }
         blank(out);
-        for area in security_areas() {
-            let rows = check_rows(&audit, area);
-            if rows.is_empty() {
-                continue;
-            }
-            subheading(out, area.label());
-            table(out, &["Статус", "Вес", "Проверка", "Детали"], &rows);
-        }
-        subheading(out, "Атакующие IP");
-        table(
-            out,
-            &[
-                "IP",
-                "Страна",
-                "Ошибок",
-                "За 10 мин",
-                "Логины",
-                "Последняя",
-                "Пометки",
-            ],
-            &attacker_rows(snapshot, ctx),
-        );
-        subheading(out, "Баны");
-        table(out, &["IP", "Источник", "Истекает"], &ban_rows(snapshot));
-        subheading(out, "Последние входы");
-        table(
-            out,
-            &["Время", "Пользователь", "Откуда", "Метод"],
-            &login_rows(snapshot),
-        );
-        subheading(out, "Вызовы sudo");
-        table(
-            out,
-            &["Время", "Пользователь", "Как", "Результат", "Команда"],
-            &sudo_rows(snapshot),
-        );
+        human_checks(out, &audit);
+        human_activity(out, snapshot, ctx);
     }
 
     fn llm(&self, out: &mut String, ctx: &DocContext<'_>) {
