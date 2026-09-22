@@ -162,3 +162,54 @@ async fn spawn_collectors(
     }
     Ok(tasks)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn collect_interval_prefers_valid_custom_seconds() {
+        let intervals = Intervals::default();
+        let mut settings = ModuleSettings::default();
+        assert_eq!(
+            collect_interval(Schedule::Fast, &intervals, &settings),
+            Some(Duration::from_secs(intervals.fast_secs))
+        );
+        settings.insert(SETTING_INTERVAL.to_owned(), " 7 ".to_owned());
+        assert_eq!(
+            collect_interval(Schedule::Slow, &intervals, &settings),
+            Some(Duration::from_secs(7))
+        );
+        settings.insert(SETTING_INTERVAL.to_owned(), "0".to_owned());
+        assert_eq!(
+            collect_interval(Schedule::Normal, &intervals, &settings),
+            Some(Duration::from_secs(intervals.normal_secs))
+        );
+        assert_eq!(
+            collect_interval(Schedule::OnDemand, &intervals, &settings),
+            None
+        );
+    }
+
+    #[test]
+    fn untrusted_host_key_maps_only_key_errors() {
+        let unknown = TransportError::UnknownHostKey {
+            fingerprint: "SHA256:abc".to_owned(),
+        };
+        assert_eq!(
+            untrusted_host_key(&unknown),
+            Some(ConnectionStatus::UntrustedHostKey {
+                fingerprint: "SHA256:abc".to_owned(),
+                changed: false,
+            })
+        );
+        let changed = TransportError::HostKeyChanged {
+            fingerprint: "SHA256:def".to_owned(),
+        };
+        assert!(matches!(
+            untrusted_host_key(&changed),
+            Some(ConnectionStatus::UntrustedHostKey { changed: true, .. })
+        ));
+        assert_eq!(untrusted_host_key(&TransportError::Timeout), None);
+    }
+}

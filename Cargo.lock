@@ -409,6 +409,7 @@ dependencies = [
  "asiba-modules",
  "asiba-storage",
  "asiba-transport",
+ "async-trait",
  "chrono",
  "serde",
  "serde_json",

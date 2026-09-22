@@ -84,3 +84,85 @@ async fn detect_one(
         availability,
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use asiba_core::{
+        Availability, CollectContext, CommandOutput, Module, ModuleError, ModuleId, ModuleRegistry,
+        ModuleSettings, Schedule, Snapshot, SudoMode, Transport,
+    };
+    use async_trait::async_trait;
+
+    use super::*;
+
+    struct DeadTransport;
+
+    #[async_trait]
+    impl Transport for DeadTransport {
+        async fn exec(&self, _command: &str) -> Result<CommandOutput, TransportError> {
+            Err(TransportError::Disconnected("сессия закрыта".to_owned()))
+        }
+
+        async fn exec_root(&self, _command: &str) -> Result<CommandOutput, TransportError> {
+            Err(TransportError::Disconnected("сессия закрыта".to_owned()))
+        }
+
+        fn sudo_mode(&self) -> SudoMode {
+            SudoMode::None
+        }
+    }
+
+    struct Probe;
+
+    #[async_trait]
+    impl Module for Probe {
+        fn id(&self) -> ModuleId {
+            ModuleId("probe")
+        }
+
+        fn title(&self) -> &'static str {
+            "probe"
+        }
+
+        fn schedule(&self) -> Schedule {
+            Schedule::Normal
+        }
+
+        async fn detect(
+            &self,
+            transport: &dyn Transport,
+            _settings: &ModuleSettings,
+        ) -> Result<Availability, ModuleError> {
+            transport.exec("true").await?;
+            Ok(Availability::Available)
+        }
+
+        async fn collect(
+            &self,
+            _transport: &dyn Transport,
+            _context: &CollectContext,
+        ) -> Result<Snapshot, ModuleError> {
+            Ok(Snapshot::new(()))
+        }
+    }
+
+    #[tokio::test]
+    async fn detect_all_propagates_a_dropped_session() {
+        let transport: Arc<dyn Transport> = Arc::new(DeadTransport);
+        let registry = ModuleRegistry::new().register(Probe);
+        let spec = ServerSpec {
+            id: asiba_core::ServerId::parse("neo").expect("id"),
+            host: "h".into(),
+            port: 22,
+            user: "u".into(),
+            auth: asiba_core::AuthMethod::Auto,
+            jump: None,
+            sudo: SudoMode::None,
+            description: Default::default(),
+            location: None,
+            modules: Default::default(),
+        };
+        let result = detect_all(&transport, &registry, &spec).await;
+        assert!(matches!(result, Err(TransportError::Disconnected(_))));
+    }
+}
