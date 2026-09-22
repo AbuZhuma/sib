@@ -165,8 +165,7 @@ pub fn alert_counts(ui: &mut Ui, state: &AppState, server: &ServerState) {
     });
 }
 
-fn events(ui: &mut Ui, state: &AppState) {
-    let p = Palette::current(ui.ctx());
+fn level_filter(ui: &mut Ui, p: &Palette) -> Severity {
     let id = Id::new(EVENT_FILTER_KEY);
     let mut minimum: Severity = ui.ctx().data(|d| d.get_temp(id)).unwrap_or(Severity::Info);
     ui.horizontal(|ui| {
@@ -180,6 +179,12 @@ fn events(ui: &mut Ui, state: &AppState) {
         }
     });
     ui.ctx().data_mut(|d| d.insert_temp(id, minimum));
+    minimum
+}
+
+fn events(ui: &mut Ui, state: &AppState) {
+    let p = Palette::current(ui.ctx());
+    let minimum = level_filter(ui, &p);
     let shown: Vec<_> = state
         .events
         .iter()

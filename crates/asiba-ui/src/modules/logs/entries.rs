@@ -23,6 +23,13 @@ pub fn priority_color(p: &Palette, priority: u8) -> Color32 {
     }
 }
 
+const HEADERS: [&str; 4] = [
+    text::COL_TIME,
+    text::LOG_LEVEL,
+    text::LOG_SOURCE,
+    text::COL_MESSAGE,
+];
+
 pub fn table(
     ui: &mut Ui,
     server: &str,
@@ -36,12 +43,6 @@ pub fn table(
         .rev()
         .filter(|e| matches(query, e.source(), &e.message))
         .collect();
-    let headers = [
-        text::COL_TIME,
-        text::LOG_LEVEL,
-        text::LOG_SOURCE,
-        text::COL_MESSAGE,
-    ];
     let body_height = ui.available_height() * LONG_TABLE_FRACTION;
     let mut is_end_visible = false;
     TableBuilder::new(ui)
@@ -53,7 +54,7 @@ pub fn table(
         .column(Column::remainder().clip(true))
         .min_scrolled_height(body_height)
         .header(ROW_HEIGHT, |mut header| {
-            header_cells(&mut header, &headers, &p)
+            header_cells(&mut header, &HEADERS, &p)
         })
         .body(|body| {
             body.rows(ROW_HEIGHT, rows.len(), |mut row| {

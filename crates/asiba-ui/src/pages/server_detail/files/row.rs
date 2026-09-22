@@ -28,6 +28,26 @@ pub enum RowClick {
     Open,
 }
 
+fn row_response(
+    ui: &mut Ui,
+    ctx: &RowContext<'_>,
+    entry: &Entry,
+    (path, state): (&str, &TreeState),
+) -> egui::Response {
+    let builder = UiBuilder::new()
+        .id_salt(("files-row", path))
+        .sense(Sense::click());
+    ui.scope_builder(builder, |ui| {
+        let rect = Rect::from_min_size(ui.cursor().min, vec2(ui.available_width(), ROW_HEIGHT));
+        paint_background(ui, rect, path, state);
+        ui.allocate_ui_with_layout(rect.size(), Layout::left_to_right(Align::Center), |ui| {
+            content(ui, ctx, entry, state.is_expanded(path));
+        });
+    })
+    .response
+    .on_hover_cursor(egui::CursorIcon::PointingHand)
+}
+
 pub fn show(
     ui: &mut Ui,
     ctx: &RowContext<'_>,
@@ -35,19 +55,7 @@ pub fn show(
     state: &mut TreeState,
 ) -> (Option<RowClick>, Option<Action>) {
     let path = files::join_path(ctx.directory, &entry.name);
-    let builder = UiBuilder::new()
-        .id_salt(("files-row", path.as_str()))
-        .sense(Sense::click());
-    let response = ui
-        .scope_builder(builder, |ui| {
-            let rect = Rect::from_min_size(ui.cursor().min, vec2(ui.available_width(), ROW_HEIGHT));
-            paint_background(ui, rect, &path, state);
-            ui.allocate_ui_with_layout(rect.size(), Layout::left_to_right(Align::Center), |ui| {
-                content(ui, ctx, entry, state.is_expanded(&path));
-            });
-        })
-        .response
-        .on_hover_cursor(egui::CursorIcon::PointingHand);
+    let response = row_response(ui, ctx, entry, (&path, state));
     if response.clicked() {
         state.selected = Some(path.clone());
     }
