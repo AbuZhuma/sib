@@ -16,6 +16,22 @@ const SUMMARY_TOP: usize = 8;
 const ACTIONS_WIDTH: f32 = 104.0;
 const USER_WIDTH: f32 = 130.0;
 const MEMORY_WIDTH: f32 = 130.0;
+const PID_WIDTH: f32 = 64.0;
+const CPU_WIDTH: f32 = 64.0;
+const IO_WIDTH: f32 = 90.0;
+const STATE_WIDTH: f32 = 40.0;
+const UPTIME_WIDTH: f32 = 80.0;
+const FIXED_COLUMNS: [f32; 9] = [
+    PID_WIDTH,
+    USER_WIDTH,
+    CPU_WIDTH,
+    MEMORY_WIDTH,
+    IO_WIDTH,
+    IO_WIDTH,
+    STATE_WIDTH,
+    UPTIME_WIDTH,
+    ACTIONS_WIDTH,
+];
 
 const COLUMN_PID: usize = 0;
 const COLUMN_USER: usize = 1;
@@ -188,18 +204,13 @@ fn table(
     ];
     let body_height = ui.available_height() * LONG_TABLE_FRACTION;
     let mut action = None;
-    TableBuilder::new(ui)
+    let mut builder = TableBuilder::new(ui)
         .scroll_bar_visibility(ScrollBarVisibility::AlwaysHidden)
-        .striped(true)
-        .column(Column::exact(64.0))
-        .column(Column::exact(USER_WIDTH))
-        .column(Column::exact(64.0))
-        .column(Column::exact(MEMORY_WIDTH))
-        .column(Column::exact(90.0))
-        .column(Column::exact(90.0))
-        .column(Column::exact(40.0))
-        .column(Column::exact(80.0))
-        .column(Column::exact(ACTIONS_WIDTH))
+        .striped(true);
+    for width in FIXED_COLUMNS {
+        builder = builder.column(Column::exact(width));
+    }
+    builder
         .column(Column::remainder().clip(true))
         .min_scrolled_height(body_height)
         .header(ROW_HEIGHT, |mut header| {

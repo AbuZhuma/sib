@@ -36,14 +36,14 @@ pub fn show(ui: &mut Ui, ctx: &SummaryContext<'_>) -> Option<Action> {
         action = Some(next);
     }
     let editing = edit_toggle(ui);
-    let available: Vec<&dyn ModuleView> = ctx
-        .views
-        .iter()
-        .map(Box::as_ref)
-        .filter(|v| v.has_content(server))
-        .collect();
+    let available = available_views(ctx);
     let mut layout = ctx.layout.clone();
-    let mut changed = module_grid(ui, ctx, &available, &mut layout, editing);
+    let grid = GridContext {
+        ctx,
+        available: &available,
+        editing,
+    };
+    let mut changed = module_grid(ui, &grid, &mut layout);
     if editing {
         changed |= hidden_list(ui, &mut layout, &available);
     }
@@ -75,21 +75,37 @@ fn full_audit(ui: &mut Ui, ctx: &SummaryContext<'_>) -> Option<Action> {
     action
 }
 
-fn module_grid(
-    ui: &mut Ui,
-    ctx: &SummaryContext<'_>,
-    available: &[&dyn ModuleView],
-    layout: &mut SummaryLayout,
+struct GridContext<'a> {
+    ctx: &'a SummaryContext<'a>,
+    available: &'a [&'a dyn ModuleView],
     editing: bool,
-) -> bool {
-    let server = ctx.server;
-    let ids: Vec<&str> = available.iter().map(|v| v.id().0).collect();
-    let visible: Vec<&dyn ModuleView> = layout
-        .arrange(&ids)
+}
+
+fn available_views<'a>(ctx: &'a SummaryContext<'a>) -> Vec<&'a dyn ModuleView> {
+    ctx.views
+        .iter()
+        .map(Box::as_ref)
+        .filter(|v| v.has_content(ctx.server))
+        .collect()
+}
+
+fn visible_views<'a>(
+    available: &[&'a dyn ModuleView],
+    layout: &SummaryLayout,
+    ids: &[&str],
+) -> Vec<&'a dyn ModuleView> {
+    layout
+        .arrange(ids)
         .into_iter()
         .filter(|id| !layout.is_hidden(id))
         .filter_map(|id| available.iter().copied().find(|v| v.id().0 == id))
-        .collect();
+        .collect()
+}
+
+fn module_grid(ui: &mut Ui, grid: &GridContext<'_>, layout: &mut SummaryLayout) -> bool {
+    let server = grid.ctx.server;
+    let ids: Vec<&str> = grid.available.iter().map(|v| v.id().0).collect();
+    let visible = visible_views(grid.available, layout, &ids);
     let mut changed = false;
     ui.columns(2, |columns| {
         for (index, view) in visible.iter().enumerate() {
@@ -99,29 +115,33 @@ fn module_grid(
                 column,
                 view.title(),
                 |ui| {
-                    if editing {
+                    if grid.editing {
                         changed |= layout_controls(ui, layout, &ids, id);
                     } else {
                         open_button(ui, view.tab());
                     }
                 },
-                |ui| view.summary(ui, server, ctx.shared),
+                |ui| view.summary(ui, server, grid.ctx.shared),
             );
             column.add_space(GAP);
         }
-        let short = shorter_column(columns);
-        panel(&mut columns[short], text::DETAIL_SECTION_MODULES, |ui| {
-            modules_table::show(ui, server)
-        });
-        columns[short].add_space(GAP);
-        let short = shorter_column(columns);
-        panel(
-            &mut columns[short],
-            text::DETAIL_SECTION_DESCRIPTION,
-            |ui| header::description(ui, server),
-        );
+        fixed_panels(columns, server);
     });
     changed
+}
+
+fn fixed_panels(columns: &mut [Ui], server: &ServerState) {
+    let short = shorter_column(columns);
+    panel(&mut columns[short], text::DETAIL_SECTION_MODULES, |ui| {
+        modules_table::show(ui, server)
+    });
+    columns[short].add_space(GAP);
+    let short = shorter_column(columns);
+    panel(
+        &mut columns[short],
+        text::DETAIL_SECTION_DESCRIPTION,
+        |ui| header::description(ui, server),
+    );
 }
 
 fn incidents(ui: &mut Ui, ctx: &SummaryContext<'_>) -> Option<Action> {
