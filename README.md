@@ -17,13 +17,13 @@
 
 ## Сборка и запуск
 
-Нужен Rust 1.98+ и системные библиотеки для окна (на Fedora: `libxkbcommon-devel wayland-devel`; для keyring — Secret Service, например GNOME Keyring или KWallet).
+Нужен Rust 1.88+ (let-chains) и системные библиотеки для окна (на Fedora: `libxkbcommon-devel wayland-devel`; для keyring — Secret Service, например GNOME Keyring или KWallet).
 
 ```
 cargo run -p asiba-app --release
 ```
 
-Проверки перед коммитом:
+Проверки перед коммитом (те же шаги гоняет CI в `.github/workflows/ci.yml`, плюс `cargo deny check` по `deny.toml`):
 
 ```
 cargo fmt
