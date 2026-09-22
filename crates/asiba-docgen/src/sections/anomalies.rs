@@ -1,5 +1,5 @@
 use asiba_core::Severity;
-use asiba_modules::anomalies::{self, AnomaliesSnapshot};
+use asiba_modules::anomalies::{self, AnomaliesSnapshot, Rates};
 
 use crate::section::{DocContext, Section, SectionId};
 use crate::write::{NONE, blank, bullet, field, heading, list, table};
@@ -35,6 +35,26 @@ fn rate(value: Option<f64>) -> String {
         .unwrap_or_else(|| NONE.to_owned())
 }
 
+type RateField = fn(&Rates) -> f64;
+
+const RATE_ROWS: [(&str, &str, RateField); 5] = [
+    (
+        "Новых соединений/с",
+        "new_connections_per_s",
+        |r| r.new_connections,
+    ),
+    (
+        "Неудачных соединений/с",
+        "failed_connections_per_s",
+        |r| r.failed_connections,
+    ),
+    ("SYN cookies/с", "syncookies_per_s", |r| r.syncookies),
+    ("Сбросов accept/с", "listen_drops_per_s", |r| {
+        r.listen_drops
+    }),
+    ("UDP/с", "udp_per_s", |r| r.udp_in),
+];
+
 fn counters(snapshot: &AnomaliesSnapshot) -> Vec<(&'static str, &'static str, String)> {
     let rates = snapshot.rates;
     let mut rows = vec![
@@ -62,33 +82,15 @@ fn counters(snapshot: &AnomaliesSnapshot) -> Vec<(&'static str, &'static str, St
                 rate(rates.map(|r| r.pps_out))
             ),
         ),
-        (
-            "Новых соединений/с",
-            "new_connections_per_s",
-            rate(rates.map(|r| r.new_connections)),
-        ),
-        (
-            "Неудачных соединений/с",
-            "failed_connections_per_s",
-            rate(rates.map(|r| r.failed_connections)),
-        ),
-        (
-            "SYN cookies/с",
-            "syncookies_per_s",
-            rate(rates.map(|r| r.syncookies)),
-        ),
-        (
-            "Сбросов accept/с",
-            "listen_drops_per_s",
-            rate(rates.map(|r| r.listen_drops)),
-        ),
-        ("UDP/с", "udp_per_s", rate(rates.map(|r| r.udp_in))),
-        (
-            "Доля топ-10 адресов",
-            "top10_share_pct",
-            format!("{:.0}%", snapshot.top_share_pct()),
-        ),
     ];
+    for (label, key, field) in RATE_ROWS {
+        rows.push((label, key, rate(rates.as_ref().map(field))));
+    }
+    rows.push((
+        "Доля топ-10 адресов",
+        "top10_share_pct",
+        format!("{:.0}%", snapshot.top_share_pct()),
+    ));
     if let Some((count, max)) = snapshot.conntrack {
         rows.push(("conntrack", "conntrack", format!("{count} / {max}")));
     }

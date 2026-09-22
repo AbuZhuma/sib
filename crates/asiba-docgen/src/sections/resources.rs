@@ -126,6 +126,50 @@ fn memory_rows(snapshot: &MemorySnapshot) -> Vec<(&'static str, &'static str, St
     rows
 }
 
+fn human_memory(out: &mut String, ctx: &DocContext<'_>) {
+    let Some(memory) = ctx.server.data::<MemorySnapshot>(memory::ID) else {
+        return;
+    };
+    subheading(out, "Память");
+    for (label, _, value) in memory_rows(memory) {
+        bullet(out, label, value);
+    }
+    blank(out);
+}
+
+fn human_filesystems(out: &mut String, ctx: &DocContext<'_>) {
+    let Some(disk) = ctx.server.data::<DiskSnapshot>(disk::ID) else {
+        return;
+    };
+    subheading(out, "Файловые системы");
+    let columns = [
+        "Точка",
+        "Устройство",
+        "Занято",
+        "Использовано",
+        "Всего",
+        "Inodes",
+    ];
+    table(out, &columns, &filesystem_rows(disk));
+}
+
+fn human_interfaces(out: &mut String, ctx: &DocContext<'_>) {
+    let Some(net) = ctx.server.data::<NetworkSnapshot>(network::ID) else {
+        return;
+    };
+    subheading(out, "Интерфейсы");
+    let columns = [
+        "Интерфейс",
+        "Состояние",
+        "Адреса",
+        "RX",
+        "TX",
+        "Ошибки",
+        "Потери",
+    ];
+    table(out, &columns, &interface_rows(net));
+}
+
 impl Section for ResourcesSection {
     fn id(&self) -> SectionId {
         SectionId::Resources
@@ -149,44 +193,9 @@ impl Section for ResourcesSection {
             ],
             &metric_rows(ctx, false),
         );
-        if let Some(memory) = ctx.server.data::<MemorySnapshot>(memory::ID) {
-            subheading(out, "Память");
-            for (label, _, value) in memory_rows(memory) {
-                bullet(out, label, value);
-            }
-            blank(out);
-        }
-        if let Some(disk) = ctx.server.data::<DiskSnapshot>(disk::ID) {
-            subheading(out, "Файловые системы");
-            table(
-                out,
-                &[
-                    "Точка",
-                    "Устройство",
-                    "Занято",
-                    "Использовано",
-                    "Всего",
-                    "Inodes",
-                ],
-                &filesystem_rows(disk),
-            );
-        }
-        if let Some(net) = ctx.server.data::<NetworkSnapshot>(network::ID) {
-            subheading(out, "Интерфейсы");
-            table(
-                out,
-                &[
-                    "Интерфейс",
-                    "Состояние",
-                    "Адреса",
-                    "RX",
-                    "TX",
-                    "Ошибки",
-                    "Потери",
-                ],
-                &interface_rows(net),
-            );
-        }
+        human_memory(out, ctx);
+        human_filesystems(out, ctx);
+        human_interfaces(out, ctx);
     }
 
     fn llm(&self, out: &mut String, ctx: &DocContext<'_>) {
