@@ -2,6 +2,23 @@ use asiba_core::Series;
 use egui::{Color32, Pos2, Rect, Sense, Stroke, Ui, Vec2};
 
 const LINE_WIDTH: f32 = 1.25;
+const MIN_TOP: f64 = 1e-9;
+const FILL_ALPHA: f32 = 0.18;
+
+fn polyline(series: &Series, rect: Rect, max: Option<f64>) -> Vec<Pos2> {
+    let top = max.unwrap_or_else(|| series.max_value()).max(MIN_TOP);
+    let values = downsample(series, rect.width() as usize);
+    let step = rect.width() / (values.len().max(2) - 1) as f32;
+    values
+        .iter()
+        .enumerate()
+        .map(|(index, value)| {
+            let x = rect.left() + step * index as f32;
+            let ratio = (value / top).clamp(0.0, 1.0) as f32;
+            Pos2::new(x, rect.bottom() - ratio * rect.height())
+        })
+        .collect()
+}
 
 pub fn sparkline(
     ui: &mut Ui,
@@ -15,20 +32,9 @@ pub fn sparkline(
     let Some(series) = series.filter(|s| s.len() > 1) else {
         return;
     };
-    let top = max.unwrap_or_else(|| series.max_value()).max(1e-9);
-    let values = downsample(series, rect.width() as usize);
-    let step = rect.width() / (values.len().max(2) - 1) as f32;
-    let points: Vec<Pos2> = values
-        .iter()
-        .enumerate()
-        .map(|(index, value)| {
-            let x = rect.left() + step * index as f32;
-            let ratio = (value / top).clamp(0.0, 1.0) as f32;
-            Pos2::new(x, rect.bottom() - ratio * rect.height())
-        })
-        .collect();
+    let points = polyline(series, rect, max);
     let painter = ui.painter();
-    let fill = color.gamma_multiply(0.18);
+    let fill = color.gamma_multiply(FILL_ALPHA);
     for pair in points.windows(2) {
         let quad = [
             pair[0],

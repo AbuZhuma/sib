@@ -108,35 +108,28 @@ fn rules_table(ui: &mut Ui, custom: &mut Vec<AlertRule>) -> bool {
     true
 }
 
+fn draft_fields(ui: &mut Ui, draft: &mut Draft) {
+    let field = |ui: &mut Ui, value: &mut String, hint: &str, width: f32| {
+        ui.add(
+            TextEdit::singleline(value)
+                .hint_text(hint)
+                .desired_width(width),
+        );
+    };
+    field(ui, &mut draft.name, text::RULE_NAME, FIELD_WIDTH / 2.0);
+    field(ui, &mut draft.metric, text::RULE_METRIC, FIELD_WIDTH / 2.0);
+    condition_picker(ui, &mut draft.condition);
+    field(ui, &mut draft.threshold, text::RULE_THRESHOLD, SHORT_FIELD);
+    field(ui, &mut draft.for_secs, text::RULE_FOR, SHORT_FIELD);
+    severity_picker(ui, &mut draft.severity);
+}
+
 fn add_form(ui: &mut Ui, custom: &mut Vec<AlertRule>) -> bool {
     let p = Palette::current(ui.ctx());
     let id = Id::new(DRAFT_KEY);
     let mut draft: Draft = ui.ctx().data(|d| d.get_temp(id)).unwrap_or_default();
     ui.label(RichText::new(text::RULE_HINT).small().color(p.text_muted));
-    ui.horizontal_wrapped(|ui| {
-        ui.add(
-            TextEdit::singleline(&mut draft.name)
-                .hint_text(text::RULE_NAME)
-                .desired_width(FIELD_WIDTH / 2.0),
-        );
-        ui.add(
-            TextEdit::singleline(&mut draft.metric)
-                .hint_text(text::RULE_METRIC)
-                .desired_width(FIELD_WIDTH / 2.0),
-        );
-        condition_picker(ui, &mut draft.condition);
-        ui.add(
-            TextEdit::singleline(&mut draft.threshold)
-                .hint_text(text::RULE_THRESHOLD)
-                .desired_width(SHORT_FIELD),
-        );
-        ui.add(
-            TextEdit::singleline(&mut draft.for_secs)
-                .hint_text(text::RULE_FOR)
-                .desired_width(SHORT_FIELD),
-        );
-        severity_picker(ui, &mut draft.severity);
-    });
+    ui.horizontal_wrapped(|ui| draft_fields(ui, &mut draft));
     let rule = draft.build();
     let added = ui
         .add_enabled(rule.is_some(), egui::Button::new(text::RULE_ADD))
