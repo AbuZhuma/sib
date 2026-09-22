@@ -37,22 +37,31 @@ pub fn show(
         return None;
     }
     for area in Area::ALL {
-        let checks: Vec<&AuditCheck> = audit
-            .in_area(area)
-            .filter(|c| show_passed || c.is_problem())
-            .collect();
-        if checks.is_empty() {
-            continue;
-        }
-        let problems = checks.iter().filter(|c| c.is_problem()).count();
-        category_header(ui, area.label(), problems, &p);
-        for check in checks {
-            if check_row(ui, check, &p) {
-                *subpage = Subpage::problem(check.key());
-            }
+        if let Some(opened) = area_rows(ui, audit, area, show_passed) {
+            *subpage = Subpage::problem(opened);
         }
     }
     None
+}
+
+fn area_rows(ui: &mut Ui, audit: &SystemAudit, area: Area, show_passed: bool) -> Option<String> {
+    let p = Palette::current(ui.ctx());
+    let checks: Vec<&AuditCheck> = audit
+        .in_area(area)
+        .filter(|c| show_passed || c.is_problem())
+        .collect();
+    if checks.is_empty() {
+        return None;
+    }
+    let problems = checks.iter().filter(|c| c.is_problem()).count();
+    category_header(ui, area.label(), problems, &p);
+    let mut opened = None;
+    for check in checks {
+        if check_row(ui, check, &p) {
+            opened = Some(check.key());
+        }
+    }
+    opened
 }
 
 fn counts_line(ui: &mut Ui, audit: &SystemAudit, p: &Palette) {

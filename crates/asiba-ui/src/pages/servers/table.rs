@@ -13,19 +13,7 @@ use crate::theme::Palette;
 pub fn show(ui: &mut Ui, servers: &[&ServerState], state: &AppState) -> Option<ServerId> {
     let p = Palette::current(ui.ctx());
     let mut clicked = None;
-    let columns = [
-        text::COL_NAME,
-        text::COL_STATUS,
-        text::FORM_ENVIRONMENT,
-        text::COL_HOST,
-        text::FORM_TAGS_SHORT,
-        "CPU",
-        "RAM",
-        "DISK",
-        text::COL_UPTIME,
-        text::COL_ALERTS,
-    ];
-    Table::new("servers-table", &columns).show(ui, |ui| {
+    Table::new("servers-table", &COLUMNS).show(ui, |ui| {
         for server in servers {
             if ui
                 .link(RichText::new(server.spec.id.as_str()).strong())
@@ -33,25 +21,40 @@ pub fn show(ui: &mut Ui, servers: &[&ServerState], state: &AppState) -> Option<S
             {
                 clicked = Some(server.spec.id.clone());
             }
-            ui.horizontal(|ui| {
-                status_label(ui, &server.connection);
-                attack_badge(ui, server);
-            });
-            badge(
-                ui,
-                environment_label(server.spec.description.environment),
-                p.text_secondary,
-            );
-            ui.monospace(&server.spec.host);
-            ui.label(
-                RichText::new(server.spec.description.tags.join(", ")).color(p.text_secondary),
-            );
+            identity_cells(ui, server, &p);
             usage_cells(ui, server);
             alert_counts(ui, state, server);
             ui.end_row();
         }
     });
     clicked
+}
+
+const COLUMNS: [&str; 10] = [
+    text::COL_NAME,
+    text::COL_STATUS,
+    text::FORM_ENVIRONMENT,
+    text::COL_HOST,
+    text::FORM_TAGS_SHORT,
+    "CPU",
+    "RAM",
+    "DISK",
+    text::COL_UPTIME,
+    text::COL_ALERTS,
+];
+
+fn identity_cells(ui: &mut Ui, server: &ServerState, p: &Palette) {
+    ui.horizontal(|ui| {
+        status_label(ui, &server.connection);
+        attack_badge(ui, server);
+    });
+    badge(
+        ui,
+        environment_label(server.spec.description.environment),
+        p.text_secondary,
+    );
+    ui.monospace(&server.spec.host);
+    ui.label(RichText::new(server.spec.description.tags.join(", ")).color(p.text_secondary));
 }
 
 fn usage_cells(ui: &mut Ui, server: &ServerState) {
