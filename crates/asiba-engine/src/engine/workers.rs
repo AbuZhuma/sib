@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex};
 
-use asiba_core::{Credentials, ServerId, ServerSpec, ServerState};
+use asiba_core::{Credentials, ModuleId, ServerId, ServerSpec, ServerState};
 use asiba_transport::HostKeyPolicy;
 use tokio::sync::broadcast;
 
@@ -95,30 +95,14 @@ impl Engine {
         }
         let transport: TransportSlot = Arc::new(Mutex::new(None));
         let (backfill, _) = broadcast::channel(worker::BACKFILL_QUEUE);
-        let ctx = WorkerContext {
-            spec: spec.clone(),
-            intervals: self.intervals,
-            credentials: credentials.clone(),
-            policy,
-            registry: self.registry.clone(),
-            state: Arc::clone(&self.state),
-            notify: Arc::clone(&self.notify),
-            storage: self.storage.clone(),
-            transport: Arc::clone(&transport),
-            backfill: backfill.clone(),
-            docs: DocWriter::new(
-                self.persistence.doc_path(&spec.id),
-                self.persistence.llm_doc_path(&spec.id),
-            ),
-        };
+        let ctx = self.worker_context(&spec, &credentials, policy, (&transport, &backfill));
         let task = tokio::spawn(worker::run(ctx));
-        let prefill = history::Prefill {
+        history::prefill(history::Prefill {
             path: self.history_path.clone(),
             state: Arc::clone(&self.state),
             server: spec.id.clone(),
             notify: Arc::clone(&self.notify),
-        };
-        history::prefill(prefill);
+        });
         geo::resolve_server(self.geo_request(), spec.clone());
         let entry = WorkerEntry {
             task,
@@ -129,5 +113,30 @@ impl Engine {
         };
         self.workers.insert(spec.id, entry);
         (self.notify)();
+    }
+
+    fn worker_context(
+        &self,
+        spec: &ServerSpec,
+        credentials: &Credentials,
+        policy: HostKeyPolicy,
+        channels: (&TransportSlot, &broadcast::Sender<ModuleId>),
+    ) -> WorkerContext {
+        WorkerContext {
+            spec: spec.clone(),
+            intervals: self.intervals,
+            credentials: credentials.clone(),
+            policy,
+            registry: self.registry.clone(),
+            state: Arc::clone(&self.state),
+            notify: Arc::clone(&self.notify),
+            storage: self.storage.clone(),
+            transport: Arc::clone(channels.0),
+            backfill: channels.1.clone(),
+            docs: DocWriter::new(
+                self.persistence.doc_path(&spec.id),
+                self.persistence.llm_doc_path(&spec.id),
+            ),
+        }
     }
 }
