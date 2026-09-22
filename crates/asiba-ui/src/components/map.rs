@@ -16,6 +16,9 @@ const HOME_RADIUS: f32 = 4.0;
 const HIT_RADIUS: f32 = 12.0;
 const LABEL_OFFSET: f32 = 9.0;
 const LABEL_PADDING: f32 = 2.0;
+const LINE_WIDTH: f32 = 1.0;
+const PING_FONT_SIZE: f32 = 11.0;
+const LABEL_FONT_SIZE: f32 = 12.0;
 const WORLD_ZOOM: f64 = 3.0;
 const CLICKED_KEY: &str = "map-clicked-server";
 const USER_AGENT: &str = concat!("asiba/", env!("CARGO_PKG_VERSION"));
@@ -147,6 +150,21 @@ impl Markers {
         painter.rect_filled(rect.expand(LABEL_PADDING), 2.0, self.label_bg);
         painter.galley(rect.min, galley, self.text);
     }
+
+    fn ping_line(&self, painter: &egui::Painter, home: Pos2, at: Pos2, ping: Option<&str>) {
+        painter.line_segment([home, at], Stroke::new(LINE_WIDTH, self.line));
+        let Some(ping) = ping else {
+            return;
+        };
+        let middle = Pos2::new((home.x + at.x) / 2.0, (home.y + at.y) / 2.0);
+        self.label(
+            painter,
+            middle,
+            Align2::CENTER_CENTER,
+            ping,
+            FontId::monospace(PING_FONT_SIZE),
+        );
+    }
 }
 
 impl Plugin for Markers {
@@ -166,26 +184,16 @@ impl Plugin for Markers {
         for marker in &self.servers {
             let at = projector.project(marker.position).to_pos2();
             if let Some(home) = home {
-                painter.line_segment([home, at], Stroke::new(1.0, self.line));
-                if let Some(ping) = &marker.ping {
-                    let middle = Pos2::new((home.x + at.x) / 2.0, (home.y + at.y) / 2.0);
-                    self.label(
-                        &painter,
-                        middle,
-                        Align2::CENTER_CENTER,
-                        ping,
-                        FontId::monospace(11.0),
-                    );
-                }
+                self.ping_line(&painter, home, at, marker.ping.as_deref());
             }
             painter.circle_filled(at, MARKER_RADIUS, marker.color);
-            painter.circle_stroke(at, MARKER_RADIUS, Stroke::new(1.0, self.text));
+            painter.circle_stroke(at, MARKER_RADIUS, Stroke::new(LINE_WIDTH, self.text));
             self.label(
                 &painter,
                 Pos2::new(at.x + LABEL_OFFSET, at.y),
                 Align2::LEFT_CENTER,
                 &marker.label,
-                FontId::proportional(12.0),
+                FontId::proportional(LABEL_FONT_SIZE),
             );
             if response.clicked() && pointer.is_some_and(|pos| pos.distance(at) <= HIT_RADIUS) {
                 ui.ctx()

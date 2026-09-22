@@ -1,4 +1,4 @@
-use asiba_core::AppState;
+use asiba_core::{AppState, ServerId};
 use egui::{RichText, Ui};
 
 use crate::components::status::status_color;
@@ -34,20 +34,28 @@ pub fn sidebar(ui: &mut Ui, page: &Page, state: &AppState) -> Option<Action> {
     }
     ui.add_space(GAP);
     ui.separator();
+    if let Some(clicked) = server_list(ui, page, state, &p) {
+        action = Some(Action::Navigate(Page::ServerDetail(clicked)));
+    }
+    action
+}
+
+fn server_list(ui: &mut Ui, page: &Page, state: &AppState, p: &Palette) -> Option<ServerId> {
+    let mut clicked = None;
     scroll::vertical().show(ui, |ui| {
         for server in state.servers.values() {
             let id = &server.spec.id;
             let selected = matches!(page, Page::ServerDetail(current) if current == id);
-            let color = status_color(&p, &server.connection);
+            let color = status_color(p, &server.connection);
             ui.horizontal(|ui| {
                 status_dot(ui, color);
                 if nav_item(ui, id.as_str(), selected).clicked() {
-                    action = Some(Action::Navigate(Page::ServerDetail(id.clone())));
+                    clicked = Some(id.clone());
                 }
             });
         }
     });
-    action
+    clicked
 }
 
 fn is_selected(page: &Page, target: &Page) -> bool {
