@@ -63,7 +63,6 @@ impl FormFields {
             port: 22,
             user: String::new(),
         });
-        let d = &spec.description;
         Self {
             name: spec.id.to_string(),
             host: spec.host.clone(),
@@ -76,13 +75,6 @@ impl FormFields {
             jump_port: jump.port.to_string(),
             jump_user: jump.user,
             sudo: spec.sudo,
-            project: d.project.clone(),
-            purpose: d.purpose.clone(),
-            environment: d.environment,
-            tags: d.tags.join(", "),
-            owner: d.owner.clone(),
-            links: d.links.join("\n"),
-            notes: d.notes.clone(),
             location: spec
                 .location
                 .as_ref()
@@ -94,6 +86,19 @@ impl FormFields {
                 .map(|l| l.label.clone())
                 .unwrap_or_default(),
             modules: spec.modules.clone(),
+            ..Self::from_description(&spec.description)
+        }
+    }
+
+    fn from_description(d: &ServerDescription) -> Self {
+        Self {
+            project: d.project.clone(),
+            purpose: d.purpose.clone(),
+            environment: d.environment,
+            tags: d.tags.join(", "),
+            owner: d.owner.clone(),
+            links: d.links.join("\n"),
+            notes: d.notes.clone(),
             ..Self::default()
         }
     }

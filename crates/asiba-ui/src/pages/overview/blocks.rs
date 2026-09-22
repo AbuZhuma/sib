@@ -1,4 +1,4 @@
-use asiba_core::{AppState, AuditTarget, IgnoredIncident, ServerState};
+use asiba_core::{AppState, AuditTarget, IgnoredIncident, ServerId, ServerState};
 use asiba_modules::anomalies::{self, AnomaliesSnapshot};
 use asiba_modules::deploy::{self, DeployState};
 use asiba_modules::{cpu, disk, memory, network};
@@ -113,6 +113,17 @@ pub fn active_anomalies(ui: &mut Ui, state: &AppState) -> Option<Action> {
     action
 }
 
+fn ranking_cell(ui: &mut Ui, entry: Option<&(ServerId, String)>) -> Option<ServerId> {
+    let Some((server, value)) = entry else {
+        ui.label("");
+        ui.label("");
+        return None;
+    };
+    let clicked = ui.link(server.as_str()).clicked();
+    ui.monospace(value);
+    clicked.then(|| server.clone())
+}
+
 pub fn top_servers(ui: &mut Ui, state: &AppState) -> Option<Action> {
     if state.servers.len() < 2 {
         return None;
@@ -138,17 +149,8 @@ pub fn top_servers(ui: &mut Ui, state: &AppState) -> Option<Action> {
         Table::new("overview-top", &columns).show(ui, |ui| {
             for index in 0..TOP_COUNT {
                 for ranking in &rankings {
-                    match ranking.get(index) {
-                        Some((server, value)) => {
-                            if ui.link(server.as_str()).clicked() {
-                                action = Some(Action::Navigate(Page::ServerDetail(server.clone())));
-                            }
-                            ui.monospace(value);
-                        }
-                        None => {
-                            ui.label("");
-                            ui.label("");
-                        }
+                    if let Some(clicked) = ranking_cell(ui, ranking.get(index)) {
+                        action = Some(Action::Navigate(Page::ServerDetail(clicked)));
                     }
                 }
                 ui.end_row();
