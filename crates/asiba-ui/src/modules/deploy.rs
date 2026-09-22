@@ -1,6 +1,6 @@
 use asiba_core::{ModuleId, ServerState};
 use asiba_modules::deploy::{self, Deploy, DeployState, DeployStatus, StageStatus};
-use chrono::Utc;
+use chrono::{DateTime, Utc};
 use egui::{Color32, CornerRadius, Frame, Id, Margin, RichText, Stroke, TextEdit, Ui};
 
 use super::{ModuleView, Tab, ViewAction, ViewShared};
@@ -208,6 +208,15 @@ fn log_block(ui: &mut Ui, lines: &[String], p: &Palette) {
     });
 }
 
+fn history_cells(ui: &mut Ui, deploy: &Deploy, now: DateTime<Utc>, p: &Palette) {
+    status_badge(ui, deploy.status, p);
+    ui.label(&deploy.project);
+    ui.label(RichText::new(deploy.source.label()).color(p.text_secondary));
+    ui.monospace(format::date_time(deploy.started_at));
+    ui.monospace(format::duration_short(deploy.duration_secs(now) as f64));
+    timeline(ui, deploy, p);
+}
+
 fn history_table(ui: &mut Ui, snapshot: &deploy::DeploySnapshot, needle: &str, p: &Palette) {
     let now = Utc::now();
     let open_id = Id::new(OPEN_KEY);
@@ -227,12 +236,7 @@ fn history_table(ui: &mut Ui, snapshot: &deploy::DeploySnapshot, needle: &str, p
             .iter()
             .filter(|d| matches_filter(d, needle))
         {
-            status_badge(ui, deploy.status, p);
-            ui.label(&deploy.project);
-            ui.label(RichText::new(deploy.source.label()).color(p.text_secondary));
-            ui.monospace(format::date_time(deploy.started_at));
-            ui.monospace(format::duration_short(deploy.duration_secs(now) as f64));
-            timeline(ui, deploy, p);
+            history_cells(ui, deploy, now, p);
             let is_open = open.as_deref() == Some(&deploy.key);
             let label = if is_open {
                 text::DEP_HIDE

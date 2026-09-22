@@ -1,5 +1,5 @@
 use asiba_core::{QueryRequest, ServerId};
-use asiba_modules::files;
+use asiba_modules::files::{self, Listing};
 use egui::{RichText, Ui};
 
 use super::browser::FileBrowser;
@@ -49,6 +49,11 @@ pub fn directory(
             action = action.or(directory(ui, ctx, &child, depth + 1, state));
         }
     }
+    listing_notes(ui, ctx, depth, listing);
+    action
+}
+
+fn listing_notes(ui: &mut Ui, ctx: &TreeContext<'_>, depth: usize, listing: &Listing) {
     if listing.is_truncated {
         note(
             ui,
@@ -60,7 +65,6 @@ pub fn directory(
     if listing.entries.is_empty() {
         note(ui, ctx, depth, text::FILES_EMPTY);
     }
-    action
 }
 
 fn handle_click(
