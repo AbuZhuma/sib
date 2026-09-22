@@ -64,23 +64,11 @@ fn active_table(ui: &mut Ui, state: &AppState) -> Option<Action> {
     }
     active.sort_by_key(|a| (std::cmp::Reverse(a.severity), a.started_at));
     let mut action = None;
-    let columns = [
-        text::COL_SEVERITY,
-        text::COL_SERVER,
-        text::ALERTS_RULE,
-        text::ALERTS_VALUE,
-        text::ALERTS_STARTED,
-        text::ALERTS_DURATION,
-        "",
-    ];
-    Table::new("alerts-active", &columns).show(ui, |ui| {
+    Table::new("alerts-active", &ACTIVE_COLUMNS).show(ui, |ui| {
         for alert in active {
             let color = severity_color(&p, alert.severity);
             badge(ui, severity_label(alert.severity), color);
-            if ui.link(alert.server.as_str()).clicked() {
-                action = Some(open_details(ui, alert));
-            }
-            if rule_cell(ui, alert, &p) {
+            if ui.link(alert.server.as_str()).clicked() || rule_cell(ui, alert, &p) {
                 action = Some(open_details(ui, alert));
             }
             ui.monospace(format!("{:.1}", alert.value));
@@ -96,6 +84,16 @@ fn active_table(ui: &mut Ui, state: &AppState) -> Option<Action> {
     });
     action
 }
+
+const ACTIVE_COLUMNS: [&str; 7] = [
+    text::COL_SEVERITY,
+    text::COL_SERVER,
+    text::ALERTS_RULE,
+    text::ALERTS_VALUE,
+    text::ALERTS_STARTED,
+    text::ALERTS_DURATION,
+    "",
+];
 
 fn open_details(ui: &Ui, alert: &Alert) -> Action {
     select_tab(ui.ctx(), Tab::for_metric(&alert.metric));

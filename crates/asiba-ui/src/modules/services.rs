@@ -113,27 +113,12 @@ fn custom_units_table(ui: &mut Ui, snapshot: &ServicesSnapshot, p: &Palette) {
 fn units_table(ui: &mut Ui, snapshot: &ServicesSnapshot, filters: Filters) -> Option<ViewAction> {
     let p = Palette::current(ui.ctx());
     let mut action = None;
-    let columns = [
-        text::COL_MODULE,
-        text::COL_STATUS,
-        text::SVC_RESTARTS,
-        "PID",
-        text::COL_MESSAGE,
-        "",
-    ];
-    let rows = snapshot.units.iter().filter(|u| {
-        (!filters.only_problems || u.is_failed() || u.restarts > 0)
-            && (!filters.only_custom || u.origin() == UnitOrigin::Custom)
-    });
-    let table = Table::new("services-units", &columns).sortable(&UNIT_SORTABLE, UNIT_DEFAULT_SORT);
+    let rows = snapshot.units.iter().filter(|u| filters.accepts(u));
+    let table =
+        Table::new("services-units", &UNIT_COLUMNS).sortable(&UNIT_SORTABLE, UNIT_DEFAULT_SORT);
     table.show_sorted(ui, |ui, sort| {
         let mut rows: Vec<&Unit> = rows.collect();
-        sort_rows(&mut rows, sort, |unit, column| match column {
-            0 => SortKey::text(unit.short_name()),
-            1 => SortKey::text(&unit.sub),
-            2 => SortKey::number(unit.restarts as f64),
-            _ => SortKey::number(unit.main_pid as f64),
-        });
+        sort_rows(&mut rows, sort, |unit, column| unit_sort_key(unit, column));
         for unit in rows {
             unit_cells(ui, unit, &p);
             ui.horizontal(|ui| {
@@ -151,6 +136,31 @@ fn units_table(ui: &mut Ui, snapshot: &ServicesSnapshot, filters: Filters) -> Op
         }
     });
     action
+}
+
+const UNIT_COLUMNS: [&str; 6] = [
+    text::COL_MODULE,
+    text::COL_STATUS,
+    text::SVC_RESTARTS,
+    "PID",
+    text::COL_MESSAGE,
+    "",
+];
+
+fn unit_sort_key(unit: &Unit, column: usize) -> SortKey {
+    match column {
+        0 => SortKey::text(unit.short_name()),
+        1 => SortKey::text(&unit.sub),
+        2 => SortKey::number(unit.restarts as f64),
+        _ => SortKey::number(unit.main_pid as f64),
+    }
+}
+
+impl Filters {
+    fn accepts(&self, unit: &Unit) -> bool {
+        (!self.only_problems || unit.is_failed() || unit.restarts > 0)
+            && (!self.only_custom || unit.origin() == UnitOrigin::Custom)
+    }
 }
 
 fn unit_cells(ui: &mut Ui, unit: &Unit, p: &Palette) {
