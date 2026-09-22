@@ -12,16 +12,7 @@ use crate::theme::{GAP, Palette};
 
 const SELECTED_KEY: &str = "audit-selected";
 
-pub fn show(ui: &mut Ui, ctx: &DetailContext<'_>) -> Option<Action> {
-    let p = Palette::current(ui.ctx());
-    let reports: Vec<&AuditReport> = ctx
-        .state
-        .audits
-        .iter()
-        .rev()
-        .filter(|a| a.is_for(&ctx.server.spec.id))
-        .collect();
-    let running = reports.iter().any(|r| r.is_running());
+fn toolbar(ui: &mut Ui, ctx: &DetailContext<'_>, running: bool, p: &Palette) -> Option<Action> {
     let mut action = None;
     ui.horizontal(|ui| {
         let ready = ctx.ai.is_ready() && !running;
@@ -40,6 +31,20 @@ pub fn show(ui: &mut Ui, ctx: &DetailContext<'_>) -> Option<Action> {
             ui.label(RichText::new(text::AI_STATUS_BUSY).color(p.accent));
         }
     });
+    action
+}
+
+pub fn show(ui: &mut Ui, ctx: &DetailContext<'_>) -> Option<Action> {
+    let p = Palette::current(ui.ctx());
+    let reports: Vec<&AuditReport> = ctx
+        .state
+        .audits
+        .iter()
+        .rev()
+        .filter(|a| a.is_for(&ctx.server.spec.id))
+        .collect();
+    let running = reports.iter().any(|r| r.is_running());
+    let mut action = toolbar(ui, ctx, running, &p);
     ui.add_space(GAP);
     if reports.is_empty() {
         ui.label(RichText::new(text::AUDIT_EMPTY).color(p.text_muted));

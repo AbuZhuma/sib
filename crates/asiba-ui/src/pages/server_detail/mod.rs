@@ -69,33 +69,36 @@ pub fn show(ui: &mut Ui, ctx: &DetailContext<'_>) -> Option<Action> {
         ui.add_space(GAP);
     }
     scroll::vertical().show(ui, |ui| {
-        let next = match tab {
-            Tab::Summary => summary::show(
-                ui,
-                &summary::SummaryContext {
-                    server,
-                    state: ctx.state,
-                    can_audit: ctx.ai.is_ready(),
-                    views,
-                    layout: ctx.layout,
-                    shared: &ctx.shared,
-                },
-            ),
-            Tab::Files => files::show(ui, ctx),
-            Tab::Security => security::show(ui, ctx),
-            other => {
-                let analysis_action = section_analysis(ui, ctx, other);
-                pages_for(ui, ctx, other).or(analysis_action)
-            }
-        };
-        if next.is_some() {
-            action = next;
+        if let Some(next) = tab_content(ui, ctx, tab) {
+            action = Some(next);
         }
         if matches!(tab, Tab::Summary | Tab::Logs) {
             events::show(ui, server);
         }
     });
     action
+}
+
+fn tab_content(ui: &mut Ui, ctx: &DetailContext<'_>, tab: Tab) -> Option<Action> {
+    match tab {
+        Tab::Summary => summary::show(
+            ui,
+            &summary::SummaryContext {
+                server: ctx.server,
+                state: ctx.state,
+                can_audit: ctx.ai.is_ready(),
+                views: ctx.views,
+                layout: ctx.layout,
+                shared: &ctx.shared,
+            },
+        ),
+        Tab::Files => files::show(ui, ctx),
+        Tab::Security => security::show(ui, ctx),
+        other => {
+            let analysis_action = section_analysis(ui, ctx, other);
+            pages_for(ui, ctx, other).or(analysis_action)
+        }
+    }
 }
 
 fn visible_tabs(server: &ServerState, views: &[Box<dyn ModuleView>]) -> Vec<Tab> {
