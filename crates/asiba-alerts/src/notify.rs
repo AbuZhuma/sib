@@ -4,33 +4,29 @@ use notify_rust::{Notification, Urgency};
 const APP_NAME: &str = "Asiba";
 
 pub fn send_desktop(alert: &Alert) {
-    let urgency = match alert.severity {
-        Severity::Critical => Urgency::Critical,
-        Severity::Warning => Urgency::Normal,
-        Severity::Info => Urgency::Low,
-    };
-    let result = Notification::new()
-        .appname(APP_NAME)
-        .summary(&format!("{}: {}", alert.server, alert.rule_name))
-        .body(&alert.message)
-        .urgency(urgency)
-        .show();
-    if let Err(error) = result {
-        tracing::warn!(%error, "уведомление на рабочий стол не отправлено");
-    }
+    let summary = format!("{}: {}", alert.server, alert.rule_name);
+    send(&summary, &alert.message, alert.severity);
 }
 
 pub fn send_desktop_incident(incident: &Incident) {
-    let urgency = match incident.severity {
+    let summary = format!("{}: {}", incident.server, incident.kind.key());
+    send(&summary, &incident.summary, incident.severity);
+}
+
+fn urgency(severity: Severity) -> Urgency {
+    match severity {
         Severity::Critical => Urgency::Critical,
         Severity::Warning => Urgency::Normal,
         Severity::Info => Urgency::Low,
-    };
+    }
+}
+
+fn send(summary: &str, body: &str, severity: Severity) {
     let result = Notification::new()
         .appname(APP_NAME)
-        .summary(&format!("{}: {}", incident.server, incident.kind.key()))
-        .body(&incident.summary)
-        .urgency(urgency)
+        .summary(summary)
+        .body(body)
+        .urgency(urgency(severity))
         .show();
     if let Err(error) = result {
         tracing::warn!(%error, "уведомление на рабочий стол не отправлено");

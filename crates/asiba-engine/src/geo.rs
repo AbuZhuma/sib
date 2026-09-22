@@ -8,6 +8,7 @@ use asiba_core::{Location, LocationSource, ServerId, ServerSpec, SharedState};
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
 
+use crate::address;
 use crate::engine::RepaintNotifier;
 
 const SELF_KEY: &str = "self";
@@ -105,7 +106,7 @@ fn lookup_key(spec: &ServerSpec) -> Option<String> {
         .parse::<IpAddr>()
         .ok()
         .or_else(|| resolve_host(&host, port))?;
-    if is_private(ip) {
+    if address::is_private(ip) {
         return Some(SELF_KEY.to_owned());
     }
     Some(ip.to_string())
@@ -117,15 +118,6 @@ fn resolve_host(host: &str, port: u16) -> Option<IpAddr> {
         .ok()?
         .map(|addr| addr.ip())
         .find(|ip| ip.is_ipv4())
-}
-
-fn is_private(ip: IpAddr) -> bool {
-    match ip {
-        IpAddr::V4(v4) => {
-            v4.is_private() || v4.is_loopback() || v4.is_link_local() || v4.is_unspecified()
-        }
-        IpAddr::V6(v6) => v6.is_loopback() || v6.is_unspecified() || v6.is_unique_local(),
-    }
 }
 
 fn locate(cache_path: Option<&std::path::Path>, key: &str) -> Option<Location> {
@@ -200,14 +192,6 @@ fn save_cache(path: Option<&std::path::Path>, cache: &BTreeMap<String, CachedLoc
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn private_and_loopback_addresses_map_to_self() {
-        assert!(is_private("127.0.0.1".parse().expect("ip")));
-        assert!(is_private("10.1.2.3".parse().expect("ip")));
-        assert!(is_private("192.168.0.5".parse().expect("ip")));
-        assert!(!is_private("8.8.8.8".parse().expect("ip")));
-    }
 
     #[test]
     fn cache_roundtrips_through_json_file() {

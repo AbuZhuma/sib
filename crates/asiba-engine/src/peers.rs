@@ -10,6 +10,7 @@ use asiba_modules::security::{self, SecuritySnapshot};
 use serde::{Deserialize, Serialize};
 use tokio::time::{MissedTickBehavior, interval};
 
+use crate::address;
 use crate::engine::RepaintNotifier;
 
 const LOOKUP_INTERVAL: Duration = Duration::from_secs(30);
@@ -102,19 +103,9 @@ fn pending_ips(state: &SharedState) -> Vec<String> {
     }
     ips.sort_unstable();
     ips.dedup();
-    ips.retain(|ip| !state.ip_countries.contains_key(ip) && is_public(ip));
+    ips.retain(|ip| !state.ip_countries.contains_key(ip) && address::is_public_text(ip));
     ips.truncate(BATCH_LIMIT);
     ips
-}
-
-fn is_public(ip: &str) -> bool {
-    match ip.parse::<std::net::IpAddr>() {
-        Ok(std::net::IpAddr::V4(v4)) => {
-            !(v4.is_private() || v4.is_loopback() || v4.is_link_local() || v4.is_unspecified())
-        }
-        Ok(std::net::IpAddr::V6(v6)) => !(v6.is_loopback() || v6.is_unique_local()),
-        Err(_) => false,
-    }
 }
 
 fn lookup(ips: &[String]) -> BTreeMap<String, String> {
@@ -169,18 +160,5 @@ fn persist(cache: Option<&std::path::Path>, fresh: &BTreeMap<String, String>) {
     }
     if let Ok(raw) = serde_json::to_string(&all) {
         let _ = std::fs::write(path, raw);
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn private_ips_are_not_looked_up() {
-        assert!(!is_public("10.0.0.1"));
-        assert!(!is_public("127.0.0.1"));
-        assert!(is_public("203.0.113.9"));
-        assert!(!is_public("garbage"));
     }
 }
