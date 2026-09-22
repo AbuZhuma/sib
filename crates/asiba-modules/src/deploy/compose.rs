@@ -131,14 +131,7 @@ fn build(project: &str, window: &[&ComposeEvent], now: DateTime<Utc>) -> Option<
     }
     let mut stages = stages_of(window);
     let crash = crash_of(window);
-    let failed = crash.is_some();
-    let (status, finished_at) = if failed {
-        (DeployStatus::Failed, Some(last.at))
-    } else if now - last.at < SETTLE {
-        (DeployStatus::InProgress, None)
-    } else {
-        (DeployStatus::Success, Some(last.at))
-    };
+    let (status, finished_at) = window_status(crash.is_some(), last.at, now);
     if let Some(c) = crash {
         stages.push(Stage {
             name: format!("{} exited", c.name),
@@ -161,6 +154,20 @@ fn build(project: &str, window: &[&ComposeEvent], now: DateTime<Utc>) -> Option<
         }),
         log_tail: Vec::new(),
     })
+}
+
+fn window_status(
+    failed: bool,
+    last_at: DateTime<Utc>,
+    now: DateTime<Utc>,
+) -> (DeployStatus, Option<DateTime<Utc>>) {
+    if failed {
+        (DeployStatus::Failed, Some(last_at))
+    } else if now - last_at < SETTLE {
+        (DeployStatus::InProgress, None)
+    } else {
+        (DeployStatus::Success, Some(last_at))
+    }
 }
 
 fn stages_of(window: &[&ComposeEvent]) -> Vec<Stage> {

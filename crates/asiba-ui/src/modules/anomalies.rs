@@ -129,13 +129,13 @@ const RATE_ROWS: [(&str, RateField); 5] = [
     (text::ANOM_UDP, |r| r.udp_in),
 ];
 
-fn counters(ui: &mut Ui, snapshot: &AnomaliesSnapshot) {
-    let p = Palette::current(ui.ctx());
-    let rate = |value: Option<f64>| {
-        value
-            .map(|v| format!("{v:.0}"))
-            .unwrap_or_else(|| "-".to_owned())
-    };
+fn rate(value: Option<f64>) -> String {
+    value
+        .map(|v| format!("{v:.0}"))
+        .unwrap_or_else(|| "-".to_owned())
+}
+
+fn counter_rows(snapshot: &AnomaliesSnapshot) -> Vec<(&'static str, String)> {
     let rates = snapshot.rates;
     let mut rows = vec![
         (text::ANOM_SYN_RECV, snapshot.syn_recv().to_string()),
@@ -156,6 +156,12 @@ fn counters(ui: &mut Ui, snapshot: &AnomaliesSnapshot) {
     if let Some((count, max)) = snapshot.conntrack {
         rows.push((text::ANOM_CONNTRACK, format!("{count} / {max}")));
     }
+    rows
+}
+
+fn counters(ui: &mut Ui, snapshot: &AnomaliesSnapshot) {
+    let p = Palette::current(ui.ctx());
+    let rows = counter_rows(snapshot);
     let pairs = ((ui.available_width() / COUNTER_PAIR_WIDTH) as usize).clamp(1, COUNTER_PAIRS_MAX);
     egui::Grid::new("anomalies-counters")
         .num_columns(pairs * 2)
@@ -200,6 +206,15 @@ fn peer_share(snapshot: &AnomaliesSnapshot, peer: &Peer) -> f64 {
     peer.connections as f64 * 100.0 / snapshot.total_connections as f64
 }
 
+const PEER_COLUMNS: [&str; 6] = [
+    "IP",
+    text::SEC_COUNTRY,
+    text::ANOM_CONNECTIONS,
+    "SYN-RECV",
+    text::ANOM_SHARE,
+    "",
+];
+
 fn peers_table(
     ui: &mut Ui,
     snapshot: &AnomaliesSnapshot,
@@ -213,15 +228,7 @@ fn peers_table(
             .color(p.text_secondary),
     );
     let suspicious = snapshot.suspicious_peers();
-    let columns = [
-        "IP",
-        text::SEC_COUNTRY,
-        text::ANOM_CONNECTIONS,
-        "SYN-RECV",
-        text::ANOM_SHARE,
-        "",
-    ];
-    Table::new("anomalies-peers", &columns).show(ui, |ui| {
+    Table::new("anomalies-peers", &PEER_COLUMNS).show(ui, |ui| {
         for peer in &snapshot.top_peers {
             let color = if suspicious.contains(&peer.ip.as_str()) {
                 p.critical

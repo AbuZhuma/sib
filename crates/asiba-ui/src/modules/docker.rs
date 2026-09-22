@@ -153,20 +153,22 @@ fn container_key(container: &Container, column: usize) -> SortKey {
     }
 }
 
+const CONTAINER_COLUMNS: [&str; 8] = [
+    text::DOCKER_CONTAINER,
+    text::COL_STATUS,
+    "CPU",
+    "RAM",
+    "NET RX/TX",
+    text::DOCKER_IMAGE,
+    text::DOCKER_PORTS,
+    "",
+];
+
 fn containers_table(ui: &mut Ui, id: &str, containers: &[&Container]) -> Option<ViewAction> {
     let p = Palette::current(ui.ctx());
     let mut action = None;
-    let columns = [
-        text::DOCKER_CONTAINER,
-        text::COL_STATUS,
-        "CPU",
-        "RAM",
-        "NET RX/TX",
-        text::DOCKER_IMAGE,
-        text::DOCKER_PORTS,
-        "",
-    ];
-    let table = Table::new(id, &columns).sortable(&CONTAINER_SORTABLE, CONTAINER_DEFAULT_SORT);
+    let table =
+        Table::new(id, &CONTAINER_COLUMNS).sortable(&CONTAINER_SORTABLE, CONTAINER_DEFAULT_SORT);
     table.show_sorted(ui, |ui, sort| {
         let mut rows: Vec<&Container> = containers.to_vec();
         sort_rows(&mut rows, sort, |container, column| {
