@@ -37,23 +37,7 @@ pub fn show(
             if ui.button(text::FILES_CLOSE).clicked() {
                 outcome = EditorOutcome::Close;
             }
-            if ui
-                .add_enabled(editor.is_dirty(), egui::Button::new(text::FILES_REVERT))
-                .clicked()
-            {
-                editor.text = editor.original.clone();
-            }
-            if ui
-                .add_enabled(editor.is_dirty(), egui::Button::new(text::FILES_SAVE))
-                .clicked()
-            {
-                action = Some(Action::AskPerform {
-                    server: server.clone(),
-                    spec: files::write_spec(&editor.path),
-                    request: ActionRequest::new(files::ACTION_WRITE, &editor.path)
-                        .with_argument(editor.text.clone()),
-                });
-            }
+            action = editor_buttons(ui, server, editor);
         });
     });
     ui.add_space(GAP);
@@ -69,4 +53,23 @@ pub fn show(
             );
         });
     (outcome, action)
+}
+
+fn editor_buttons(ui: &mut Ui, server: &ServerId, editor: &mut Editor) -> Option<Action> {
+    let is_dirty = editor.is_dirty();
+    if ui
+        .add_enabled(is_dirty, egui::Button::new(text::FILES_REVERT))
+        .clicked()
+    {
+        editor.text = editor.original.clone();
+    }
+    let save = ui
+        .add_enabled(is_dirty, egui::Button::new(text::FILES_SAVE))
+        .clicked();
+    save.then(|| Action::AskPerform {
+        server: server.clone(),
+        spec: files::write_spec(&editor.path),
+        request: ActionRequest::new(files::ACTION_WRITE, &editor.path)
+            .with_argument(editor.text.clone()),
+    })
 }

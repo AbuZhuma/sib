@@ -86,28 +86,32 @@ fn name(
     if !(clicked || (submitted && is_valid)) {
         return None;
     }
-    Some(match kind {
+    Some(name_action(server, path, kind, trimmed))
+}
+
+fn name_action(server: &ServerId, path: &str, kind: NameKind, value: &str) -> Action {
+    match kind {
         NameKind::NewFile => perform(
             server,
             files::SPEC_CREATE,
-            &files::join_path(path, trimmed),
+            &files::join_path(path, value),
             "",
         ),
         NameKind::NewDirectory => perform(
             server,
             files::SPEC_MKDIR,
-            &files::join_path(path, trimmed),
+            &files::join_path(path, value),
             "",
         ),
         NameKind::Rename => perform(
             server,
             files::SPEC_MOVE,
             path,
-            &files::join_path(files::parent_path(path), trimmed),
+            &files::join_path(files::parent_path(path), value),
         ),
-        NameKind::Move => perform(server, files::SPEC_MOVE, path, trimmed),
-        NameKind::Copy => perform(server, files::SPEC_COPY, path, trimmed),
-    })
+        NameKind::Move => perform(server, files::SPEC_MOVE, path, value),
+        NameKind::Copy => perform(server, files::SPEC_COPY, path, value),
+    }
 }
 
 fn is_valid_input(kind: NameKind, value: &str) -> bool {
