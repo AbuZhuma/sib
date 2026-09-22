@@ -217,39 +217,40 @@ fn history_cells(ui: &mut Ui, deploy: &Deploy, now: DateTime<Utc>, p: &Palette) 
     timeline(ui, deploy, p);
 }
 
+const HISTORY_COLUMNS: [&str; 7] = [
+    text::COL_STATUS,
+    text::DEP_PROJECT,
+    text::DEP_SOURCE,
+    text::DEP_STARTED,
+    text::DEP_DURATION,
+    text::DEP_STAGE,
+    "",
+];
+
+fn toggle_button(ui: &mut Ui, open: &mut Option<String>, key: &str) {
+    let is_open = open.as_deref() == Some(key);
+    let label = if is_open {
+        text::DEP_HIDE
+    } else {
+        text::DEP_SHOW
+    };
+    if ui.small_button(label).clicked() {
+        *open = if is_open { None } else { Some(key.to_owned()) };
+    }
+}
+
 fn history_table(ui: &mut Ui, snapshot: &deploy::DeploySnapshot, needle: &str, p: &Palette) {
     let now = Utc::now();
     let open_id = Id::new(OPEN_KEY);
     let mut open: Option<String> = ui.ctx().data(|d| d.get_temp(open_id));
-    let columns = [
-        text::COL_STATUS,
-        text::DEP_PROJECT,
-        text::DEP_SOURCE,
-        text::DEP_STARTED,
-        text::DEP_DURATION,
-        text::DEP_STAGE,
-        "",
-    ];
-    Table::new("deploy-history", &columns).show(ui, |ui| {
+    Table::new("deploy-history", &HISTORY_COLUMNS).show(ui, |ui| {
         for deploy in snapshot
             .deploys
             .iter()
             .filter(|d| matches_filter(d, needle))
         {
             history_cells(ui, deploy, now, p);
-            let is_open = open.as_deref() == Some(&deploy.key);
-            let label = if is_open {
-                text::DEP_HIDE
-            } else {
-                text::DEP_SHOW
-            };
-            if ui.small_button(label).clicked() {
-                open = if is_open {
-                    None
-                } else {
-                    Some(deploy.key.clone())
-                };
-            }
+            toggle_button(ui, &mut open, &deploy.key);
             ui.end_row();
         }
     });

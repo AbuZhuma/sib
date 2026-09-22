@@ -16,6 +16,14 @@ use crate::theme::GAP;
 
 const FILTER_KEY: &str = "servers-filter";
 
+fn stored_filter(ui: &mut Ui, state: &AppState) -> Filter {
+    let id = Id::new(FILTER_KEY);
+    let mut filter: Filter = ui.ctx().data(|d| d.get_temp(id)).unwrap_or_default();
+    filter::toolbar(ui, &mut filter, state);
+    ui.ctx().data_mut(|d| d.insert_temp(id, filter.clone()));
+    filter
+}
+
 pub fn show(ui: &mut Ui, state: &AppState) -> Option<Action> {
     let mut action = None;
     ui.horizontal(|ui| {
@@ -30,10 +38,7 @@ pub fn show(ui: &mut Ui, state: &AppState) -> Option<Action> {
         ui.label(text::EMPTY_SERVERS);
         return action;
     }
-    let id = Id::new(FILTER_KEY);
-    let mut filter: Filter = ui.ctx().data(|d| d.get_temp(id)).unwrap_or_default();
-    filter::toolbar(ui, &mut filter, state);
-    ui.ctx().data_mut(|d| d.insert_temp(id, filter.clone()));
+    let filter = stored_filter(ui, state);
     ui.add_space(GAP);
     let servers: Vec<&ServerState> = state
         .servers

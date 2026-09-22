@@ -30,23 +30,31 @@ pub fn show(ui: &mut Ui, server: &ServerState) -> Option<Action> {
         ConnectionStatus::UntrustedHostKey {
             fingerprint,
             changed,
-        } => {
-            let warning = if *changed {
-                text::TEST_CHANGED_KEY
-            } else {
-                text::TEST_UNKNOWN_KEY
-            };
-            ui.label(RichText::new(warning).color(p.warning));
-            ui.monospace(fingerprint);
-            ui.button(text::BTN_TRUST_KEY_SERVER)
-                .clicked()
-                .then(|| Action::TrustHostKey {
-                    server: server.spec.id.clone(),
-                    fingerprint: fingerprint.clone(),
-                })
-        }
+        } => untrusted_key(ui, server, fingerprint, *changed),
         ConnectionStatus::Connecting => None,
     }
+}
+
+fn untrusted_key(
+    ui: &mut Ui,
+    server: &ServerState,
+    fingerprint: &str,
+    changed: bool,
+) -> Option<Action> {
+    let p = Palette::current(ui.ctx());
+    let warning = if changed {
+        text::TEST_CHANGED_KEY
+    } else {
+        text::TEST_UNKNOWN_KEY
+    };
+    ui.label(RichText::new(warning).color(p.warning));
+    ui.monospace(fingerprint);
+    ui.button(text::BTN_TRUST_KEY_SERVER)
+        .clicked()
+        .then(|| Action::TrustHostKey {
+            server: server.spec.id.clone(),
+            fingerprint: fingerprint.to_owned(),
+        })
 }
 
 fn ping_line(ui: &mut Ui, server: &ServerState) {
