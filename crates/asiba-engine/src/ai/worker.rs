@@ -107,9 +107,13 @@ impl Runner {
             self.drop_queued(job.report_id);
             return;
         }
+        self.run_job(job, &config).await;
+    }
+
+    async fn run_job(&mut self, job: AuditJob, config: &AiConfig) {
         let report = self.open(&job, config.model.clone());
         let Some(prepared) =
-            context::prepare(&job, &self.worker.state, &self.worker.registry, &config).await
+            context::prepare(&job, &self.worker.state, &self.worker.registry, config).await
         else {
             self.finish(report, Err(NO_DATA.to_owned()));
             return;
@@ -119,7 +123,7 @@ impl Runner {
         let completion = Arc::new(prepared.completion);
         let report_id = report.id;
         let result = tokio::select! {
-            result = complete_with_fallbacks(&config, completion, &mut report) => result,
+            result = complete_with_fallbacks(config, completion, &mut report) => result,
             _ = self.worker.cancellations.wait_for(report_id) => {
                 self.worker.cancellations.take(report_id);
                 return;
