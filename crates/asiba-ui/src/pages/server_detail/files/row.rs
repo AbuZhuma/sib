@@ -148,6 +148,14 @@ fn menu(ui: &mut Ui, entry: &Entry, path: &str, state: &mut TreeState) -> Option
         }
         creation_items(ui, path, state);
     }
+    draft_items(ui, entry, path, state);
+    if click.is_some() {
+        ui.close();
+    }
+    click
+}
+
+fn draft_items(ui: &mut Ui, entry: &Entry, path: &str, state: &mut TreeState) {
     let items = [
         (text::FILES_RENAME, NameKind::Rename, entry.name.clone()),
         (text::FILES_MOVE_TO, NameKind::Move, path.to_owned()),
@@ -171,10 +179,6 @@ fn menu(ui: &mut Ui, entry: &Entry, path: &str, state: &mut TreeState) -> Option
         });
         ui.close();
     }
-    if click.is_some() {
-        ui.close();
-    }
-    click
 }
 
 pub fn creation_items(ui: &mut Ui, directory: &str, state: &mut TreeState) {

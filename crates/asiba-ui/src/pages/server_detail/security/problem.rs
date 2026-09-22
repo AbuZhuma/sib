@@ -119,16 +119,20 @@ fn evidence(
             })
         }
         Evidence::Tab(key) => {
-            if !ui.button(text::SEC_EVIDENCE_OPEN).clicked() {
-                return None;
-            }
-            if let Some(target) = Subpage::from_key(key) {
-                *subpage = target;
-            } else if let Some(tab) = Tab::from_key(key) {
-                select_tab(ui.ctx(), tab);
-            }
+            open_tab_evidence(ui, key, subpage);
             None
         }
+    }
+}
+
+fn open_tab_evidence(ui: &mut Ui, key: &str, subpage: &mut Subpage) {
+    if !ui.button(text::SEC_EVIDENCE_OPEN).clicked() {
+        return;
+    }
+    if let Some(target) = Subpage::from_key(key) {
+        *subpage = target;
+    } else if let Some(tab) = Tab::from_key(key) {
+        select_tab(ui.ctx(), tab);
     }
 }
 
