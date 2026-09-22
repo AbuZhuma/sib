@@ -73,6 +73,13 @@ impl ModuleView for PortsView {
                     .color(p.text_secondary),
             );
         }
+        ports_table(ui, snapshot, &p);
+        None
+    }
+}
+
+fn ports_table(ui: &mut Ui, snapshot: &PortsSnapshot, p: &Palette) {
+    {
         let columns = [
             text::PORT_PORT,
             text::PORT_PROTO,
@@ -96,12 +103,11 @@ impl ModuleView for PortsView {
                 ui.monospace(&port.address);
                 ui.monospace(port.process_label());
                 ui.monospace(port.connections.to_string());
-                firewall_cell(ui, port, &p);
-                reachable_cell(ui, port, &p);
+                firewall_cell(ui, port, p);
+                reachable_cell(ui, port, p);
                 ui.end_row();
             }
         });
-        None
     }
 }
 

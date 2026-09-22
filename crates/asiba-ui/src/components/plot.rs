@@ -1,5 +1,5 @@
 use asiba_core::Series;
-use chrono::{Duration as ChronoDuration, Utc};
+use chrono::{DateTime, Duration as ChronoDuration, Utc};
 use egui::{Color32, RichText, Sense, Stroke, Ui, Vec2};
 use egui_plot::{GridMark, HoverPosition, Line, Plot, PlotPoints};
 
@@ -153,23 +153,28 @@ impl<'a> TimeSeriesPlot<'a> {
         }
         plot.show(ui, |plot_ui| {
             for entry in &self.series {
-                let points: Vec<[f64; 2]> = entry
-                    .series
-                    .since(window)
-                    .map(|point| {
-                        [
-                            (point.at - now).num_milliseconds() as f64 / 1000.0,
-                            point.value,
-                        ]
-                    })
-                    .collect();
-                let line = Line::new(entry.label, PlotPoints::from(points))
-                    .stroke(Stroke::new(LINE_WIDTH, entry.color))
-                    .fill(0.0)
-                    .fill_alpha(FILL_ALPHA);
-                plot_ui.line(line);
+                plot_ui.line(entry.line(window, now));
             }
         });
+    }
+}
+
+impl PlotSeries<'_> {
+    fn line(&self, window: ChronoDuration, now: DateTime<Utc>) -> Line<'static> {
+        let points: Vec<[f64; 2]> = self
+            .series
+            .since(window)
+            .map(|point| {
+                [
+                    (point.at - now).num_milliseconds() as f64 / 1000.0,
+                    point.value,
+                ]
+            })
+            .collect();
+        Line::new(self.label, PlotPoints::from(points))
+            .stroke(Stroke::new(LINE_WIDTH, self.color))
+            .fill(0.0)
+            .fill_alpha(FILL_ALPHA)
     }
 }
 
