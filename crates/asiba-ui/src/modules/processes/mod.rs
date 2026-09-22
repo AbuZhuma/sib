@@ -21,6 +21,19 @@ const CPU_WIDTH: f32 = 64.0;
 const IO_WIDTH: f32 = 90.0;
 const STATE_WIDTH: f32 = 40.0;
 const UPTIME_WIDTH: f32 = 80.0;
+const HEADERS: [&str; 10] = [
+    "PID",
+    text::PROC_USER,
+    "CPU",
+    "RAM",
+    "R/s",
+    "W/s",
+    text::PROC_STATE,
+    text::PROC_UPTIME,
+    "",
+    text::PROC_COMMAND,
+];
+const SUMMARY_COMMAND_CHARS: usize = 48;
 const FIXED_COLUMNS: [f32; 9] = [
     PID_WIDTH,
     USER_WIDTH,
@@ -108,27 +121,7 @@ impl ModuleView for ProcessesView {
                     .color(color),
             );
         });
-        let mut top: Vec<&Process> = snapshot
-            .processes
-            .iter()
-            .filter(|p| p.cpu_pct.is_some())
-            .collect();
-        top.sort_by(|a, b| {
-            b.cpu_pct
-                .partial_cmp(&a.cpu_pct)
-                .unwrap_or(std::cmp::Ordering::Equal)
-        });
-        egui::Grid::new("processes-top")
-            .num_columns(3)
-            .spacing([12.0, 2.0])
-            .show(ui, |ui| {
-                for process in top.iter().take(SUMMARY_TOP) {
-                    ui.monospace(format!("{:>5.1}%", process.cpu_pct.unwrap_or(0.0)));
-                    ui.monospace(format::bytes(process.rss_bytes));
-                    ui.label(row::truncate(process.display_name(), 48));
-                    ui.end_row();
-                }
-            });
+        top_grid(ui, snapshot);
     }
 
     fn page(&self, ui: &mut Ui, server: &ServerState, _shared: &ViewShared) -> Option<ViewAction> {
@@ -183,6 +176,34 @@ fn filtered_sorted<'a>(snapshot: &'a ProcessSnapshot, state: &TableState) -> Vec
     rows
 }
 
+fn top_by_cpu(snapshot: &ProcessSnapshot) -> Vec<&Process> {
+    let mut top: Vec<&Process> = snapshot
+        .processes
+        .iter()
+        .filter(|p| p.cpu_pct.is_some())
+        .collect();
+    top.sort_by(|a, b| {
+        b.cpu_pct
+            .partial_cmp(&a.cpu_pct)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
+    top
+}
+
+fn top_grid(ui: &mut Ui, snapshot: &ProcessSnapshot) {
+    egui::Grid::new("processes-top")
+        .num_columns(3)
+        .spacing([12.0, 2.0])
+        .show(ui, |ui| {
+            for process in top_by_cpu(snapshot).iter().take(SUMMARY_TOP) {
+                ui.monospace(format!("{:>5.1}%", process.cpu_pct.unwrap_or(0.0)));
+                ui.monospace(format::bytes(process.rss_bytes));
+                ui.label(row::truncate(process.display_name(), SUMMARY_COMMAND_CHARS));
+                ui.end_row();
+            }
+        });
+}
+
 fn table(
     ui: &mut Ui,
     snapshot: &ProcessSnapshot,
@@ -190,18 +211,6 @@ fn table(
     state: &mut TableState,
 ) -> Option<ViewAction> {
     let p = Palette::current(ui.ctx());
-    let headers = [
-        "PID",
-        text::PROC_USER,
-        "CPU",
-        "RAM",
-        "R/s",
-        "W/s",
-        text::PROC_STATE,
-        text::PROC_UPTIME,
-        "",
-        text::PROC_COMMAND,
-    ];
     let body_height = ui.available_height() * LONG_TABLE_FRACTION;
     let mut action = None;
     let mut builder = TableBuilder::new(ui)
@@ -214,7 +223,7 @@ fn table(
         .column(Column::remainder().clip(true))
         .min_scrolled_height(body_height)
         .header(ROW_HEIGHT, |mut header| {
-            for (index, label) in headers.into_iter().enumerate() {
+            for (index, label) in HEADERS.into_iter().enumerate() {
                 header.col(|ui| header_cell(ui, index, label, &mut state.sort));
             }
         })
