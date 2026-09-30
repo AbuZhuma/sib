@@ -16,36 +16,36 @@ pub struct Playbook {
     pub format: &'static str,
 }
 
-pub const FORMAT_AUDIT: &str = "Формат ответа (Markdown, только эти заголовки, пустые разделы пропускай):\n\
-## Итог\nДва-три предложения: общее состояние и главный риск.\n\
-## Критично\nЧто требует действий сейчас. Для каждого пункта: факт (строка данных), риск, точная команда или изменение конфигурации.\n\
-## Рекомендуется\nЧто исправить в ближайшее время, в том же формате.\n\
-## Замечания\nМелочи и наблюдения одной строкой каждое.";
+pub const FORMAT_AUDIT: &str = "Answer format (Markdown, only these headings, skip empty sections):\n\
+## Summary\nTwo or three sentences: the overall state and the main risk.\n\
+## Critical\nWhat needs action now. For each item: the fact (a data line), the risk, the exact command or configuration change.\n\
+## Recommended\nWhat to fix soon, in the same format.\n\
+## Notes\nSmall things and observations, one line each.";
 
-pub const FORMAT_INCIDENT: &str = "Формат ответа (Markdown, только эти заголовки):\n\
-## Причина\nОдна-две фразы: наиболее вероятная причина и уверенность (высокая/средняя/низкая).\n\
-## Доказательства\nСтроки данных или логов, на которых основан вывод (цитируй дословно, до 8 строк).\n\
-## Что сделать сейчас\nПошагово: команды диагностики и исправления в порядке выполнения.\n\
-## Как предотвратить\nНастройки, мониторинг, лимиты — коротко.";
+pub const FORMAT_INCIDENT: &str = "Answer format (Markdown, only these headings):\n\
+## Cause\nOne or two sentences: the most likely cause and how sure you are (high, medium, low).\n\
+## Evidence\nThe data or log lines the answer is based on (quote them exactly, up to 8 lines).\n\
+## What to do now\nStep by step: the diagnostic and fix commands in the order to run them.\n\
+## How to prevent it\nSettings, monitoring, limits, briefly.";
 
-pub const FORMAT_SECTION: &str = "Формат ответа (Markdown, только эти заголовки, коротко — это блок на экране рядом с данными):\n\
-## Состояние\nОдно-два предложения по существу.\n\
-## Что настораживает\nСписок фактов из данных с пояснением, почему это важно; если ничего — одна строка «ничего существенного».\n\
-## Рекомендации\nДо пяти конкретных действий с командами; если всё в порядке — что стоит держать под контролем.";
+pub const FORMAT_SECTION: &str = "Answer format (Markdown, only these headings, short, this is a block on screen next to the data):\n\
+## State\nOne or two sentences to the point.\n\
+## What looks wrong\nFacts from the data with why they matter. If there is nothing, one line: nothing important.\n\
+## Recommendations\nUp to five concrete actions with commands. If all is well, what is worth keeping an eye on.";
 
-pub const FORMAT_FLEET: &str = "Формат ответа (Markdown, только эти заголовки):\n\
-## Общее состояние\nДва-три предложения по всему парку серверов.\n\
-## Требуют внимания\nСерверы в порядке срочности: имя — что не так — что сделать первым. Критичные инциденты всегда выше остальных.\n\
-## Первые шаги\nТри самых полезных действия на сегодня.";
+pub const FORMAT_FLEET: &str = "Answer format (Markdown, only these headings):\n\
+## Overall state\nTwo or three sentences about the whole fleet.\n\
+## Need attention\nServers in order of urgency: name, what is wrong, what to do first. Critical incidents always come above the rest.\n\
+## First steps\nThe three most useful things to do today.";
 
 const FULL: Playbook = Playbook {
     sections: &SectionId::ALL,
-    task: "Проведи полный операционный аудит и аудит безопасности этого сервера. Начни с раздела Findings: \
-это уже найденные программой проблемы, их нужно объяснить и приоритизировать, а не повторять. Затем ищи то, \
-чего программа не видит: несоответствия между разделами (например, открытый порт без процесса, контейнер \
-с рестартами при свободных ресурсах, рост ошибок в журнале), устаревшие или рискованные настройки, \
-признаки утечек и деградации по сводкам за час и сутки. Если сервер в порядке, скажи это коротко и \
-не выдумывай проблем.",
+    task: "Do a full operations and security audit of this server. Start with the Findings section: \
+those are problems the program already found, so explain and rank them instead of repeating them. Then \
+look for what the program does not see: mismatches between sections (an open port with no process, a \
+container restarting while resources are free, a rise in journal errors), settings that are outdated \
+or risky, signs of leaks and of slow degradation in the hour and day summaries. If the server is fine, \
+say so briefly and do not invent problems.",
     format: FORMAT_AUDIT,
 };
 

@@ -11,11 +11,11 @@ const CONTAINER: Playbook = Playbook {
         SectionId::Deploy,
         SectionId::Events,
     ],
-    task: "Контейнер «{subject}» остановлен, падает или unhealthy. По его логам (раздел с логами \
-контейнера, если он есть), состоянию Docker и проекта определи причину: падение приложения, ошибка \
-конфигурации или переменных окружения, недоступная зависимость (БД, сеть, том), нехватка ресурсов, \
-проблема образа. Отличай причину от следствия: если в логах есть первая ошибка перед каскадом — \
-она главная.",
+    task: "Container \"{subject}\" is stopped, crashing or unhealthy. From its logs (the container log \
+section, if there is one), the state of Docker and of the project, work out the cause: the application \
+crashed, a configuration or environment variable is wrong, a dependency is down (database, network, \
+volume), resources ran out, or the image is broken. Tell a cause from an effect: if the logs show a \
+first error before a cascade, that one is the real cause.",
     format: FORMAT_INCIDENT,
 };
 
@@ -27,10 +27,10 @@ const UNIT: Playbook = Playbook {
         SectionId::Resources,
         SectionId::Events,
     ],
-    task: "Юнит systemd «{subject}» в состоянии failed. По его журналу (раздел с journal, если он есть), \
-списку сервисов и системному журналу определи причину: ошибка запуска (ExecStart, права, отсутствующий \
-файл или порт занят), падение процесса, превышение лимитов, зависимость. Учитывай счётчик рестартов \
-и результат (result).",
+    task: "The systemd unit \"{subject}\" is failed. From its journal (the journal section, if there is \
+one), the service list and the system journal, work out the cause: a start error (ExecStart, \
+permissions, a missing file, a busy port), a crashed process, a limit that was hit, or a dependency. \
+Take the restart counter and the result field into account.",
     format: FORMAT_INCIDENT,
 };
 
@@ -42,9 +42,9 @@ const DEPLOY: Playbook = Playbook {
         SectionId::Services,
         SectionId::Logs,
     ],
-    task: "Деплой «{subject}» завершился ошибкой. По хвосту лога деплоя, стадиям и состоянию контейнеров \
-и сервисов определи, на каком шаге и почему он упал (сборка, миграции, запуск, health-check, \
-недоступный реестр или репозиторий), и что проверить перед повторным запуском.",
+    task: "The deploy \"{subject}\" failed. From the tail of the deploy log, the stages and the state of \
+the containers and services, work out at which step and why it failed (build, migrations, start, \
+health check, an unreachable registry or repository), and what to check before running it again.",
     format: FORMAT_INCIDENT,
 };
 
@@ -57,11 +57,11 @@ const ATTACK: Playbook = Playbook {
         SectionId::Resources,
         SectionId::Events,
     ],
-    task: "Обнаружен сетевой признак атаки или брутфорс: «{subject}». По счётчикам, списку адресов и \
-состоянию защиты реши, это атака (DDoS, сканирование, подбор пароля) или легитимная нагрузка, и \
-объясни на чём основан вывод. Дай конкретные меры: какие IP или диапазоны блокировать и чем именно \
-на этом сервере (fail2ban / nftables / iptables / ufw / firewalld — выбирай то, что там есть), \
-какие sysctl и настройки sshd применить, за чем следить дальше.",
+    task: "A network attack sign or brute force was found: \"{subject}\". From the counters, the address \
+list and the state of the defenses, decide whether this is an attack (DDoS, scanning, password \
+guessing) or normal load, and say what the answer is based on. Give concrete steps: which IPs or \
+ranges to block and with what on this server (fail2ban, nftables, iptables, ufw or firewalld, pick \
+what is there), which sysctl and sshd settings to apply, and what to watch next.",
     format: FORMAT_INCIDENT,
 };
 
@@ -73,9 +73,9 @@ const SECURITY: Playbook = Playbook {
         SectionId::Ports,
         SectionId::Updates,
     ],
-    task: "Провалена проверка безопасности: «{subject}». Объясни риск именно для этого сервера (учитывая \
-открытые порты, пользователей, окружение) и дай точное изменение конфигурации или команду для \
-исправления и проверку, что исправление применилось.",
+    task: "A security check failed: \"{subject}\". Explain the risk for this particular server, taking its \
+open ports, users and environment into account, and give the exact configuration change or command \
+that fixes it plus a way to check that the fix took effect.",
     format: FORMAT_INCIDENT,
 };
 
@@ -88,10 +88,11 @@ const RESOURCES: Playbook = Playbook {
         SectionId::Services,
         SectionId::Logs,
     ],
-    task: "Проблема с ресурсами: «{subject}». По сводкам за час и сутки, топу процессов, контейнерам и \
-сервисам определи, кто потребляет ресурс и характер проблемы: утечка (монотонный рост), всплеск \
-(пик и возврат) или нормальный рост. Дай действия для снятия проблемы сейчас (что перезапустить, \
-что почистить, что ограничить) и меры на будущее (лимиты, ротация, алерты).",
+    task: "A resource problem: \"{subject}\". From the hour and day summaries, the top processes, the \
+containers and the services, work out what is using the resource and what kind of problem it is: a \
+leak (steady growth), a spike (a peak and a return) or normal growth. Give steps to take the pressure \
+off now (what to restart, what to clean up, what to limit) and steps for later (limits, rotation, \
+alerts).",
     format: FORMAT_INCIDENT,
 };
 

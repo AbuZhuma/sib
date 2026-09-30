@@ -11,10 +11,11 @@ pub const FLEET_SECTIONS: [SectionId; 4] = [
 
 const FLEET: Playbook = Playbook {
     sections: &FLEET_SECTIONS,
-    task: "Ниже данные по всем серверам (каждый сервер — отдельный блок, начинающийся с «# Server:»). Дай \
-сводку по всему парку для администратора, который только что открыл программу: где всё хорошо, где \
-проблемы, что делать первым. Активные инциденты и критичные находки всегда важнее остального. Не \
-перечисляй всё подряд — только то, что требует внимания, остальное одной фразой.",
+    task: "Below is the data for every server (each server is a separate block starting with \"# Server:\"). \
+Give a summary of the whole fleet for an administrator who has just opened the program: where things \
+are fine, where there are problems, what to do first. Active incidents and critical findings always \
+come before the rest. Do not list everything, only what needs attention, and sum up the rest in one \
+sentence.",
     format: FORMAT_FLEET,
 };
 

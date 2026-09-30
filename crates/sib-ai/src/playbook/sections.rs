@@ -8,9 +8,9 @@ const PROCESSES: Playbook = Playbook {
         SectionId::Processes,
         SectionId::Resources,
     ],
-    task: "Проанализируй процессы сервера: кто съедает CPU и память, есть ли зомби, подозрительные или \
-лишние процессы (майнеры, неизвестные бинарники из /tmp, дубликаты). Сопоставь с загрузкой из раздела \
-Resources.",
+    task: "Look at the processes on the server: what is eating CPU and memory, whether there are zombies, \
+suspicious or pointless processes (miners, unknown binaries from /tmp, duplicates). Compare with the \
+load in the resources section.",
     format: FORMAT_SECTION,
 };
 
@@ -20,9 +20,10 @@ const RESOURCES: Playbook = Playbook {
         SectionId::Resources,
         SectionId::Processes,
     ],
-    task: "Проанализируй ресурсы сервера по текущим значениям и сводкам за час и сутки: CPU, память, swap, \
-диски, inodes, сеть. Ищи тренды (рост занятости диска, постоянный swap, пики CPU), давление памяти, \
-ошибки и потери на интерфейсах. Оцени запас на ближайшие дни.",
+    task: "Look at the server resources from the current values and the hour and day summaries: CPU, \
+memory, swap, disks, inodes, network. Look for trends (disk filling up, swap always in use, CPU \
+spikes), memory pressure, errors and drops on the interfaces. Say how much headroom is left for the \
+next few days.",
     format: FORMAT_SECTION,
 };
 
@@ -33,24 +34,24 @@ const PORTS: Playbook = Playbook {
         SectionId::Security,
         SectionId::Docker,
     ],
-    task: "Проанализируй слушающие порты и файрвол: какие сервисы открыты наружу, какие из них не должны \
-быть публичными (базы данных, панели, отладочные порты), есть ли порты без процесса, что открыто в \
-файрволе без необходимости, чего в файрволе не хватает.",
+    task: "Look at the listening ports and the firewall: which services are open to the outside, which of \
+them should not be public (databases, admin panels, debug ports), whether there are ports with no \
+process, what is opened in the firewall without need, and what the firewall is missing.",
     format: FORMAT_SECTION,
 };
 
 const DOCKER: Playbook = Playbook {
     sections: &[SectionId::Findings, SectionId::Docker, SectionId::Resources],
-    task: "Проанализируй контейнеры: остановленные с ненулевым кодом, рестарты, unhealthy, контейнеры без \
-политики перезапуска у сервисов, которые должны жить постоянно, порты, проброшенные на 0.0.0.0, \
-устаревшие образы, мусор (образы, тома). Учитывай compose-проекты.",
+    task: "Look at the containers: those that exited with a non-zero code, restarts, unhealthy ones, \
+containers with no restart policy for services that should always run, ports published on 0.0.0.0, \
+outdated images, leftovers (images, volumes). Take compose projects into account.",
     format: FORMAT_SECTION,
 };
 
 const SERVICES: Playbook = Playbook {
     sections: &[SectionId::Findings, SectionId::Services, SectionId::Logs],
-    task: "Проанализируй сервисы systemd: упавшие, с частыми рестартами, пользовательские юниты и их \
-состояние. Сопоставь с ошибками в журнале.",
+    task: "Look at the systemd services: failed ones, ones that restart often, custom units and their \
+state. Compare with the errors in the journal.",
     format: FORMAT_SECTION,
 };
 
@@ -61,17 +62,17 @@ const LOGS: Playbook = Playbook {
         SectionId::Services,
         SectionId::Resources,
     ],
-    task: "Проанализируй системный журнал: сгруппированные повторяющиеся сообщения и последние записи. \
-Отдели шум от реальных проблем, объясни самые частые ошибки, укажи, какие из них связаны с \
-упавшими сервисами или ресурсами, и что сделать, чтобы они исчезли.",
+    task: "Look at the system journal: the grouped repeating messages and the latest entries. Separate \
+noise from real problems, explain the most frequent errors, say which of them are tied to failed \
+services or to resources, and what to do to make them go away.",
     format: FORMAT_SECTION,
 };
 
 const USERS: Playbook = Playbook {
     sections: &[SectionId::Findings, SectionId::Users, SectionId::Security],
-    task: "Проанализируй пользователей: активные сессии и откуда они, последние входы, учётные записи с \
-shell и sudo, количество ключей. Ищи лишние учётки с доступом, вход с незнакомых адресов, root-входы, \
-учётки без ключей, но с sudo.",
+    task: "Look at the users: active sessions and where they come from, the latest logins, accounts with a \
+shell and with sudo, the number of keys. Look for extra accounts with access, logins from unfamiliar \
+addresses, root logins, and accounts with sudo but no keys.",
     format: FORMAT_SECTION,
 };
 
@@ -83,9 +84,9 @@ const SECURITY: Playbook = Playbook {
         SectionId::Users,
         SectionId::Updates,
     ],
-    task: "Проанализируй безопасность: проваленные и неизвестные проверки (что нужно, чтобы их выполнить), \
-атакующие адреса и баны, входы и sudo-вызовы, обновления безопасности. Расставь приоритеты по \
-реальному риску для этого сервера, а не по формальному списку.",
+    task: "Look at security: failed and unknown checks (and what is needed to run them), attacking \
+addresses and bans, logins and sudo calls, security updates. Rank them by the real risk to this \
+server, not by the order of the list.",
     format: FORMAT_SECTION,
 };
 
@@ -96,23 +97,23 @@ const ANOMALIES: Playbook = Playbook {
         SectionId::Ports,
         SectionId::Security,
     ],
-    task: "Проанализируй сетевую картину: состояния соединений, скорости пакетов и новых соединений, \
-sync-cookies и сбросы, доля топовых адресов, conntrack. Скажи, есть ли признаки атаки или сканирования, \
-и какие адреса выглядят подозрительно.",
+    task: "Look at the network picture: connection states, packet and new connection rates, syn cookies \
+and drops, the share of the top addresses, conntrack. Say whether there are signs of an attack or \
+scanning, and which addresses look suspicious.",
     format: FORMAT_SECTION,
 };
 
 const DEPLOY: Playbook = Playbook {
     sections: &[SectionId::Findings, SectionId::Deploy, SectionId::Docker],
-    task: "Проанализируй деплои: частота, длительность, ошибки, незавершённые, события compose. \
-Ищи нестабильные проекты (частые падения), деплои в нерабочее время, зависшие.",
+    task: "Look at the deploys: how often, how long, failures, unfinished ones, compose events. Look for \
+unstable projects (frequent failures), deploys outside working hours, and stuck ones.",
     format: FORMAT_SECTION,
 };
 
 const GPU: Playbook = Playbook {
     sections: &[SectionId::Findings, SectionId::Gpu, SectionId::Processes],
-    task: "Проанализируй GPU: загрузка, память, температура, мощность, процессы на GPU. Ищи перегрев, \
-переполнение памяти, простаивающие или чужие процессы.",
+    task: "Look at the GPU: load, memory, temperature, power, processes on the GPU. Look for overheating, \
+memory filling up, and idle or foreign processes.",
     format: FORMAT_SECTION,
 };
 

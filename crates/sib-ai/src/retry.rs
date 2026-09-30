@@ -21,7 +21,7 @@ pub fn complete_with_retry(
                 tracing::warn!(
                     model = %backend.model_name(),
                     attempt,
-                    "временная ошибка ИИ, повтор: {error}"
+                    "temporary AI error, retrying: {error}"
                 );
                 std::thread::sleep(delays[attempt]);
                 attempt += 1;
