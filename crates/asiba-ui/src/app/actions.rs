@@ -49,12 +49,6 @@ impl AsibaApp {
     }
 
     pub(super) fn rename_local_records(&mut self, previous: &ServerId, next: &ServerId) {
-        if let Some(layout) = self.layouts.servers.remove(previous.as_str()) {
-            self.layouts.servers.insert(next.to_string(), layout);
-            if let Err(error) = self.layouts.save(&self.paths) {
-                self.notices.push(Notice::new(error.to_string()));
-            }
-        }
         let has_ignored = self.ignored.incidents.iter().any(|i| &i.server == previous);
         if has_ignored {
             for entry in &mut self.ignored.incidents {

@@ -16,7 +16,7 @@ asiba-core ◄── asiba-transport ◄──┐
 |---|---|---|
 | `asiba-core` | доменные типы: `ServerSpec`, `Transport`, `Module`, `Snapshot`, `AppState` | SSH, egui, SQLite, файлы |
 | `asiba-transport` | SSH-сессии (`russh`), локальный транспорт, sudo, known_hosts | модули, UI |
-| `asiba-config` | пути XDG, `config.toml`, `servers/<name>.toml`, keyring, раскладка виджетов | сеть, UI |
+| `asiba-config` | пути XDG, `config.toml`, `servers/<name>.toml`, keyring, архив инцидентов | сеть, UI |
 | `asiba-modules` | сборщики данных и их парсеры | как и когда их вызывают |
 | `asiba-storage` | SQLite: история метрик, даунсэмплинг, поток записи | модули, UI |
 | `asiba-incidents` | детекторы инцидентов (`Detector`) и сверка с состоянием (`reconcile`) | docgen, движок |

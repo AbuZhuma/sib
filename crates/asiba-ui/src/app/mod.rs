@@ -9,7 +9,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
 
-use asiba_config::{AppConfig, IgnoredStore, LayoutStore, Paths, SecretStore};
+use asiba_config::{AppConfig, IgnoredStore, Paths, SecretStore};
 use asiba_core::{AppState, ServerId, SharedState};
 use asiba_engine::{EngineHandle, RepaintNotifier};
 use egui::{CentralPanel, Frame, Margin, Panel};
@@ -78,7 +78,6 @@ pub struct AsibaApp {
     map: MapState,
     paused: bool,
     frozen: Option<Arc<AppState>>,
-    layouts: LayoutStore,
     ignored: IgnoredStore,
     inspector: Option<Inspector>,
     files: HashMap<ServerId, FileBrowser>,
@@ -88,11 +87,9 @@ pub struct AsibaApp {
 impl AsibaApp {
     fn new(deps: AppDeps, engine: EngineHandle, ctx: &egui::Context) -> Self {
         let map = MapState::new(ctx, deps.paths.tiles_cache());
-        let layouts = LayoutStore::load(&deps.paths);
         let ignored = IgnoredStore::load(&deps.paths);
         Self {
             map,
-            layouts,
             ignored,
             engine,
             state: deps.state,
@@ -164,7 +161,6 @@ impl AsibaApp {
         let Some(server) = state.servers.get(id) else {
             return Some(Action::Navigate(Page::Servers));
         };
-        let layout = self.layouts.for_server(id.as_str());
         let detail = DetailContext {
             server,
             state,
@@ -172,7 +168,6 @@ impl AsibaApp {
             views: &self.views,
             inspector: self.inspector.as_ref(),
             files: self.files.get(id),
-            layout: &layout,
             shared: ViewShared {
                 state,
                 countries: &state.ip_countries,

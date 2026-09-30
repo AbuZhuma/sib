@@ -10,7 +10,7 @@ Asiba — настольное приложение (Rust, egui) для мони
 |---|---|---|---|
 | Домен | `asiba-core` | 1 625 | Типы: `ServerSpec`, `Transport`, `Module`, `Snapshot`, `AppState`, `Incident`, `Alert`, `AuditReport` |
 | Транспорт | `asiba-transport` | 733 | SSH через `russh`, локальный транспорт, sudo, known_hosts, `~/.ssh/config` |
-| Конфигурация | `asiba-config` | 968 | XDG-пути, `config.toml`, `servers/<id>.toml`, keyring, раскладка, архив инцидентов |
+| Конфигурация | `asiba-config` | 968 | XDG-пути, `config.toml`, `servers/<id>.toml`, keyring, архив инцидентов |
 | Хранилище | `asiba-storage` | 625 | SQLite: метрики (3 уровня), журнал действий, поток записи |
 | Модули | `asiba-modules` | 10 192 | 18 сборщиков данных, парсеры, действия, запросы |
 | Инциденты | `asiba-incidents` | 3 397 | 12 детекторов, 77 паттернов аудита, оценка безопасности, `reconcile` |
@@ -36,7 +36,7 @@ Asiba — настольное приложение (Rust, egui) для мони
 
 `~/.ssh/config` (`ssh_config.rs`, крейт `ssh2-config`): для алиаса берутся `HostName` и `IdentityFile`; `Port` и `User` из формы имеют приоритет; `ProxyJump` не читается — jump host задаётся в форме и всегда входит по `auto`.
 
-**Хранение**: спецификация — `~/.config/asiba/servers/<id>.toml` (`ServerStore`); переименование сервера в форме переносит файлы `.md`/`.llm.md`, секреты, раскладку, архив инцидентов и состояние в памяти под новое имя (`Command::UpdateServer { previous }`), удаление стирает toml, оба документа, секреты и историю в SQLite. Секреты (пароль, passphrase, пароль sudo) — системный keyring, сервис `asiba`, аккаунты `<id>/password`, `<id>/passphrase`, `<id>/sudo` (`KeyringSecretStore`). Без Secret Service приложение работает, но входит без секретов (предупреждение в лог). При редактировании незаполненные секреты берутся из текущих (`Credentials::fill_missing_from`).
+**Хранение**: спецификация — `~/.config/asiba/servers/<id>.toml` (`ServerStore`); переименование сервера в форме переносит файлы `.md`/`.llm.md`, секреты, архив инцидентов и состояние в памяти под новое имя (`Command::UpdateServer { previous }`), удаление стирает toml, оба документа, секреты и историю в SQLite. Секреты (пароль, passphrase, пароль sudo) — системный keyring, сервис `asiba`, аккаунты `<id>/password`, `<id>/passphrase`, `<id>/sudo` (`KeyringSecretStore`). Без Secret Service приложение работает, но входит без секретов (предупреждение в лог). При редактировании незаполненные секреты берутся из текущих (`Credentials::fill_missing_from`).
 
 ### 2.2 Жизненный цикл соединения
 
@@ -220,7 +220,6 @@ connect (таймаут 15 с)
 | `~/.config/asiba/servers/<id>.md`, `<id>.llm.md` | файлы сервера | `DocWriter` |
 | keyring `asiba` | пароли, passphrase, sudo, ключ API ИИ | `Persistence`, UI (Настройки → ИИ) |
 | `~/.local/share/asiba/history.db` | метрики, журнал действий | `StorageWriter` |
-| `~/.local/state/asiba/layout.toml` | раскладка сводок | UI |
 | `~/.local/state/asiba/ignored.toml` | архив инцидентов | UI |
 | `~/.local/state/asiba/audits/<сервер>/` | отчёты ИИ | воркер ИИ |
 | `~/.cache/asiba/geo.json`, `countries.json`, `tiles/` | геокеш, страны, тайлы | движок, карта |

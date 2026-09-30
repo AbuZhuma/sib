@@ -149,14 +149,7 @@ pub const AVAIL_UNAVAILABLE: &str = "недоступен";
 
 pub const DETAIL_SECTION_CONNECTION: &str = "Соединение";
 pub const DETAIL_SECTION_EVENTS: &str = "События сервера";
-pub const DETAIL_LAYOUT: &str = "раскладка";
-pub const DETAIL_LAYOUT_DONE: &str = "готово";
-pub const DETAIL_HIDE: &str = "скрыть";
 pub const DETAIL_OPEN: &str = "перейти →";
-pub const DETAIL_SHOW: &str = "показать";
-pub const DETAIL_HIDDEN: &str = "Скрытые виджеты";
-pub const DETAIL_UP: &str = "▲";
-pub const DETAIL_DOWN: &str = "▼";
 pub const DETAIL_SECTION_MODULES: &str = "Модули";
 pub const DETAIL_SECTION_DESCRIPTION: &str = "Описание";
 pub const DETAIL_RETRY_AT: &str = "повтор через";

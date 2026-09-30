@@ -11,7 +11,7 @@ pub mod server_form;
 pub mod servers;
 pub mod settings;
 
-use asiba_config::{AiConfig, SummaryLayout, ThemeChoice};
+use asiba_config::{AiConfig, ThemeChoice};
 use asiba_core::{
     ActionRequest, ActionSpec, AlertRule, AuditScope, AuditTarget, Credentials, IgnoredIncident,
     Intervals, ModuleId, QueryRequest, Retention, ServerId, ServerSpec,
@@ -46,10 +46,6 @@ pub enum Action {
     },
     AskDelete(ServerId),
     OpenServerFile(ServerId),
-    SaveLayout {
-        server: ServerId,
-        layout: SummaryLayout,
-    },
     OpenTerminal(ServerId),
     SetTheme(ThemeChoice),
     SetGeolocation(bool),

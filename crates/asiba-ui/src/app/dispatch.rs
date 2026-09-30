@@ -3,7 +3,6 @@ use asiba_engine::Command;
 use super::AsibaApp;
 use super::dialogs::DeleteDialog;
 use crate::pages::Action;
-use crate::shell::Notice;
 
 impl AsibaApp {
     pub(super) fn apply(&mut self, action: Action, ctx: &egui::Context) {
@@ -26,7 +25,6 @@ impl AsibaApp {
             | Action::FilesClearSearch { .. } => self.apply_data(action),
             Action::SetTheme(_)
             | Action::SetGeolocation(_)
-            | Action::SaveLayout { .. }
             | Action::SaveCollection { .. }
             | Action::SaveAlertSettings { .. }
             | Action::SaveAiConfig(_) => self.apply_settings(action, ctx),
@@ -105,12 +103,6 @@ impl AsibaApp {
                 self.config.geolocation = enabled;
                 self.engine.send(Command::SetGeolocation(enabled));
                 self.save_config();
-            }
-            Action::SaveLayout { server, layout } => {
-                self.layouts.servers.insert(server.to_string(), layout);
-                if let Err(error) = self.layouts.save(&self.paths) {
-                    self.notices.push(Notice::new(error.to_string()));
-                }
             }
             Action::SaveCollection {
                 intervals,

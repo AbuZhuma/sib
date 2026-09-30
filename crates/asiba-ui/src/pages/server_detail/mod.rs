@@ -7,7 +7,7 @@ mod modules_table;
 pub mod security;
 mod summary;
 
-use asiba_config::{AiConfig, SummaryLayout};
+use asiba_config::AiConfig;
 use asiba_core::{
     AppState, AuditScope, AuditTarget, Incident, IncidentKind, ModuleId, ServerState,
 };
@@ -30,7 +30,6 @@ pub struct DetailContext<'a> {
     pub views: &'a [Box<dyn ModuleView>],
     pub inspector: Option<&'a Inspector>,
     pub files: Option<&'a files::FileBrowser>,
-    pub layout: &'a SummaryLayout,
     pub shared: ViewShared<'a>,
 }
 
@@ -88,7 +87,6 @@ fn tab_content(ui: &mut Ui, ctx: &DetailContext<'_>, tab: Tab) -> Option<Action>
                 state: ctx.state,
                 can_audit: ctx.ai.is_ready(),
                 views: ctx.views,
-                layout: ctx.layout,
                 shared: &ctx.shared,
             },
         ),
