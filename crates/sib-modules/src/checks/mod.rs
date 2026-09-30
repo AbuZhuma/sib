@@ -18,7 +18,7 @@ pub const ID: ModuleId = ModuleId("checks");
 pub const KEY_FAILED: &str = "checks.failed";
 
 const DETECT: &str = "command -v timeout";
-const NO_TIMEOUT: &str = "нет timeout";
+const NO_TIMEOUT: &str = "no timeout";
 
 pub fn metric_key(check: &CustomCheck) -> String {
     format!("checks.{}.failed", check.id)
@@ -41,7 +41,7 @@ impl Module for ChecksModule {
     }
 
     fn title(&self) -> &'static str {
-        "Свои проверки"
+        "Your checks"
     }
 
     fn schedule(&self) -> Schedule {

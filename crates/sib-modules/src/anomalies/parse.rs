@@ -11,7 +11,7 @@ pub fn anomalies_snapshot(raw: &str) -> Result<AnomaliesSnapshot, ModuleError> {
     let sections = Sections::parse(raw);
     let sockets = sections.get_or_empty("ss");
     if sections.get("snmp").is_none() {
-        return Err(ModuleError::Parse("нет /proc/net/snmp".to_owned()));
+        return Err(ModuleError::Parse("no /proc/net/snmp".to_owned()));
     }
     let (states, peers) = sockets_summary(sockets);
     let total_connections = states.values().sum();

@@ -28,7 +28,7 @@ pub fn services_snapshot(raw: &str) -> Result<ServicesSnapshot, ModuleError> {
 fn units(raw: &str) -> Result<Vec<Unit>, ModuleError> {
     let parsed: Vec<Unit> = raw.lines().filter_map(unit_line).collect();
     if parsed.is_empty() {
-        return Err(ModuleError::Parse("пустой список юнитов".to_owned()));
+        return Err(ModuleError::Parse("empty unit list".to_owned()));
     }
     Ok(parsed)
 }

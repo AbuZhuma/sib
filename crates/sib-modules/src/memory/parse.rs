@@ -11,7 +11,7 @@ pub fn memory_snapshot(raw: &str) -> Result<MemorySnapshot, ModuleError> {
     let meminfo = sections.get_or_empty("meminfo");
     let vmstat = sections.get_or_empty("vmstat");
     let total_bytes = meminfo_field(meminfo, "MemTotal")
-        .ok_or_else(|| ModuleError::Parse("нет MemTotal в /proc/meminfo".to_owned()))?;
+        .ok_or_else(|| ModuleError::Parse("no MemTotal in /proc/meminfo".to_owned()))?;
     Ok(MemorySnapshot {
         total_bytes,
         free_bytes: meminfo_field(meminfo, "MemFree").unwrap_or(0),

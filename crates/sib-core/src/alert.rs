@@ -51,7 +51,7 @@ fn enabled_by_default() -> bool {
 impl AlertRule {
     pub fn summary(&self) -> String {
         format!(
-            "{} {} {} / {}с",
+            "{} {} {} / {}s",
             self.metric,
             self.condition.symbol(),
             self.threshold,

@@ -44,7 +44,7 @@ fn syn_backlog(snapshot: &AnomaliesSnapshot, signs: &mut Vec<AttackSign>) {
     signs.push(AttackSign {
         kind: SignKind::SynBacklog,
         severity,
-        detail: format!("{syn_recv} полуоткрытых соединений"),
+        detail: format!("{syn_recv} half-open connections"),
         peers,
     });
 }
@@ -54,7 +54,7 @@ fn rate_signs(snapshot: &AnomaliesSnapshot, rates: &Rates, signs: &mut Vec<Attac
         signs.push(AttackSign {
             kind: SignKind::SynFlood,
             severity: Severity::Critical,
-            detail: format!("ядро отправляет {:.0} SYN cookies/с", rates.syncookies),
+            detail: format!("the kernel sends {:.0} SYN cookies/s", rates.syncookies),
             peers: syn_peers(snapshot),
         });
     }
@@ -62,7 +62,7 @@ fn rate_signs(snapshot: &AnomaliesSnapshot, rates: &Rates, signs: &mut Vec<Attac
         signs.push(AttackSign {
             kind: SignKind::ListenDrops,
             severity: Severity::Critical,
-            detail: format!("{:.0} сбросов/с в очереди accept", rates.listen_drops),
+            detail: format!("{:.0} drops/s in the accept queue", rates.listen_drops),
             peers: Vec::new(),
         });
     }
@@ -75,7 +75,7 @@ fn rate_signs(snapshot: &AnomaliesSnapshot, rates: &Rates, signs: &mut Vec<Attac
         signs.push(AttackSign {
             kind: SignKind::PacketFlood,
             severity,
-            detail: format!("{:.0} пакетов/с входящих", rates.pps_in),
+            detail: format!("{:.0} incoming packets/s", rates.pps_in),
             peers: Vec::new(),
         });
     }
@@ -83,7 +83,7 @@ fn rate_signs(snapshot: &AnomaliesSnapshot, rates: &Rates, signs: &mut Vec<Attac
         signs.push(AttackSign {
             kind: SignKind::ConnectionFlood,
             severity: Severity::Warning,
-            detail: format!("{:.0} новых соединений/с", rates.new_connections),
+            detail: format!("{:.0} new connections/s", rates.new_connections),
             peers: top_ips(snapshot, 3),
         });
     }
@@ -100,7 +100,7 @@ fn peer_signs(snapshot: &AnomaliesSnapshot, signs: &mut Vec<AttackSign>) {
         signs.push(AttackSign {
             kind: SignKind::SinglePeer,
             severity: Severity::Warning,
-            detail: format!("{}: {} соединений", top.ip, top.connections),
+            detail: format!("{}: {} connections", top.ip, top.connections),
             peers: heavy,
         });
     }
@@ -112,7 +112,7 @@ fn peer_signs(snapshot: &AnomaliesSnapshot, signs: &mut Vec<AttackSign>) {
             kind: SignKind::ConcentratedPeers,
             severity: Severity::Warning,
             detail: format!(
-                "топ-{} IP дают {share:.0}% соединений",
+                "top {} IPs make {share:.0}% of connections",
                 snapshot.top_peers.len()
             ),
             peers: top_ips(snapshot, snapshot.top_peers.len()),
@@ -129,7 +129,7 @@ fn conntrack(snapshot: &AnomaliesSnapshot, signs: &mut Vec<AttackSign>) {
         signs.push(AttackSign {
             kind: SignKind::ConntrackFull,
             severity: Severity::Critical,
-            detail: format!("{count} из {max} ({pct:.0}%)"),
+            detail: format!("{count} of {max} ({pct:.0}%)"),
             peers: Vec::new(),
         });
     }

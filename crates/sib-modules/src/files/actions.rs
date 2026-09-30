@@ -13,9 +13,9 @@ pub const ACTION_MOVE: &str = "move";
 pub const ACTION_COPY: &str = "copy";
 
 pub const SPEC_WRITE: ActionSpec =
-    ActionSpec::new(ID, ACTION_WRITE, "Сохранить файл", Danger::Normal);
+    ActionSpec::new(ID, ACTION_WRITE, "Save the file", Danger::Normal);
 pub const SPEC_WRITE_SYSTEM: ActionSpec =
-    ActionSpec::new(ID, ACTION_WRITE, "Сохранить системный файл", Danger::High);
+    ActionSpec::new(ID, ACTION_WRITE, "Save the system file", Danger::High);
 const SYSTEM_PREFIXES: [&str; 6] = ["/etc/", "/boot/", "/usr/", "/bin/", "/sbin/", "/lib/"];
 
 pub fn write_spec(path: &str) -> ActionSpec {
@@ -28,21 +28,17 @@ pub fn write_spec(path: &str) -> ActionSpec {
     SPEC_WRITE
 }
 pub const SPEC_CHMOD: ActionSpec =
-    ActionSpec::new(ID, ACTION_CHMOD, "Изменить права", Danger::Normal);
+    ActionSpec::new(ID, ACTION_CHMOD, "Change permissions", Danger::Normal);
 pub const SPEC_CHOWN: ActionSpec =
-    ActionSpec::new(ID, ACTION_CHOWN, "Изменить владельца", Danger::Normal);
-pub const SPEC_DELETE: ActionSpec = ActionSpec::new(ID, ACTION_DELETE, "Удалить", Danger::High);
+    ActionSpec::new(ID, ACTION_CHOWN, "Change the owner", Danger::Normal);
+pub const SPEC_DELETE: ActionSpec = ActionSpec::new(ID, ACTION_DELETE, "Delete", Danger::High);
 pub const SPEC_MKDIR: ActionSpec =
-    ActionSpec::new(ID, ACTION_MKDIR, "Создать папку", Danger::Normal);
+    ActionSpec::new(ID, ACTION_MKDIR, "Create a folder", Danger::Normal);
 pub const SPEC_CREATE: ActionSpec =
-    ActionSpec::new(ID, ACTION_CREATE, "Создать файл", Danger::Normal);
-pub const SPEC_MOVE: ActionSpec = ActionSpec::new(
-    ID,
-    ACTION_MOVE,
-    "Переместить или переименовать",
-    Danger::Normal,
-);
-pub const SPEC_COPY: ActionSpec = ActionSpec::new(ID, ACTION_COPY, "Копировать", Danger::Normal);
+    ActionSpec::new(ID, ACTION_CREATE, "Create a file", Danger::Normal);
+pub const SPEC_MOVE: ActionSpec =
+    ActionSpec::new(ID, ACTION_MOVE, "Move or rename", Danger::Normal);
+pub const SPEC_COPY: ActionSpec = ActionSpec::new(ID, ACTION_COPY, "Copy", Danger::Normal);
 pub const SPECS: [ActionSpec; 8] = [
     SPEC_WRITE,
     SPEC_CHMOD,
@@ -84,9 +80,9 @@ pub async fn perform(
 
 fn outcome_message(kind: &str, path: &str, argument: &str) -> String {
     match kind {
-        ACTION_WRITE => format!("{path}: записано {} байт", argument.len()),
-        ACTION_DELETE => format!("{path}: удалено"),
-        ACTION_MKDIR | ACTION_CREATE => format!("{path}: создано"),
+        ACTION_WRITE => format!("{path}: wrote {} bytes", argument.len()),
+        ACTION_DELETE => format!("{path}: deleted"),
+        ACTION_MKDIR | ACTION_CREATE => format!("{path}: created"),
         ACTION_MOVE | ACTION_COPY => format!("{path} → {argument}: ok"),
         _ => format!("{kind} {argument} {path}: ok"),
     }
@@ -98,7 +94,7 @@ fn validate_mode(value: &str) -> Result<&str, ModuleError> {
         MODE_DIGITS.contains(&trimmed.len()) && trimmed.chars().all(|c| ('0'..='7').contains(&c));
     if !is_octal {
         return Err(ModuleError::ActionFailed(format!(
-            "права должны быть восьмеричным числом, получено {trimmed:?}"
+            "permissions must be an octal number, got {trimmed:?}"
         )));
     }
     Ok(trimmed)
@@ -107,7 +103,7 @@ fn validate_mode(value: &str) -> Result<&str, ModuleError> {
 fn validate_deletable(path: &str) -> Result<&str, ModuleError> {
     if path.trim_end_matches('/').is_empty() || path == ROOT {
         return Err(ModuleError::ActionFailed(
-            "корень удалять нельзя".to_owned(),
+            "the root directory cannot be deleted".to_owned(),
         ));
     }
     Ok(path)

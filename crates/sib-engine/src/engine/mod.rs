@@ -38,7 +38,7 @@ pub struct EngineHandle {
 impl EngineHandle {
     pub fn send(&self, command: Command) {
         if self.commands.send(command).is_err() {
-            tracing::error!("движок остановлен, команда потеряна");
+            tracing::error!("engine has stopped, the command is lost");
         }
     }
 
@@ -143,8 +143,8 @@ impl Engine {
                     self.start_worker(spec, credentials, HostKeyPolicy::KnownHostsOnly);
                 }
             }
-            Ok(Err(error)) => self.warn(format!("не удалось загрузить серверы: {error}")),
-            Err(error) => self.warn(format!("сбой загрузки: {error}")),
+            Ok(Err(error)) => self.warn(format!("could not load the servers: {error}")),
+            Err(error) => self.warn(format!("loading failed: {error}")),
         }
     }
 
@@ -220,7 +220,7 @@ impl Engine {
                 if let Some(storage) = &self.storage
                     && storage.set_retention(retention).is_err()
                 {
-                    self.warn("хранилище остановлено, сроки хранения не применены".to_owned());
+                    self.warn("storage has stopped, retention was not applied".to_owned());
                 }
             }
             Command::Audit {

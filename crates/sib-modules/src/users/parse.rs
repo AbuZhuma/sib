@@ -14,7 +14,7 @@ pub fn users_snapshot(raw: &str) -> Result<UsersSnapshot, ModuleError> {
     let sections = Sections::parse(raw);
     let passwd = sections.get_or_empty("passwd");
     if passwd.trim().is_empty() {
-        return Err(ModuleError::Parse("пустой getent passwd".to_owned()));
+        return Err(ModuleError::Parse("empty getent passwd".to_owned()));
     }
     let sudoers = sudoers(sections.get_or_empty("sudoers"));
     Ok(UsersSnapshot {

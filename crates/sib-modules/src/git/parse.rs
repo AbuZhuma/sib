@@ -12,7 +12,7 @@ pub fn git_snapshot(raw: &str) -> Result<GitSnapshot, ModuleError> {
     let sections = Sections::parse(raw);
     let version = sections.get_or_empty("version").trim();
     if version.is_empty() {
-        return Err(ModuleError::Parse("git --version пуст".to_owned()));
+        return Err(ModuleError::Parse("git --version is empty".to_owned()));
     }
     Ok(GitSnapshot {
         version: version

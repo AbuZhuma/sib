@@ -16,7 +16,7 @@ impl Source {
         match self {
             Self::Compose => "compose",
             Self::Systemd => "systemd",
-            Self::LogFile => "лог",
+            Self::LogFile => "log",
             Self::Runner => "CI runner",
         }
     }

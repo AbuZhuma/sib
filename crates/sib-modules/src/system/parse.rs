@@ -135,6 +135,6 @@ mod tests {
     fn uptime_human_formats_days() {
         let mut info = system_info(FEDORA).expect("parse");
         info.uptime = Duration::from_secs(90_000);
-        assert_eq!(info.uptime_human(), "1д 1ч 0м");
+        assert_eq!(info.uptime_human(), "1d 1h 0m");
     }
 }

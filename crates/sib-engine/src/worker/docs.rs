@@ -70,7 +70,7 @@ fn write_file(path: &Path, content: &str) -> bool {
     match std::fs::write(path, content) {
         Ok(()) => true,
         Err(error) => {
-            tracing::warn!(path = %path.display(), %error, "файл сервера не записан");
+            tracing::warn!(path = %path.display(), %error, "the server file was not written");
             false
         }
     }

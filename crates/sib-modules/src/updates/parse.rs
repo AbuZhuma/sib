@@ -8,7 +8,7 @@ const MAX_PACKAGES: usize = 200;
 pub fn updates_snapshot(raw: &str) -> Result<UpdatesSnapshot, ModuleError> {
     let sections = Sections::parse(raw);
     let manager = manager(sections.get_or_empty("manager"))
-        .ok_or_else(|| ModuleError::Parse("пакетный менеджер не определён".to_owned()))?;
+        .ok_or_else(|| ModuleError::Parse("could not tell the package manager".to_owned()))?;
     let lines: Vec<&str> = match manager {
         PackageManager::Apt => sections.get_or_empty("apt").lines().collect(),
         PackageManager::Dnf | PackageManager::Yum => sections.get_or_empty("dnf").lines().collect(),

@@ -149,7 +149,7 @@ fn build(project: &str, window: &[&ComposeEvent], now: DateTime<Utc>) -> Option<
         stages,
         status,
         error: crash.map(|c| DeployError {
-            line: format!("{} завершился с кодом {}", c.name, c.exit_code.unwrap_or(0)),
+            line: format!("{} exited with code {}", c.name, c.exit_code.unwrap_or(0)),
             context: Vec::new(),
         }),
         log_tail: Vec::new(),
@@ -223,7 +223,7 @@ mod tests {
         assert_eq!(names, vec!["pull", "create", "start", "healthy"]);
         let api = deploys.iter().find(|d| d.project == "api").expect("api");
         assert_eq!(api.status, DeployStatus::Failed);
-        assert!(api.error.as_ref().expect("error").line.contains("кодом 1"));
+        assert!(api.error.as_ref().expect("error").line.contains("code 1"));
     }
 
     #[test]

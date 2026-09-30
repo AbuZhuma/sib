@@ -31,7 +31,7 @@ fn brute_force(previous: &SecuritySnapshot, current: &SecuritySnapshot, events: 
             ID,
             Severity::Warning,
             format!(
-                "брутфорс SSH с {}: {} попыток за 10 мин ({})",
+                "SSH brute force from {}: {} attempts in 10 min ({})",
                 attacker.ip,
                 attacker.recent_failures,
                 attacker.users_label()
@@ -56,16 +56,12 @@ fn logins(
         } else {
             Severity::Info
         };
-        let suffix = if is_new_ip {
-            " - новый адрес"
-        } else {
-            ""
-        };
+        let suffix = if is_new_ip { " - new address" } else { "" };
         events.push(Event::new(
             ID,
             severity,
             format!(
-                "вход {} с {} ({}){suffix}",
+                "{} logged in from {} ({}){suffix}",
                 login.user, login.from, login.method
             ),
         ));
@@ -81,7 +77,7 @@ fn file_changes(previous: &SecuritySnapshot, current: &SecuritySnapshot, events:
             events.push(Event::new(
                 ID,
                 Severity::Critical,
-                format!("изменён {path}"),
+                format!("{path} changed"),
             ));
         }
     }
@@ -93,13 +89,13 @@ fn file_changes(previous: &SecuritySnapshot, current: &SecuritySnapshot, events:
             None => events.push(Event::new(
                 ID,
                 Severity::Critical,
-                format!("новый файл {path}"),
+                format!("new file {path}"),
             )),
             Some(before) if before != hash => {
                 events.push(Event::new(
                     ID,
                     Severity::Critical,
-                    format!("изменён {path}"),
+                    format!("{path} changed"),
                 ));
             }
             _ => {}
@@ -202,6 +198,6 @@ mod tests {
         };
         let events = between(&empty(), &current, at(1));
         assert_eq!(events[0].severity, Severity::Critical);
-        assert_eq!(events[0].message, "изменён /etc/passwd");
+        assert_eq!(events[0].message, "/etc/passwd changed");
     }
 }

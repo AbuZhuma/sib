@@ -32,11 +32,11 @@ impl SystemInfo {
         let hours = (secs % 86_400) / 3_600;
         let minutes = (secs % 3_600) / 60;
         if days > 0 {
-            return format!("{days}д {hours}ч {minutes}м");
+            return format!("{days}d {hours}h {minutes}m");
         }
         if hours > 0 {
-            return format!("{hours}ч {minutes}м");
+            return format!("{hours}h {minutes}m");
         }
-        format!("{minutes}м")
+        format!("{minutes}m")
     }
 }

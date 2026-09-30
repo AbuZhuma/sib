@@ -65,8 +65,8 @@ async fn execute(job: &Perform) -> Result<String, String> {
             .await
             .map(|outcome| outcome.message)
             .map_err(|e| e.to_string()),
-        (None, _) => Err("сервер не подключён".to_owned()),
-        (_, None) => Err("модуль не найден".to_owned()),
+        (None, _) => Err("server is not connected".to_owned()),
+        (_, None) => Err("module not found".to_owned()),
     }
 }
 
@@ -75,14 +75,14 @@ fn journaled_argument(module: &str, kind: &str, argument: String) -> String {
     if !is_file_content && argument.chars().count() <= MAX_JOURNALED_ARGUMENT {
         return argument;
     }
-    format!("{} байт", argument.len())
+    format!("{} bytes", argument.len())
 }
 
 fn log_record(record: &ActionRecord) {
     if record.is_success {
-        tracing::info!(server = %record.server, kind = %record.kind, target = %record.target, "действие выполнено");
+        tracing::info!(server = %record.server, kind = %record.kind, target = %record.target, "action done");
     } else {
-        tracing::warn!(server = %record.server, kind = %record.kind, target = %record.target, error = %record.message, "действие не выполнено");
+        tracing::warn!(server = %record.server, kind = %record.kind, target = %record.target, error = %record.message, "action failed");
     }
 }
 
@@ -100,7 +100,7 @@ pub fn prefill_journal(path: Option<PathBuf>, state: SharedState, notify: Repain
                 }
                 notify();
             }
-            Err(error) => tracing::warn!(%error, "журнал действий не загружен"),
+            Err(error) => tracing::warn!(%error, "action journal was not loaded"),
         }
     });
 }
@@ -113,7 +113,7 @@ mod tests {
     fn file_content_is_journaled_as_size_only() {
         assert_eq!(
             journaled_argument("files", "write", "secret=1".to_owned()),
-            "8 байт"
+            "8 bytes"
         );
         assert_eq!(
             journaled_argument("files", "chmod", "644".to_owned()),
@@ -121,7 +121,7 @@ mod tests {
         );
         assert_eq!(
             journaled_argument("security", "ban", "x".repeat(200)),
-            "200 байт"
+            "200 bytes"
         );
     }
 }

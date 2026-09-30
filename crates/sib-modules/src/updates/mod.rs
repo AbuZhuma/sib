@@ -45,7 +45,7 @@ impl Module for UpdatesModule {
     }
 
     fn title(&self) -> &'static str {
-        "Обновления"
+        "Updates"
     }
 
     fn schedule(&self) -> Schedule {
@@ -57,7 +57,7 @@ impl Module for UpdatesModule {
         transport: &dyn Transport,
         _settings: &ModuleSettings,
     ) -> Result<Availability, ModuleError> {
-        detect::require(transport, DETECT, "пакетный менеджер не найден").await
+        detect::require(transport, DETECT, "no package manager found").await
     }
 
     async fn collect(

@@ -27,7 +27,7 @@ fn change(previous: &ChecksSnapshot, result: &CheckResult) -> Option<Event> {
         CheckOutcome::Passed if before == CheckOutcome::Failed => Some(Event::new(
             ID,
             Severity::Info,
-            format!("проверка «{}» снова проходит", result.check.name),
+            format!("check \"{}\" passes again", result.check.name),
         )),
         _ => None,
     }
@@ -37,11 +37,11 @@ fn failed_message(result: &CheckResult) -> String {
     let detail = model::CheckResult::first_line(result);
     if detail.is_empty() {
         return format!(
-            "проверка «{}» не пройдена (код {})",
+            "check \"{}\" failed (exit code {})",
             result.check.name, result.exit_code
         );
     }
-    format!("проверка «{}» не пройдена: {detail}", result.check.name)
+    format!("check \"{}\" failed: {detail}", result.check.name)
 }
 
 #[cfg(test)]
@@ -54,12 +54,12 @@ mod tests {
     fn result(outcome: CheckOutcome) -> CheckResult {
         CheckResult {
             check: CustomCheck {
-                name: "Сертификат".to_owned(),
+                name: "Certificate".to_owned(),
                 ..CustomCheck::new("custom:1")
             },
             outcome,
             exit_code: 1,
-            output: "истекает через 2 дня".to_owned(),
+            output: "expires in 2 days".to_owned(),
             at: Utc::now(),
         }
     }
@@ -71,7 +71,7 @@ mod tests {
         };
         let events = changes(Some(&previous), &[result(CheckOutcome::Failed)]);
         assert_eq!(events.len(), 1);
-        assert!(events[0].message.contains("истекает через 2 дня"));
+        assert!(events[0].message.contains("expires in 2 days"));
     }
 
     #[test]

@@ -41,7 +41,7 @@ impl Module for NetworkModule {
     }
 
     fn title(&self) -> &'static str {
-        "Сеть"
+        "Network"
     }
 
     fn schedule(&self) -> Schedule {

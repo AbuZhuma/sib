@@ -9,11 +9,11 @@ pub const ACTION_KILL: &str = "kill";
 pub const SPEC_TERMINATE: ActionSpec = ActionSpec::new(
     ID,
     ACTION_TERMINATE,
-    "Завершить процесс (SIGTERM)",
+    "Stop the process (SIGTERM)",
     Danger::Normal,
 );
 pub const SPEC_KILL: ActionSpec =
-    ActionSpec::new(ID, ACTION_KILL, "Убить процесс (SIGKILL)", Danger::High);
+    ActionSpec::new(ID, ACTION_KILL, "Kill the process (SIGKILL)", Danger::High);
 pub const SPECS: [ActionSpec; 2] = [SPEC_TERMINATE, SPEC_KILL];
 
 pub async fn perform(
@@ -29,7 +29,7 @@ pub async fn perform(
     let command = format!("kill -{signal} {pid}");
     require_success(exec_prefer_root(transport, &command).await?)?;
     Ok(ActionOutcome::new(format!(
-        "SIG{signal} отправлен процессу {pid}"
+        "SIG{signal} sent to process {pid}"
     )))
 }
 
@@ -39,7 +39,7 @@ fn validate_pid(value: &str) -> Result<u32, ModuleError> {
         .parse::<u32>()
         .ok()
         .filter(|pid| *pid > 1)
-        .ok_or_else(|| ModuleError::ActionFailed(format!("некорректный PID {value}")))
+        .ok_or_else(|| ModuleError::ActionFailed(format!("invalid PID {value}")))
 }
 
 #[cfg(test)]

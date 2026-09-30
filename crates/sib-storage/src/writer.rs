@@ -121,25 +121,25 @@ pub fn spawn_writer(database: Database, retention: Retention) -> StorageWriter {
 
 fn flush(database: &mut Database, batch: &mut Vec<StoredSample>) {
     if let Err(error) = database.insert_batch(batch) {
-        tracing::error!(%error, "не удалось записать метрики");
+        tracing::error!(%error, "could not write metrics");
     }
     batch.clear();
 }
 
 fn record_action(database: &Database, record: &ActionRecord) {
     if let Err(error) = database.insert_action(record) {
-        tracing::error!(%error, "не удалось записать действие в журнал");
+        tracing::error!(%error, "could not write the action to the journal");
     }
 }
 
 fn delete_server(database: &Database, server: &str) {
     if let Err(error) = database.delete_server(server) {
-        tracing::error!(%error, server, "история сервера не удалена");
+        tracing::error!(%error, server, "server history was not deleted");
     }
 }
 
 fn maintain(database: &mut Database, retention: &Retention) {
     if let Err(error) = database.run_maintenance(Utc::now(), retention) {
-        tracing::error!(%error, "обслуживание базы не выполнено");
+        tracing::error!(%error, "database maintenance failed");
     }
 }

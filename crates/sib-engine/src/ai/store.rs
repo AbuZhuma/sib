@@ -9,7 +9,7 @@ pub fn write_report(dir: &Path, report: &AuditReport) -> Option<PathBuf> {
     };
     let server_dir = dir.join(report.target.key());
     if let Err(error) = std::fs::create_dir_all(&server_dir) {
-        tracing::warn!(path = %server_dir.display(), %error, "папка аудитов не создана");
+        tracing::warn!(path = %server_dir.display(), %error, "the audit folder was not created");
         return None;
     }
     let stamp = report
@@ -30,7 +30,7 @@ pub fn write_report(dir: &Path, report: &AuditReport) -> Option<PathBuf> {
     match std::fs::write(&path, body) {
         Ok(()) => Some(path),
         Err(error) => {
-            tracing::warn!(path = %path.display(), %error, "отчёт аудита не записан");
+            tracing::warn!(path = %path.display(), %error, "the audit report was not written");
             None
         }
     }

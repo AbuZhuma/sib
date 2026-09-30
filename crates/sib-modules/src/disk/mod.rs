@@ -39,7 +39,7 @@ impl Module for DiskModule {
     }
 
     fn title(&self) -> &'static str {
-        "Диски"
+        "Disks"
     }
 
     fn schedule(&self) -> Schedule {
@@ -51,7 +51,7 @@ impl Module for DiskModule {
         transport: &dyn Transport,
         _settings: &ModuleSettings,
     ) -> Result<Availability, ModuleError> {
-        detect::require(transport, "command -v df", "нет df").await
+        detect::require(transport, "command -v df", "no df").await
     }
 
     async fn collect(

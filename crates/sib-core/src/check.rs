@@ -42,17 +42,17 @@ impl Area {
     pub fn label(self) -> &'static str {
         match self {
             Self::Ssh => "SSH",
-            Self::Access => "Доступ и права",
-            Self::Firewall => "Сеть и файрвол",
-            Self::Kernel => "Ядро",
-            Self::Hardening => "Защита системы",
-            Self::Resources => "Ресурсы",
-            Self::Reliability => "Надёжность",
-            Self::Network => "Сетевые интерфейсы",
-            Self::Updates => "Обновления",
-            Self::Logs => "Журнал",
-            Self::Collection => "Сбор данных",
-            Self::Custom => "Свои проверки",
+            Self::Access => "Access and permissions",
+            Self::Firewall => "Network and firewall",
+            Self::Kernel => "Kernel",
+            Self::Hardening => "System hardening",
+            Self::Resources => "Resources",
+            Self::Reliability => "Reliability",
+            Self::Network => "Network interfaces",
+            Self::Updates => "Updates",
+            Self::Logs => "Logs",
+            Self::Collection => "Data collection",
+            Self::Custom => "Your checks",
         }
     }
 
@@ -85,9 +85,9 @@ impl Weight {
 
     pub fn label(self) -> &'static str {
         match self {
-            Self::Low => "низкий",
-            Self::Medium => "средний",
-            Self::High => "высокий",
+            Self::Low => "low",
+            Self::Medium => "medium",
+            Self::High => "high",
         }
     }
 
@@ -220,7 +220,7 @@ mod tests {
         CustomCheck {
             expect,
             expect_text: text.to_owned(),
-            name: "проверка".to_owned(),
+            name: "check".to_owned(),
             source: "true".to_owned(),
             ..CustomCheck::new("custom:1")
         }
@@ -229,7 +229,7 @@ mod tests {
     #[test]
     fn exit_zero_check_passes_only_on_zero() {
         let check = check(CheckExpect::ExitZero, "");
-        assert!(check.is_passing(0, "что угодно"));
+        assert!(check.is_passing(0, "anything"));
         assert!(!check.is_passing(1, ""));
     }
 
@@ -259,7 +259,7 @@ mod tests {
         let mut check = check(CheckExpect::ExitZero, "");
         check.name = "  ".to_owned();
         assert!(!check.is_complete());
-        check.name = "проверка".to_owned();
+        check.name = "check".to_owned();
         check.source = String::new();
         assert!(!check.is_complete());
     }

@@ -15,7 +15,7 @@ pub fn ports_snapshot(raw: &str) -> Result<PortsSnapshot, ModuleError> {
         .collect();
     if ports.is_empty() && !sections.get_or_empty("listen").trim().is_empty() {
         return Err(ModuleError::Parse(
-            "не удалось разобрать вывод ss".to_owned(),
+            "could not parse the ss output".to_owned(),
         ));
     }
     for port in &mut ports {

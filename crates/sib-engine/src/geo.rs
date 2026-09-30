@@ -142,12 +142,12 @@ fn fetch(key: &str) -> Option<CachedLocation> {
     let parsed = match response {
         Ok(parsed) => parsed,
         Err(error) => {
-            tracing::warn!(%error, key, "геолокация недоступна");
+            tracing::warn!(%error, key, "geolocation is not available");
             return None;
         }
     };
     if parsed.status != "success" {
-        tracing::warn!(key, message = ?parsed.message, "геолокация отклонена");
+        tracing::warn!(key, message = ?parsed.message, "geolocation request rejected");
         return None;
     }
     let label = [parsed.city, parsed.country]

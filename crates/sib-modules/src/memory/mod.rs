@@ -41,7 +41,7 @@ impl Module for MemoryModule {
     }
 
     fn title(&self) -> &'static str {
-        "Память"
+        "Memory"
     }
 
     fn schedule(&self) -> Schedule {
@@ -94,7 +94,7 @@ fn oom_event(count: u64) -> Event {
     Event::new(
         ID,
         Severity::Critical,
-        format!("OOM killer завершил процессов: {count}"),
+        format!("OOM killer stopped {count} processes"),
     )
 }
 

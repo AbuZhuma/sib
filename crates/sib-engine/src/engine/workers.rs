@@ -20,8 +20,8 @@ impl Engine {
             tokio::task::spawn_blocking(move || persistence.save(&spec_copy, &creds_copy)).await;
         match saved {
             Ok(Ok(())) => self.emit(EngineEvent::ServerSaved(spec.id.clone())),
-            Ok(Err(error)) => self.warn(format!("не удалось сохранить сервер: {error}")),
-            Err(error) => self.warn(format!("сбой сохранения: {error}")),
+            Ok(Err(error)) => self.warn(format!("could not save the server: {error}")),
+            Err(error) => self.warn(format!("saving failed: {error}")),
         }
         self.start_worker(spec, credentials, HostKeyPolicy::KnownHostsOnly);
     }
@@ -41,7 +41,7 @@ impl Engine {
         let persistence = self.persistence.clone();
         let saved = tokio::task::spawn_blocking(move || persistence.save_spec(&spec)).await;
         if let Ok(Err(error)) = saved {
-            self.warn(format!("не удалось сохранить проверки: {error}"));
+            self.warn(format!("could not save the checks: {error}"));
         }
         self.restart(&id, HostKeyPolicy::KnownHostsOnly);
     }
@@ -60,7 +60,7 @@ impl Engine {
         let id_copy = id.clone();
         let removed = tokio::task::spawn_blocking(move || persistence.remove(&id_copy)).await;
         if let Ok(Err(error)) = removed {
-            self.warn(format!("не удалось удалить файлы сервера: {error}"));
+            self.warn(format!("could not delete the server files: {error}"));
         }
         self.emit(EngineEvent::ServerRemoved(id));
     }
@@ -88,7 +88,7 @@ impl Engine {
         let (from, to) = (previous.clone(), next.clone());
         let moved = tokio::task::spawn_blocking(move || persistence.rename(&from, &to)).await;
         if let Ok(Err(error)) = moved {
-            self.warn(format!("не удалось переименовать файлы сервера: {error}"));
+            self.warn(format!("could not rename the server files: {error}"));
         }
         self.emit(EngineEvent::ServerRemoved(previous.clone()));
     }

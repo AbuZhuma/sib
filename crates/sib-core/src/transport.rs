@@ -17,21 +17,21 @@ impl CommandOutput {
 
 #[derive(Debug, Clone, thiserror::Error)]
 pub enum TransportError {
-    #[error("не удалось подключиться: {0}")]
+    #[error("could not connect: {0}")]
     Connect(String),
-    #[error("ошибка аутентификации: {0}")]
+    #[error("authentication failed: {0}")]
     Auth(String),
-    #[error("неизвестный ключ хоста: {fingerprint}")]
+    #[error("unknown host key: {fingerprint}")]
     UnknownHostKey { fingerprint: String },
-    #[error("ключ хоста изменился: {fingerprint}")]
+    #[error("host key changed: {fingerprint}")]
     HostKeyChanged { fingerprint: String },
-    #[error("соединение потеряно: {0}")]
+    #[error("connection lost: {0}")]
     Disconnected(String),
-    #[error("ошибка выполнения команды: {0}")]
+    #[error("command execution failed: {0}")]
     Exec(String),
-    #[error("sudo не настроен для этого сервера")]
+    #[error("sudo is not set up for this server")]
     SudoUnavailable,
-    #[error("таймаут операции")]
+    #[error("operation timed out")]
     Timeout,
 }
 

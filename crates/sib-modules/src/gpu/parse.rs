@@ -13,7 +13,7 @@ pub fn gpu_snapshot(raw: &str) -> Result<GpuSnapshot, ModuleError> {
     );
     gpus.extend(amd(sections.get_or_empty("amd")));
     if gpus.is_empty() {
-        return Err(ModuleError::Parse("ни одного GPU в выводе".to_owned()));
+        return Err(ModuleError::Parse("no GPU in the output".to_owned()));
     }
     Ok(GpuSnapshot { gpus })
 }

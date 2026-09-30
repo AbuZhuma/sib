@@ -8,11 +8,11 @@ pub const ACTION_START: &str = "start";
 pub const ACTION_STOP: &str = "stop";
 
 pub const SPEC_RESTART: ActionSpec =
-    ActionSpec::new(ID, ACTION_RESTART, "Перезапустить сервис", Danger::Normal);
+    ActionSpec::new(ID, ACTION_RESTART, "Restart the service", Danger::Normal);
 pub const SPEC_START: ActionSpec =
-    ActionSpec::new(ID, ACTION_START, "Запустить сервис", Danger::Normal);
+    ActionSpec::new(ID, ACTION_START, "Start the service", Danger::Normal);
 pub const SPEC_STOP: ActionSpec =
-    ActionSpec::new(ID, ACTION_STOP, "Остановить сервис", Danger::High);
+    ActionSpec::new(ID, ACTION_STOP, "Stop the service", Danger::High);
 pub const SPECS: [ActionSpec; 3] = [SPEC_RESTART, SPEC_START, SPEC_STOP];
 
 pub async fn perform(

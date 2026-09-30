@@ -65,12 +65,12 @@ async fn with_password(
     let password = credentials
         .password
         .as_deref()
-        .ok_or_else(|| TransportError::Auth("пароль не задан".to_owned()))?;
+        .ok_or_else(|| TransportError::Auth("no password given".to_owned()))?;
     let result = session
         .authenticate_password(user, password)
         .await
         .map_err(|e| TransportError::Auth(e.to_string()))?;
-    check_result(result, "пароль отклонён")
+    check_result(result, "password rejected")
 }
 
 async fn with_key_file(
@@ -86,7 +86,7 @@ async fn with_key_file(
         .authenticate_publickey(user, key)
         .await
         .map_err(|e| TransportError::Auth(e.to_string()))?;
-    check_result(result, "ключ отклонён")
+    check_result(result, "key rejected")
 }
 
 async fn with_agent(session: &mut Session, user: &str) -> Result<(), TransportError> {
@@ -110,7 +110,7 @@ async fn with_agent(session: &mut Session, user: &str) -> Result<(), TransportEr
         }
     }
     Err(TransportError::Auth(
-        "ни один ключ из agent не подошёл".to_owned(),
+        "no key from the agent was accepted".to_owned(),
     ))
 }
 

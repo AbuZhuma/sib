@@ -8,7 +8,7 @@ pub fn docker_snapshot(raw: &str) -> Result<DockerSnapshot, ModuleError> {
     let sections = Sections::parse(raw);
     let version = sections.get_or_empty("version").trim().to_owned();
     if version.is_empty() {
-        return Err(ModuleError::Parse("docker не отвечает".to_owned()));
+        return Err(ModuleError::Parse("docker does not answer".to_owned()));
     }
     let mut containers: Vec<Container> = sections
         .get_or_empty("ps")

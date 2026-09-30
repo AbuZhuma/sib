@@ -15,7 +15,7 @@ pub async fn run(
     stdin: Option<&str>,
 ) -> Result<CommandOutput, TransportError> {
     if session.is_closed() {
-        return Err(TransportError::Disconnected("сессия закрыта".to_owned()));
+        return Err(TransportError::Disconnected("session closed".to_owned()));
     }
     tokio::time::timeout(COMMAND_TIMEOUT, run_inner(session, command, stdin))
         .await
@@ -57,7 +57,7 @@ async fn run_inner(
 fn disconnected(error: russh::Error) -> TransportError {
     match error {
         russh::Error::ChannelOpenFailure(reason) => {
-            TransportError::Exec(format!("канал не открыт: {reason:?}"))
+            TransportError::Exec(format!("channel not open: {reason:?}"))
         }
         other => TransportError::Disconnected(other.to_string()),
     }

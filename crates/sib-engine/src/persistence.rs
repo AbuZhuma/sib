@@ -26,7 +26,7 @@ impl Persistence {
         let credentials = match self.secrets.load_credentials(&spec.id) {
             Ok(credentials) => credentials,
             Err(error) => {
-                tracing::warn!(server = %spec.id, %error, "секреты недоступны, вход без них");
+                tracing::warn!(server = %spec.id, %error, "secrets are not available, logging in without them");
                 Credentials::default()
             }
         };

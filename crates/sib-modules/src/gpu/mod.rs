@@ -56,7 +56,7 @@ impl Module for GpuModule {
         detect::require(
             transport,
             "command -v nvidia-smi || ls /sys/class/drm/card*/device/gpu_busy_percent",
-            "нет nvidia-smi и gpu_busy_percent",
+            "no nvidia-smi and no gpu_busy_percent",
         )
         .await
     }
@@ -112,7 +112,7 @@ fn events_between(previous: &GpuSnapshot, current: &GpuSnapshot) -> Vec<Event> {
                 ID,
                 Severity::Warning,
                 format!(
-                    "GPU {} перегрев: {:.0}°C",
+                    "GPU {} is overheating: {:.0}C",
                     gpu.name,
                     gpu.temperature_c.unwrap_or(0.0)
                 ),
@@ -123,7 +123,7 @@ fn events_between(previous: &GpuSnapshot, current: &GpuSnapshot) -> Vec<Event> {
             events.push(Event::new(
                 ID,
                 Severity::Warning,
-                format!("память GPU {} занята на {:.0}%", gpu.name, gpu.memory_pct()),
+                format!("GPU {} memory is {:.0}% used", gpu.name, gpu.memory_pct()),
             ));
         }
     }

@@ -18,7 +18,7 @@ pub fn disk_snapshot(raw: &str) -> Result<DiskSnapshot, ModuleError> {
 fn filesystems(raw: &str) -> Result<Vec<Filesystem>, ModuleError> {
     let parsed: Vec<Filesystem> = raw.lines().skip(1).filter_map(filesystem_line).collect();
     if parsed.is_empty() {
-        return Err(ModuleError::Parse("пустой вывод df".to_owned()));
+        return Err(ModuleError::Parse("empty df output".to_owned()));
     }
     Ok(parsed)
 }

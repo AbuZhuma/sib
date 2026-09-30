@@ -3,7 +3,7 @@ use sib_core::{CheckKind, CustomCheck, ModuleError, SudoMode, Transport};
 use super::model::CheckResult;
 use super::{parse, script};
 
-const SUDO_MISSING: &str = "sudo не настроен для этого сервера";
+const SUDO_MISSING: &str = "sudo is not set up for this server";
 
 pub async fn all(
     transport: &dyn Transport,
@@ -61,6 +61,6 @@ async fn body(check: &CustomCheck) -> Result<String, String> {
     let path = check.source.trim();
     match tokio::fs::read_to_string(path).await {
         Ok(text) => Ok(text),
-        Err(error) => Err(format!("файл {path} не прочитан: {error}")),
+        Err(error) => Err(format!("could not read the file {path}: {error}")),
     }
 }

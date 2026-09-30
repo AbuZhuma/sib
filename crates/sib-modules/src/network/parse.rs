@@ -23,7 +23,7 @@ pub fn network_snapshot(raw: &str) -> Result<NetworkSnapshot, ModuleError> {
 fn interfaces(raw: &str) -> Result<Vec<Interface>, ModuleError> {
     let parsed: Vec<Interface> = raw.lines().skip(2).filter_map(dev_line).collect();
     if parsed.is_empty() {
-        return Err(ModuleError::Parse("пустой /proc/net/dev".to_owned()));
+        return Err(ModuleError::Parse("empty /proc/net/dev".to_owned()));
     }
     Ok(parsed)
 }

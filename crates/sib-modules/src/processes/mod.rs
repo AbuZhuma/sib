@@ -44,7 +44,7 @@ impl Module for ProcessesModule {
     }
 
     fn title(&self) -> &'static str {
-        "Процессы"
+        "Processes"
     }
 
     fn schedule(&self) -> Schedule {

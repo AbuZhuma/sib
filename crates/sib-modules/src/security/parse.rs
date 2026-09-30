@@ -21,7 +21,7 @@ pub fn security_snapshot(raw: &str, now: DateTime<Utc>) -> Result<SecuritySnapsh
     let sections = Sections::parse(raw);
     let units = sections.get_or_empty("units");
     if units.trim().is_empty() && sections.get("ssh").is_none() {
-        return Err(ModuleError::Parse("пустой вывод security".to_owned()));
+        return Err(ModuleError::Parse("empty security output".to_owned()));
     }
     let activity = journal::ssh_activity(sections.get_or_empty("ssh"), now);
     let mut sudo_calls = journal::sudo_calls(sections.get_or_empty("sudo"), now);

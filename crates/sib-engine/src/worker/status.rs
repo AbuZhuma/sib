@@ -17,7 +17,7 @@ pub fn set(ctx: &WorkerContext, status: ConnectionStatus) {
 
 pub fn go_offline(ctx: &WorkerContext, reason: String, delay: Duration) {
     let retry_at = Utc::now() + chrono::Duration::from_std(delay).unwrap_or_default();
-    tracing::warn!(server = %ctx.spec.id, %reason, "сервер недоступен");
+    tracing::warn!(server = %ctx.spec.id, %reason, "server is offline");
     set(ctx, ConnectionStatus::Offline { reason, retry_at });
 }
 

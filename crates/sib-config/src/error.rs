@@ -2,25 +2,25 @@ use std::path::PathBuf;
 
 #[derive(Debug, thiserror::Error)]
 pub enum ConfigError {
-    #[error("не удалось определить домашнюю директорию")]
+    #[error("could not find the home directory")]
     NoHome,
-    #[error("ошибка чтения {path}: {source}")]
+    #[error("could not read {path}: {source}")]
     Read {
         path: PathBuf,
         source: std::io::Error,
     },
-    #[error("ошибка записи {path}: {source}")]
+    #[error("could not write {path}: {source}")]
     Write {
         path: PathBuf,
         source: std::io::Error,
     },
-    #[error("ошибка разбора {path}: {source}")]
+    #[error("could not parse {path}: {source}")]
     Parse {
         path: PathBuf,
         source: toml::de::Error,
     },
-    #[error("ошибка сериализации: {0}")]
+    #[error("could not serialize: {0}")]
     Serialize(#[from] toml::ser::Error),
-    #[error("хранилище секретов: {0}")]
+    #[error("secret store: {0}")]
     Secrets(String),
 }

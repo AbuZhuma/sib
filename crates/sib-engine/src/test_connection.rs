@@ -101,11 +101,11 @@ mod tests {
     #[async_trait]
     impl Transport for DeadTransport {
         async fn exec(&self, _command: &str) -> Result<CommandOutput, TransportError> {
-            Err(TransportError::Disconnected("сессия закрыта".to_owned()))
+            Err(TransportError::Disconnected("session closed".to_owned()))
         }
 
         async fn exec_root(&self, _command: &str) -> Result<CommandOutput, TransportError> {
-            Err(TransportError::Disconnected("сессия закрыта".to_owned()))
+            Err(TransportError::Disconnected("session closed".to_owned()))
         }
 
         fn sudo_mode(&self) -> SudoMode {

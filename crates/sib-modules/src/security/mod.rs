@@ -43,7 +43,7 @@ impl Module for SecurityModule {
     }
 
     fn title(&self) -> &'static str {
-        "Безопасность"
+        "Security"
     }
 
     fn schedule(&self) -> Schedule {
@@ -59,7 +59,7 @@ impl Module for SecurityModule {
             let whoami = transport.exec("id -un").await?;
             if whoami.stdout.trim() != "root" {
                 return Ok(Availability::partial(
-                    "настройки sshd, fail2ban и список банов (нужен sudo)",
+                    "sshd settings, fail2ban and the ban list (needs sudo)",
                 ));
             }
         }

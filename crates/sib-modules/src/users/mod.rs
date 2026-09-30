@@ -36,7 +36,7 @@ impl Module for UsersModule {
     }
 
     fn title(&self) -> &'static str {
-        "Пользователи"
+        "Users"
     }
 
     fn schedule(&self) -> Schedule {
@@ -85,7 +85,7 @@ fn events_between(previous: &UsersSnapshot, current: &UsersSnapshot) -> Vec<Even
     for session in &current.sessions {
         if !previous.sessions.iter().any(|s| s.same(session)) {
             let from = session.from.as_deref().unwrap_or("local");
-            let message = format!("вход {} с {from} ({})", session.user, session.tty);
+            let message = format!("{} logged in from {from} ({})", session.user, session.tty);
             events.push(Event::new(ID, Severity::Info, message));
         }
     }
@@ -94,7 +94,7 @@ fn events_between(previous: &UsersSnapshot, current: &UsersSnapshot) -> Vec<Even
             events.push(Event::new(
                 ID,
                 Severity::Warning,
-                format!("новый пользователь {}", account.name),
+                format!("new user {}", account.name),
             ));
         }
     }
@@ -108,7 +108,7 @@ fn events_between(previous: &UsersSnapshot, current: &UsersSnapshot) -> Vec<Even
             events.push(Event::new(
                 ID,
                 Severity::Warning,
-                format!("новый ключ в {home}/.ssh/authorized_keys"),
+                format!("new key in {home}/.ssh/authorized_keys"),
             ));
         }
     }

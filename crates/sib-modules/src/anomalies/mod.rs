@@ -42,7 +42,7 @@ impl Module for AnomaliesModule {
     }
 
     fn title(&self) -> &'static str {
-        "Аномалии"
+        "Anomalies"
     }
 
     fn schedule(&self) -> Schedule {
@@ -57,7 +57,7 @@ impl Module for AnomaliesModule {
         let probe = detect::require(
             transport,
             "command -v ss && test -r /proc/net/snmp",
-            "нет ss или /proc/net/snmp",
+            "no ss or /proc/net/snmp",
         )
         .await?;
         if !probe.is_usable() {

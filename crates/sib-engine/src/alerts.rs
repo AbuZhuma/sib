@@ -65,7 +65,7 @@ async fn run(mut context: AlertLoop) {
         }
         let notify_desktop = context.settings.borrow().desktop_notifications;
         for alert in &raised {
-            tracing::info!(server = %alert.server, rule = %alert.rule_id, "алерт: {}", alert.message);
+            tracing::info!(server = %alert.server, rule = %alert.rule_id, "alert: {}", alert.message);
             if notify_desktop && alert.severity > sib_core::Severity::Info {
                 sib_alerts::send_desktop(alert);
             }

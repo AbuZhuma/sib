@@ -51,7 +51,7 @@ impl ServerStore {
             }
             match load_spec(&path) {
                 Ok(spec) => specs.push(spec),
-                Err(error) => tracing::warn!(?path, %error, "пропущен файл сервера"),
+                Err(error) => tracing::warn!(?path, %error, "skipped a server file"),
             }
         }
         specs.sort_by(|a, b| a.id.cmp(&b.id));

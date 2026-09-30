@@ -10,7 +10,7 @@ async fn main() {
     let registry = sib_modules::default_registry();
     let leaked: &'static str = Box::leak(id.into_boxed_str());
     let Some(module) = registry.get(ModuleId(leaked)) else {
-        eprintln!("нет такого модуля");
+        eprintln!("no such module");
         return;
     };
     let context = CollectContext {

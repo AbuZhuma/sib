@@ -14,13 +14,13 @@ pub struct ServerId(String);
 
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 pub enum InvalidServerName {
-    #[error("имя не может быть пустым")]
+    #[error("name cannot be empty")]
     Empty,
-    #[error("имя длиннее {MAX_NAME_LEN} символов")]
+    #[error("name is longer than {MAX_NAME_LEN} characters")]
     TooLong,
-    #[error("допустимы только строчные латинские буквы, цифры и дефис")]
+    #[error("only lowercase latin letters, digits and hyphens are allowed")]
     BadChar,
-    #[error("имя не может начинаться или заканчиваться дефисом")]
+    #[error("name cannot start or end with a hyphen")]
     EdgeHyphen,
 }
 

@@ -92,7 +92,7 @@ async fn connect_through(
     let channel = jump
         .channel_open_direct_tcpip(host.to_owned(), u32::from(port), "127.0.0.1", 0)
         .await
-        .map_err(|e| TransportError::Connect(format!("через jump host: {e}")))?;
+        .map_err(|e| TransportError::Connect(format!("through the jump host: {e}")))?;
     let handler = ClientHandler::new(host, port, policy);
     let verdict = handler.verdict_slot();
     let attempt = client::connect_stream(config(), channel.into_stream(), handler);

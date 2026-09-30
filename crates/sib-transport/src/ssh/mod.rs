@@ -50,7 +50,7 @@ impl SshTransport {
             .channels
             .acquire()
             .await
-            .map_err(|_| TransportError::Disconnected("транспорт закрыт".to_owned()))?;
+            .map_err(|_| TransportError::Disconnected("transport closed".to_owned()))?;
         command::run(&self.handle, command, stdin).await
     }
 

@@ -41,14 +41,14 @@ pub fn baseline_check(metric: &str, value: f64, deviation: Option<Deviation>) ->
     let message = deviation
         .map(|d| {
             format!(
-                "{metric} = {value:.1}, базовая линия {:.1} ({:+.1}σ)",
+                "{metric} = {value:.1}, baseline {:.1} ({:+.1}s)",
                 d.mean, d.sigmas
             )
         })
         .unwrap_or_default();
     Check {
         rule_id: format!("{BASELINE_RULE_PREFIX}{metric}"),
-        rule_name: format!("Отклонение {metric}"),
+        rule_name: format!("{metric} off baseline"),
         metric: metric.to_owned(),
         severity: Severity::Warning,
         for_secs: BASELINE_FOR_SECS,

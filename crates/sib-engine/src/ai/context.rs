@@ -169,7 +169,7 @@ async fn run_query(
     match module.query(transport.as_ref(), request).await {
         Ok(response) => Some(tail(&response.text, QUERY_TAIL_LINES)),
         Err(error) => {
-            tracing::warn!(kind = %request.kind, target = %request.target, %error, "запрос для аудита не выполнен");
+            tracing::warn!(kind = %request.kind, target = %request.target, %error, "the query for the audit failed");
             None
         }
     }

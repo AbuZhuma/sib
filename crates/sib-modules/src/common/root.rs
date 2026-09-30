@@ -40,7 +40,7 @@ pub fn require_success(output: CommandOutput) -> Result<String, ModuleError> {
         output.stderr.trim().to_owned()
     };
     Err(ModuleError::ActionFailed(format!(
-        "код {}: {detail}",
+        "exit code {}: {detail}",
         output.exit_code
     )))
 }
@@ -50,7 +50,7 @@ pub fn validate_ip(value: &str) -> Result<String, ModuleError> {
     trimmed
         .parse::<std::net::IpAddr>()
         .map(|ip| ip.to_string())
-        .map_err(|_| ModuleError::ActionFailed(format!("некорректный IP {}", shell_quote(trimmed))))
+        .map_err(|_| ModuleError::ActionFailed(format!("invalid IP {}", shell_quote(trimmed))))
 }
 
 pub fn validate_name(value: &str) -> Result<String, ModuleError> {
@@ -61,7 +61,7 @@ pub fn validate_name(value: &str) -> Result<String, ModuleError> {
             .all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.' | '@' | ':'));
     if !is_safe {
         return Err(ModuleError::ActionFailed(format!(
-            "недопустимое имя {}",
+            "invalid name {}",
             shell_quote(trimmed)
         )));
     }

@@ -2,7 +2,7 @@ use sib_core::{CollectContext, SudoMode};
 use sib_transport::LocalTransport;
 
 #[tokio::test]
-#[ignore = "требует локальную машину с /proc; запускать вручную: cargo test -p sib-modules -- --ignored"]
+#[ignore = "needs a local machine with /proc; run by hand: cargo test -p sib-modules -- --ignored"]
 async fn all_modules_collect_on_localhost() {
     let transport = LocalTransport::new(SudoMode::None, None);
     for module in sib_modules::default_registry().all() {
@@ -18,7 +18,7 @@ async fn all_modules_collect_on_localhost() {
         let second = module.collect(&transport, &context).await;
         assert!(
             second.is_ok(),
-            "{} (второй сбор): {:?}",
+            "{} (second collect): {:?}",
             module.id(),
             second.err()
         );
@@ -30,21 +30,17 @@ async fn all_modules_collect_on_localhost() {
         let second_len = second.map(|s| s.samples.len()).unwrap_or(0);
         assert!(
             second_len >= first_len,
-            "{}: второй сбор потерял метрики",
+            "{}: the second collect lost its metrics",
             module.id()
         );
         if matches!(module.id().0, "cpu" | "network" | "disk") {
-            assert!(
-                second_len > first_len,
-                "{}: нет метрик скорости",
-                module.id()
-            );
+            assert!(second_len > first_len, "{}: no rate metrics", module.id());
         }
     }
 }
 
 #[tokio::test]
-#[ignore = "запускает и завершает локальный sleep; запускать вручную вместе с --ignored"]
+#[ignore = "starts and stops a local sleep; run by hand together with --ignored"]
 async fn processes_terminate_action_stops_own_child() {
     use sib_core::{ActionRequest, Module};
     use sib_modules::processes::{ACTION_TERMINATE, ProcessesModule};

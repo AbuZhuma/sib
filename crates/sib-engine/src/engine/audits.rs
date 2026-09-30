@@ -33,7 +33,7 @@ impl Engine {
             let reconciled = sib_incidents::reconcile(&mut state, now);
             tracing::info!(
                 resolved = reconciled.resolved.len(),
-                "список игнорируемых инцидентов обновлён"
+                "the archived incident list was updated"
             );
         }
         (self.notify)();

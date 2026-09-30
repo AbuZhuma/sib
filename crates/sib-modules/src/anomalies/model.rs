@@ -51,14 +51,14 @@ pub enum SignKind {
 impl SignKind {
     pub fn label(self) -> &'static str {
         match self {
-            Self::SynFlood => "SYN-флуд",
-            Self::SynBacklog => "переполнен backlog SYN",
-            Self::ListenDrops => "ядро сбрасывает входящие соединения",
-            Self::PacketFlood => "шторм пакетов",
-            Self::ConnectionFlood => "всплеск новых соединений",
-            Self::SinglePeer => "слишком много соединений с одного IP",
-            Self::ConcentratedPeers => "трафик сосредоточен на нескольких IP",
-            Self::ConntrackFull => "таблица conntrack почти заполнена",
+            Self::SynFlood => "SYN flood",
+            Self::SynBacklog => "SYN backlog is full",
+            Self::ListenDrops => "the kernel is dropping incoming connections",
+            Self::PacketFlood => "packet storm",
+            Self::ConnectionFlood => "burst of new connections",
+            Self::SinglePeer => "too many connections from one IP",
+            Self::ConcentratedPeers => "traffic comes from a few IPs",
+            Self::ConntrackFull => "the conntrack table is nearly full",
         }
     }
 }

@@ -52,10 +52,10 @@ impl Module for GitModule {
         let output = transport.exec(&sections::script(&parts)).await?;
         let found = sections::Sections::parse(&output.stdout);
         if found.get_or_empty("version").trim().is_empty() {
-            return Ok(Availability::unavailable("git не установлен"));
+            return Ok(Availability::unavailable("git is not installed"));
         }
         if found.get_or_empty("first").trim().is_empty() {
-            return Ok(Availability::unavailable("репозитории не найдены"));
+            return Ok(Availability::unavailable("no repositories found"));
         }
         Ok(Availability::Available)
     }
@@ -143,7 +143,7 @@ fn events_between(previous: &GitSnapshot, current: &GitSnapshot) -> Vec<Event> {
 fn repository_event(before: &Repository, after: &Repository) -> Option<Event> {
     if before.branch != after.branch {
         let branch = after.branch.as_deref().unwrap_or("detached HEAD");
-        let message = format!("{}: переключение на {branch}", after.name());
+        let message = format!("{}: switched to {branch}", after.name());
         return Some(Event::new(ID, Severity::Info, message));
     }
     if before.head == after.head {
@@ -151,7 +151,7 @@ fn repository_event(before: &Repository, after: &Repository) -> Option<Event> {
     }
     let commit = after.last_commit()?;
     let message = format!(
-        "{}: новый коммит {} {} - {}",
+        "{}: new commit {} {} - {}",
         after.name(),
         commit.short_hash(),
         commit.author,
@@ -195,7 +195,7 @@ mod tests {
         assert!(
             events[0]
                 .message
-                .contains("api: новый коммит fffffff Anna - deploy")
+                .contains("api: new commit fffffff Anna - deploy")
         );
     }
 
@@ -206,7 +206,7 @@ mod tests {
         after.repositories[0].branch = Some("master".to_owned());
         let events = events_between(&before, &after);
         assert_eq!(events.len(), 1);
-        assert!(events[0].message.contains("переключение на master"));
+        assert!(events[0].message.contains("switched to master"));
     }
 
     #[test]

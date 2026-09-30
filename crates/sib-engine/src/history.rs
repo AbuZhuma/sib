@@ -32,7 +32,7 @@ pub fn prefill(request: Prefill) {
         match loaded {
             Ok(history) => {
                 let points: usize = history.values().map(Vec::len).sum();
-                tracing::info!(%server, points, "история метрик загружена");
+                tracing::info!(%server, points, "metric history loaded");
                 if let Ok(mut state) = state.write()
                     && let Some(entry) = state.servers.get_mut(&server)
                 {
@@ -40,7 +40,7 @@ pub fn prefill(request: Prefill) {
                 }
                 notify();
             }
-            Err(error) => tracing::warn!(%server, %error, "история метрик не загружена"),
+            Err(error) => tracing::warn!(%server, %error, "metric history was not loaded"),
         }
     });
 }

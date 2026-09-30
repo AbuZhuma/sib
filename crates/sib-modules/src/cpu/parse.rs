@@ -35,7 +35,7 @@ fn times(raw: &str) -> Result<Vec<CpuTimes>, ModuleError> {
         .filter_map(times_line)
         .collect();
     if parsed.is_empty() {
-        return Err(ModuleError::Parse("нет строк cpu в /proc/stat".to_owned()));
+        return Err(ModuleError::Parse("no cpu lines in /proc/stat".to_owned()));
     }
     Ok(parsed)
 }

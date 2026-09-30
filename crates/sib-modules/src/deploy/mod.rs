@@ -90,7 +90,7 @@ impl Module for DeployModule {
     }
 
     fn title(&self) -> &'static str {
-        "Деплой"
+        "Deploys"
     }
 
     fn schedule(&self) -> Schedule {
@@ -110,7 +110,7 @@ impl Module for DeployModule {
             .any(|name| !sections.get_or_empty(name).trim().is_empty());
         if !has_source {
             return Ok(Availability::unavailable(
-                "нет источников деплоя (docker, deploy*.service, CI runner)",
+                "no deploy sources (docker, deploy*.service, CI runner)",
             ));
         }
         Ok(Availability::Available)
@@ -215,12 +215,12 @@ fn deploy_event(deploy: &Deploy) -> Event {
     let (severity, message) = match deploy.status {
         DeployStatus::InProgress => (
             Severity::Info,
-            format!("деплой {} начался ({source})", deploy.project),
+            format!("deploy of {} started ({source})", deploy.project),
         ),
         DeployStatus::Success => (
             Severity::Info,
             format!(
-                "деплой {} завершён ({source}): {}",
+                "deploy of {} finished ({source}): {}",
                 deploy.project, deploy.detail
             ),
         ),
@@ -232,7 +232,7 @@ fn deploy_event(deploy: &Deploy) -> Event {
             (
                 Severity::Critical,
                 format!(
-                    "деплой {} упал на стадии {stage} ({source})",
+                    "deploy of {} failed at stage {stage} ({source})",
                     deploy.project
                 ),
             )
@@ -283,6 +283,6 @@ mod tests {
         }
         let events = events_between(&first.snapshot, &changed);
         assert_eq!(events.len(), 1);
-        assert!(events[0].message.contains("начался"));
+        assert!(events[0].message.contains("started"));
     }
 }

@@ -45,7 +45,7 @@ impl Module for ServicesModule {
     }
 
     fn title(&self) -> &'static str {
-        "Сервисы"
+        "Services"
     }
 
     fn schedule(&self) -> Schedule {
@@ -57,7 +57,7 @@ impl Module for ServicesModule {
         transport: &dyn Transport,
         _settings: &ModuleSettings,
     ) -> Result<Availability, ModuleError> {
-        detect::require(transport, "command -v systemctl", "нет systemd").await
+        detect::require(transport, "command -v systemctl", "no systemd").await
     }
 
     async fn collect(
@@ -124,11 +124,11 @@ fn events_between(previous: &ServicesSnapshot, current: &ServicesSnapshot) -> Ve
             continue;
         };
         if unit.is_failed() && !before.is_failed() {
-            let message = format!("{} перешёл в failed ({})", unit.name, unit.result);
+            let message = format!("{} went to failed ({})", unit.name, unit.result);
             events.push(Event::new(ID, Severity::Critical, message));
         }
         if unit.restarts > before.restarts {
-            let message = format!("{} перезапущен ({} раз)", unit.name, unit.restarts);
+            let message = format!("{} restarted ({} times)", unit.name, unit.restarts);
             events.push(Event::new(ID, Severity::Warning, message));
         }
     }

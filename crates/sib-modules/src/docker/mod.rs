@@ -78,9 +78,9 @@ impl Module for DockerModule {
         let output = transport.exec(&probe).await?;
         match output.exit_code {
             0 => Ok(Availability::Available),
-            3 => Ok(Availability::unavailable("нет docker/podman")),
+            3 => Ok(Availability::unavailable("no docker or podman")),
             _ => Ok(Availability::unavailable(
-                "нет доступа к docker: добавьте пользователя в группу docker",
+                "no access to docker: add the user to the docker group",
             )),
         }
     }
@@ -159,10 +159,7 @@ fn events_between(previous: &DockerSnapshot, current: &DockerSnapshot) -> Vec<Ev
         let before = previous.containers.iter().find(|c| c.id == container.id);
         let was_running = before.is_some_and(|c| c.is_running());
         if was_running && !container.is_running() {
-            let message = format!(
-                "{} остановлен (exit {})",
-                container.name, container.exit_code
-            );
+            let message = format!("{} stopped (exit {})", container.name, container.exit_code);
             let severity = if container.exit_code == 0 {
                 Severity::Info
             } else {
@@ -172,7 +169,7 @@ fn events_between(previous: &DockerSnapshot, current: &DockerSnapshot) -> Vec<Ev
         }
         if before.is_some_and(|c| c.restart_count < container.restart_count) {
             let message = format!(
-                "{} перезапущен ({} раз)",
+                "{} restarted ({} times)",
                 container.name, container.restart_count
             );
             events.push(Event::new(ID, Severity::Warning, message));

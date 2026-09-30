@@ -8,9 +8,9 @@ pub const ACTION_BAN: &str = "ban";
 pub const ACTION_UNBAN: &str = "unban";
 pub const PERMANENT: &str = "";
 
-pub const SPEC_BAN: ActionSpec = ActionSpec::new(ID, ACTION_BAN, "Забанить IP", Danger::Normal);
+pub const SPEC_BAN: ActionSpec = ActionSpec::new(ID, ACTION_BAN, "Ban the IP", Danger::Normal);
 pub const SPEC_UNBAN: ActionSpec =
-    ActionSpec::new(ID, ACTION_UNBAN, "Разбанить IP", Danger::Normal);
+    ActionSpec::new(ID, ACTION_UNBAN, "Unban the IP", Danger::Normal);
 pub const SPECS: [ActionSpec; 2] = [SPEC_BAN, SPEC_UNBAN];
 
 const NFT_SETUP: &str = "nft list table inet sib >/dev/null 2>&1 || { nft add table inet sib && nft add set inet sib bans '{ type ipv4_addr; flags timeout; }' && nft add set inet sib bans6 '{ type ipv6_addr; flags timeout; }' && nft add chain inet sib input '{ type filter hook input priority -10; policy accept; }' && nft add rule inet sib input ip saddr @bans drop && nft add rule inet sib input ip6 saddr @bans6 drop; }";
@@ -65,7 +65,7 @@ async fn detect(transport: &dyn Transport) -> Result<Backend, ModuleError> {
         BanBackend::Ufw
     } else {
         return Err(ModuleError::ActionFailed(
-            "нет ни fail2ban, ни nft, ни iptables, ни ufw".to_owned(),
+            "no fail2ban, nft, iptables or ufw".to_owned(),
         ));
     };
     Ok(Backend { kind, jail })
@@ -96,7 +96,7 @@ async fn own_addresses(transport: &dyn Transport) -> Result<Vec<String>, ModuleE
 fn ensure_not_own(ip: &str, own: &[String]) -> Result<(), ModuleError> {
     if own.iter().any(|address| address == ip) {
         return Err(ModuleError::ActionFailed(format!(
-            "{ip} - адрес, с которого Sib подключена к серверу; бан отрезал бы доступ"
+            "{ip} is the address Sib is connected from, banning it would cut off access"
         )));
     }
     Ok(())
@@ -145,11 +145,11 @@ fn ban_command(backend: &Backend, ip: &str, duration: Option<&str>) -> Result<St
 fn ban_message(backend: &Backend, ip: &str, duration: Option<&str>) -> String {
     let label = backend.kind.label();
     match duration {
-        None => format!("{ip} забанен через {label} навсегда"),
+        None => format!("{ip} banned through {label} forever"),
         Some(period) if backend.kind.supports_timeout() => {
-            format!("{ip} забанен через {label} на {period}")
+            format!("{ip} banned through {label} for {period}")
         }
-        Some(_) => format!("{ip} забанен через {label} навсегда ({label} не поддерживает срок)"),
+        Some(_) => format!("{ip} banned through {label} forever ({label} has no time limit)"),
     }
 }
 
@@ -180,7 +180,7 @@ async fn unban(
     let command = unban_command(&backend, ip)?;
     require_success(exec_as_root(transport, &command).await?)?;
     Ok(ActionOutcome::new(format!(
-        "{ip} разбанен через {}",
+        "{ip} unbanned through {}",
         backend.kind.label()
     )))
 }
@@ -223,7 +223,7 @@ fn validate_duration(value: &str) -> Result<Option<String>, ModuleError> {
     let has_unit = digits.len() < trimmed.len();
     if digits.is_empty() || !has_unit || !digits.chars().all(|c| c.is_ascii_digit()) {
         return Err(ModuleError::ActionFailed(format!(
-            "срок должен быть вида 30m, 12h или 7d, получено {trimmed}"
+            "the period must look like 30m, 12h or 7d, got {trimmed}"
         )));
     }
     Ok(Some(trimmed.to_owned()))

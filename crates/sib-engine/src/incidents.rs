@@ -31,7 +31,7 @@ pub fn announce(opened: &[Incident], notify_desktop: bool) {
         tracing::info!(
             server = %incident.server,
             kind = incident.kind.key(),
-            "инцидент: {}",
+            "incident: {}",
             incident.summary
         );
         if notify_desktop && incident.kind != sib_core::IncidentKind::Alert {

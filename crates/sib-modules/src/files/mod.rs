@@ -40,7 +40,7 @@ impl Module for FilesModule {
     }
 
     fn title(&self) -> &'static str {
-        "Файлы"
+        "Files"
     }
 
     fn schedule(&self) -> Schedule {
@@ -52,7 +52,7 @@ impl Module for FilesModule {
         transport: &dyn Transport,
         _settings: &ModuleSettings,
     ) -> Result<Availability, ModuleError> {
-        detect::require(transport, script::DETECT, "нужны GNU find и stat").await
+        detect::require(transport, script::DETECT, "GNU find and stat are required").await
     }
 
     async fn collect(
@@ -110,9 +110,9 @@ async fn read(transport: &dyn Transport, path: &str) -> Result<QueryResponse, Mo
                 text: output.stdout,
             });
         }
-        script::EXIT_UNREADABLE => "нет доступа на чтение".to_owned(),
-        script::EXIT_TOO_LARGE => format!("файл больше {} КБ", MAX_FILE_BYTES / 1000),
-        script::EXIT_BINARY => "бинарный файл".to_owned(),
+        script::EXIT_UNREADABLE => "no read permission".to_owned(),
+        script::EXIT_TOO_LARGE => format!("file is larger than {} KB", MAX_FILE_BYTES / 1000),
+        script::EXIT_BINARY => "binary file".to_owned(),
         _ => failure_detail(&output.stderr),
     };
     Err(ModuleError::CommandFailed(format!("{path}: {reason}")))
@@ -135,7 +135,7 @@ pub fn validate_pattern(pattern: &str) -> Result<&str, ModuleError> {
         && !trimmed.chars().any(char::is_control);
     if !is_safe {
         return Err(ModuleError::ActionFailed(format!(
-            "шаблон поиска - имя без '/', до {MAX_PATTERN_LEN} символов: {pattern:?}"
+            "the search pattern is a name without '/', up to {MAX_PATTERN_LEN} characters: {pattern:?}"
         )));
     }
     Ok(trimmed)
@@ -145,7 +145,7 @@ fn failure_detail(stderr: &str) -> String {
     stderr
         .lines()
         .next()
-        .unwrap_or("команда завершилась с ошибкой")
+        .unwrap_or("the command failed")
         .trim()
         .to_owned()
 }
@@ -156,7 +156,7 @@ pub fn validate_path(path: &str) -> Result<&str, ModuleError> {
         && !path.split('/').any(|segment| segment == "..");
     if !is_safe {
         return Err(ModuleError::ActionFailed(format!(
-            "путь должен быть абсолютным без '..': {path:?}"
+            "the path must be absolute and without '..': {path:?}"
         )));
     }
     Ok(path)

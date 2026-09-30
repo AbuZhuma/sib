@@ -27,19 +27,19 @@ pub fn listing(raw: &str) -> Result<Listing, ModuleError> {
 fn entry(line: &str) -> Result<Entry, ModuleError> {
     let fields: Vec<&str> = line.splitn(FIELD_COUNT, '\t').collect();
     if fields.len() < FIELD_COUNT {
-        return Err(ModuleError::Parse(format!("строка find: {line}")));
+        return Err(ModuleError::Parse(format!("find line: {line}")));
     }
     let kind = kind(fields[0], fields[1]);
     let mode = u32::from_str_radix(fields[2], OCTAL_RADIX)
-        .map_err(|_| ModuleError::Parse(format!("права {}", fields[2])))?;
+        .map_err(|_| ModuleError::Parse(format!("permissions {}", fields[2])))?;
     let size = fields[5]
         .parse()
-        .map_err(|_| ModuleError::Parse(format!("размер {}", fields[5])))?;
+        .map_err(|_| ModuleError::Parse(format!("size {}", fields[5])))?;
     let modified_at = fields[6]
         .split('.')
         .next()
         .and_then(|s| s.parse().ok())
-        .ok_or_else(|| ModuleError::Parse(format!("время {}", fields[6])))?;
+        .ok_or_else(|| ModuleError::Parse(format!("time {}", fields[6])))?;
     let link_target = (!fields[7].is_empty()).then(|| fields[7].to_owned());
     Ok(Entry {
         name: fields[8].to_owned(),

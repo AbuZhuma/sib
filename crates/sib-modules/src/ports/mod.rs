@@ -38,7 +38,7 @@ impl Module for PortsModule {
     }
 
     fn title(&self) -> &'static str {
-        "Порты"
+        "Ports"
     }
 
     fn schedule(&self) -> Schedule {
@@ -50,12 +50,12 @@ impl Module for PortsModule {
         transport: &dyn Transport,
         _settings: &ModuleSettings,
     ) -> Result<Availability, ModuleError> {
-        let probe = detect::require(transport, "command -v ss", "нет ss (iproute2)").await?;
+        let probe = detect::require(transport, "command -v ss", "no ss (iproute2)").await?;
         if !probe.is_usable() {
             return Ok(probe);
         }
         if transport.sudo_mode() == SudoMode::None {
-            return Ok(Availability::partial("файрвол (нужен sudo)"));
+            return Ok(Availability::partial("firewall (needs sudo)"));
         }
         Ok(Availability::Available)
     }
@@ -98,7 +98,7 @@ fn events_between(previous: &PortsSnapshot, current: &PortsSnapshot) -> Vec<Even
         let existed = previous.ports.iter().any(|p| p.same_socket(port));
         if !existed {
             let message = format!(
-                "новый порт {}:{} ({})",
+                "new port {}:{} ({})",
                 port.address,
                 port.port,
                 port.process_label()
@@ -114,14 +114,14 @@ fn events_between(previous: &PortsSnapshot, current: &PortsSnapshot) -> Vec<Even
             events.push(Event::new(
                 ID,
                 Severity::Info,
-                format!("порт {} снова доступен снаружи", port.port),
+                format!("port {} is reachable from outside again", port.port),
             ));
         }
         if port.reachable == Some(false) && was_reachable == Some(true) {
             events.push(Event::new(
                 ID,
                 Severity::Warning,
-                format!("порт {} стал недоступен снаружи", port.port),
+                format!("port {} is no longer reachable from outside", port.port),
             ));
         }
     }

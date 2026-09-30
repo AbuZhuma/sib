@@ -3,7 +3,7 @@ use sib_modules::files::{self, FilesModule};
 use sib_transport::LocalTransport;
 
 #[tokio::test]
-#[ignore = "пишет во временную папку локальной машины; запускать вручную: cargo test -p sib-modules --test live_files -- --ignored"]
+#[ignore = "writes to a temporary folder on the local machine; run by hand: cargo test -p sib-modules --test live_files -- --ignored"]
 async fn list_write_read_chmod_delete_roundtrip() {
     let transport = LocalTransport::new(SudoMode::None, None);
     let module = FilesModule;
@@ -11,7 +11,7 @@ async fn list_write_read_chmod_delete_roundtrip() {
     std::fs::create_dir_all(&directory).expect("temp dir");
     let directory = directory.to_string_lossy().into_owned();
     let path = format!("{directory}/it's a \"test\".txt");
-    let content = "первая строка\n$HOME %s \\ done\n";
+    let content = "first line\n$HOME %s \\ done\n";
 
     let write = ActionRequest::new(files::ACTION_WRITE, &path).with_argument(content);
     module.perform(&transport, &write).await.expect("write");
@@ -71,7 +71,7 @@ async fn list_write_read_chmod_delete_roundtrip() {
             )
             .await
             .is_err(),
-        "повторное создание должно падать"
+        "creating it twice must fail"
     );
     let renamed = format!("{nested}/renamed.txt");
     module

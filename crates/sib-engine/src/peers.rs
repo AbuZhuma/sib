@@ -132,7 +132,7 @@ fn lookup(ips: &[String]) -> BTreeMap<String, String> {
             })
             .collect(),
         Err(error) => {
-            tracing::warn!(%error, "страны адресов не определены");
+            tracing::warn!(%error, "could not resolve address countries");
             BTreeMap::new()
         }
     }

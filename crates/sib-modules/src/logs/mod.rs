@@ -55,7 +55,7 @@ impl Module for LogsModule {
     }
 
     fn title(&self) -> &'static str {
-        "Логи"
+        "Logs"
     }
 
     fn schedule(&self) -> Schedule {
@@ -67,7 +67,7 @@ impl Module for LogsModule {
         transport: &dyn Transport,
         _settings: &ModuleSettings,
     ) -> Result<Availability, ModuleError> {
-        let probe = detect::require(transport, "command -v journalctl", "нет journalctl").await?;
+        let probe = detect::require(transport, "command -v journalctl", "no journalctl").await?;
         if !probe.is_usable() {
             return Ok(probe);
         }
@@ -76,7 +76,7 @@ impl Module for LogsModule {
             .await?;
         if probe.stdout.contains("No journal files") || probe.stdout.contains("permission") {
             return Ok(Availability::partial(
-                "системный журнал (нужна группа systemd-journal)",
+                "the system journal (needs the systemd-journal group)",
             ));
         }
         Ok(Availability::Available)
@@ -145,7 +145,10 @@ fn events_for(snapshot: &LogsSnapshot, has_previous: bool) -> Vec<Event> {
         events.push(Event::new(ID, Severity::Critical, message));
     }
     if snapshot.fresh.len() >= BURST_THRESHOLD {
-        let message = format!("всплеск ошибок в журнале: {} за цикл", snapshot.fresh.len());
+        let message = format!(
+            "burst of journal errors: {} in one cycle",
+            snapshot.fresh.len()
+        );
         events.push(Event::new(ID, Severity::Warning, message));
     }
     events

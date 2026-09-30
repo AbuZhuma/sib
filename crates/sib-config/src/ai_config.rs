@@ -66,7 +66,7 @@ impl AiProvider {
             Self::Gemini => "Gemini",
             Self::OpenAi => "OpenAI (GPT)",
             Self::Anthropic => "Claude",
-            Self::OpenAiCompatible => "OpenAI-совместимый API",
+            Self::OpenAiCompatible => "OpenAI-compatible API",
         }
     }
 

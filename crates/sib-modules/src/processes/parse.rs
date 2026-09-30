@@ -21,7 +21,7 @@ pub fn process_snapshot(raw: &str) -> Result<ProcessSnapshot, ModuleError> {
         .filter_map(|line| stat_line(line, page_size))
         .collect();
     if processes.is_empty() {
-        return Err(ModuleError::Parse("нет строк /proc/[pid]/stat".to_owned()));
+        return Err(ModuleError::Parse("no /proc/[pid]/stat lines".to_owned()));
     }
     for process in &mut processes {
         let pid = process.pid;

@@ -121,17 +121,17 @@ impl Availability {
 pub enum ModuleError {
     #[error(transparent)]
     Transport(#[from] TransportError),
-    #[error("не удалось разобрать вывод: {0}")]
+    #[error("could not parse output: {0}")]
     Parse(String),
-    #[error("команда завершилась с ошибкой: {0}")]
+    #[error("command failed: {0}")]
     CommandFailed(String),
-    #[error("модуль не поддерживает запрос {0}")]
+    #[error("module does not support the query {0}")]
     UnsupportedQuery(String),
-    #[error("модуль не умеет подгружать историю")]
+    #[error("module cannot load older data")]
     UnsupportedBackfill,
-    #[error("модуль не поддерживает действие {0}")]
+    #[error("module does not support the action {0}")]
     UnsupportedAction(String),
-    #[error("действие не выполнено: {0}")]
+    #[error("action failed: {0}")]
     ActionFailed(String),
 }
 

@@ -36,8 +36,8 @@ impl Engine {
                     .query(transport.as_ref(), &request)
                     .await
                     .map_err(|e| e.to_string()),
-                (None, _) => Err("сервер не подключён".to_owned()),
-                (_, None) => Err("модуль не найден".to_owned()),
+                (None, _) => Err("server is not connected".to_owned()),
+                (_, None) => Err("module not found".to_owned()),
             };
             let _ = events.send(EngineEvent::QueryFinished { token, result });
             notify();

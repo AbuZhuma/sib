@@ -47,7 +47,7 @@ impl ClientHandler {
             return false;
         }
         if let Err(error) = learn_known_hosts(&self.host, self.port, key) {
-            tracing::warn!(host = %self.host, %error, "не удалось записать ключ в known_hosts");
+            tracing::warn!(host = %self.host, %error, "could not write the key to known_hosts");
         }
         true
     }

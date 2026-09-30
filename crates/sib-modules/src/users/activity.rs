@@ -68,18 +68,18 @@ pub fn render(user: &str, sections: &Sections) -> String {
         .lines()
         .filter_map(zsh_command)
         .collect();
-    push_commands(&mut out, "История команд (bash)", &bash);
-    push_commands(&mut out, "История команд (zsh)", &zsh);
+    push_commands(&mut out, "Command history (bash)", &bash);
+    push_commands(&mut out, "Command history (zsh)", &zsh);
     let sudo: Vec<String> = sections
         .get_or_empty("sudo")
         .lines()
         .filter_map(sudo_line)
         .collect();
-    push_commands(&mut out, "Команды через sudo (журнал, 30 дней)", &sudo);
+    push_commands(&mut out, "Commands through sudo (journal, 30 days)", &sudo);
     let journal = sections.get_or_empty("journal");
     if !journal.trim().is_empty() {
         out.push_str(&format!(
-            "{HEADING_PREFIX}Журнал процессов пользователя {user}\n{journal}\n"
+            "{HEADING_PREFIX}Journal for the user {user}\n{journal}\n"
         ));
     }
     out
@@ -147,7 +147,7 @@ mod tests {
     fn render_marks_commands_and_headings() {
         let raw = "###passwd\nsander:x:1000:1000::/home/sander:/bin/bash\n###bash\nls\ncat x\n###zsh\n###sudo\n###journal\n";
         let text = render("sander", &Sections::parse(raw));
-        assert!(text.contains("## История команд (bash)\n$ ls\n$ cat x\n"));
+        assert!(text.contains("## Command history (bash)\n$ ls\n$ cat x\n"));
         assert!(!text.contains("zsh"));
     }
 }

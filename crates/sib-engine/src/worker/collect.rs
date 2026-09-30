@@ -53,7 +53,7 @@ pub async fn run(ctx: LoopContext) {
                 failures += 1;
                 record_error(&ctx, &error);
                 if failures >= FAILURES_BEFORE_GIVING_UP {
-                    tracing::warn!(server = %ctx.worker.spec.id, module = %ctx.module.id(), %error, "модуль отключён до повторного detect");
+                    tracing::warn!(server = %ctx.worker.spec.id, module = %ctx.module.id(), %error, "module switched off until the next detect");
                     return;
                 }
             }

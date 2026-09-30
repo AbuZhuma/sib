@@ -132,7 +132,7 @@ impl Runner {
         if let Err(AiError::Api { status, .. }) = &result
             && *status == QUOTA_STATUS
         {
-            tracing::warn!("квота ИИ исчерпана, автозапросы приостановлены на 15 минут");
+            tracing::warn!("AI quota is used up, automatic requests paused for 15 minutes");
             self.quota_paused_until = Some(Instant::now() + QUOTA_PAUSE);
         }
         self.finish(report, result.map_err(|e| e.to_string()));
@@ -179,7 +179,7 @@ impl Runner {
                 store::write_report(&self.worker.audits_dir, &report);
             }
             Err(error) => {
-                tracing::warn!(target = %report.target.key(), "аудит не выполнен: {error}");
+                tracing::warn!(target = %report.target.key(), "audit failed: {error}");
                 report.status = AuditStatus::Failed(error);
             }
         }
@@ -204,7 +204,10 @@ async fn complete_with_fallbacks(
         if !is_transient || *fallback == config.model {
             continue;
         }
-        tracing::warn!(model = fallback, "модель недоступна, пробуем запасную");
+        tracing::warn!(
+            model = fallback,
+            "model is not available, trying the fallback"
+        );
         report.model = (*fallback).to_owned();
         result = complete(config, fallback, Arc::clone(&completion)).await;
     }
@@ -224,5 +227,5 @@ async fn complete(
     .map_err(|e| AiError::Request(e.to_string()))?
 }
 
-const NOT_READY: &str = "ИИ-анализ выключен: включите его в настройках и укажите ключ API";
-const NO_DATA: &str = "нет данных сервера для аудита";
+const NOT_READY: &str = "AI analysis is off: turn it on in the settings and set an API key";
+const NO_DATA: &str = "no server data to audit";

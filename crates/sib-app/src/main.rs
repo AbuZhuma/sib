@@ -10,11 +10,11 @@ use tracing_subscriber::EnvFilter;
 
 fn main() -> anyhow::Result<()> {
     init_tracing();
-    let paths = Paths::discover().context("пути приложения")?;
+    let paths = Paths::discover().context("application paths")?;
     let mut config = AppConfig::load(&paths).context("config.toml")?;
     let secrets: Arc<dyn SecretStore> = Arc::new(KeyringSecretStore);
     if let Err(error) = config.load_ai_key(secrets.as_ref(), &paths) {
-        tracing::warn!(%error, "ключ ИИ недоступен в keyring");
+        tracing::warn!(%error, "the AI key is not available in the keyring");
     }
     let state = AppState::shared();
     let runtime = tokio::runtime::Builder::new_multi_thread()
@@ -67,7 +67,7 @@ fn open_storage(paths: &Paths, retention: Retention) -> Option<sib_storage::Stor
     match Database::open(&paths.history_db()) {
         Ok(database) => Some(spawn_writer(database, retention)),
         Err(error) => {
-            tracing::error!(%error, "история метрик отключена");
+            tracing::error!(%error, "metric history is disabled");
             None
         }
     }

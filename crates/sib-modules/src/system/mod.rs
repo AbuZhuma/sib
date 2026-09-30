@@ -42,7 +42,7 @@ impl Module for SystemModule {
     }
 
     fn title(&self) -> &'static str {
-        "Система"
+        "System"
     }
 
     fn schedule(&self) -> Schedule {

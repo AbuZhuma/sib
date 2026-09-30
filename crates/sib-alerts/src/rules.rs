@@ -14,7 +14,7 @@ struct BuiltinRule {
 const BUILTIN: [BuiltinRule; 10] = [
     BuiltinRule {
         id: "offline",
-        name: "Сервер недоступен",
+        name: "Server is offline",
         metric: METRIC_OFFLINE,
         condition: Condition::Above,
         threshold: 0.5,
@@ -23,7 +23,7 @@ const BUILTIN: [BuiltinRule; 10] = [
     },
     BuiltinRule {
         id: "cpu-high",
-        name: "CPU выше 90%",
+        name: "CPU above 90%",
         metric: cpu::KEY_TOTAL,
         condition: Condition::Above,
         threshold: 90.0,
@@ -32,7 +32,7 @@ const BUILTIN: [BuiltinRule; 10] = [
     },
     BuiltinRule {
         id: "memory-high",
-        name: "Память выше 90%",
+        name: "Memory above 90%",
         metric: memory::KEY_USED_PCT,
         condition: Condition::Above,
         threshold: 90.0,
@@ -41,7 +41,7 @@ const BUILTIN: [BuiltinRule; 10] = [
     },
     BuiltinRule {
         id: "disk-full",
-        name: "Корневой диск заполнен на 90%",
+        name: "Root disk 90% full",
         metric: disk::KEY_ROOT_USED_PCT,
         condition: Condition::Above,
         threshold: 90.0,
@@ -50,7 +50,7 @@ const BUILTIN: [BuiltinRule; 10] = [
     },
     BuiltinRule {
         id: "disk-warning",
-        name: "Корневой диск заполнен на 80%",
+        name: "Root disk 80% full",
         metric: disk::KEY_ROOT_USED_PCT,
         condition: Condition::Above,
         threshold: 80.0,
@@ -59,7 +59,7 @@ const BUILTIN: [BuiltinRule; 10] = [
     },
     BuiltinRule {
         id: "services-failed",
-        name: "Упавшие сервисы",
+        name: "Failed services",
         metric: services::KEY_FAILED,
         condition: Condition::Above,
         threshold: 0.5,
@@ -68,7 +68,7 @@ const BUILTIN: [BuiltinRule; 10] = [
     },
     BuiltinRule {
         id: "log-errors",
-        name: "Ошибки в журнале",
+        name: "Errors in the journal",
         metric: logs::KEY_ERRORS_PER_MIN,
         condition: Condition::Above,
         threshold: 30.0,
@@ -77,7 +77,7 @@ const BUILTIN: [BuiltinRule; 10] = [
     },
     BuiltinRule {
         id: "attack",
-        name: "Признаки DDoS",
+        name: "Signs of DDoS",
         metric: anomalies::KEY_ATTACK,
         condition: Condition::Above,
         threshold: 0.5,
@@ -86,7 +86,7 @@ const BUILTIN: [BuiltinRule; 10] = [
     },
     BuiltinRule {
         id: "brute-force",
-        name: "Брутфорс SSH",
+        name: "SSH brute force",
         metric: security::KEY_BRUTE_FORCE,
         condition: Condition::Above,
         threshold: 0.5,
@@ -95,7 +95,7 @@ const BUILTIN: [BuiltinRule; 10] = [
     },
     BuiltinRule {
         id: "reboot-required",
-        name: "Требуется перезагрузка",
+        name: "Reboot required",
         metric: updates::KEY_REBOOT_REQUIRED,
         condition: Condition::Above,
         threshold: 0.5,

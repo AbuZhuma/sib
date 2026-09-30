@@ -29,6 +29,6 @@ fn send(summary: &str, body: &str, severity: Severity) {
         .urgency(urgency(severity))
         .show();
     if let Err(error) = result {
-        tracing::warn!(%error, "уведомление на рабочий стол не отправлено");
+        tracing::warn!(%error, "desktop notification was not sent");
     }
 }

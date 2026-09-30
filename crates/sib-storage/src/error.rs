@@ -2,6 +2,6 @@
 pub enum StorageError {
     #[error("sqlite: {0}")]
     Sqlite(#[from] rusqlite::Error),
-    #[error("поток записи остановлен")]
+    #[error("the writer thread has stopped")]
     WriterStopped,
 }
