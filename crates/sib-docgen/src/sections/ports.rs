@@ -19,20 +19,15 @@ fn flag(value: Option<bool>, yes: &str, no: &str) -> String {
     }
 }
 
-fn row(port: &ListeningPort, english: bool) -> Vec<String> {
-    let (yes, no) = if english {
-        ("yes", "no")
-    } else {
-        ("yes", "no")
-    };
+fn row(port: &ListeningPort) -> Vec<String> {
     vec![
         port.port.to_string(),
         port.protocol.label().to_owned(),
         port.address.clone(),
         port.process_label(),
         port.connections.to_string(),
-        flag(port.reachable, yes, no),
-        flag(port.firewall_allowed, yes, no),
+        flag(port.reachable, "yes", "no"),
+        flag(port.firewall_allowed, "yes", "no"),
     ]
 }
 
@@ -46,7 +41,7 @@ fn rows(snapshot: &PortsSnapshot, english: bool) -> Vec<Vec<String>> {
         .iter()
         .filter(|p| !english || !is_local_only(p))
         .take(MAX_PORTS)
-        .map(|p| row(p, english))
+        .map(row)
         .collect()
 }
 
