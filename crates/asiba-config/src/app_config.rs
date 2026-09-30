@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use asiba_core::{AlertRule, Intervals, Retention};
+use asiba_core::{AlertRule, CustomCheck, Intervals, Retention};
 use serde::{Deserialize, Serialize};
 
 use crate::ai_config::AiConfig;
@@ -24,6 +24,7 @@ pub struct AppConfig {
     pub desktop_notifications: bool,
     pub geolocation: bool,
     pub alert_rules: Vec<AlertRule>,
+    pub checks: Vec<CustomCheck>,
     pub intervals: Intervals,
     pub retention: Retention,
     pub ai: AiConfig,
@@ -37,6 +38,7 @@ impl Default for AppConfig {
             desktop_notifications: true,
             geolocation: true,
             alert_rules: Vec::new(),
+            checks: Vec::new(),
             intervals: Intervals::default(),
             retention: Retention::default(),
             ai: AiConfig::default(),
@@ -102,6 +104,23 @@ mod tests {
     #[test]
     fn default_config_roundtrips_through_toml() {
         let config = AppConfig::default();
+        let raw = toml::to_string(&config).unwrap_or_default();
+        let parsed: AppConfig = toml::from_str(&raw).unwrap_or_default();
+        assert_eq!(parsed, config);
+    }
+
+    #[test]
+    fn custom_checks_roundtrip_through_toml() {
+        let config = AppConfig {
+            checks: vec![asiba_core::CustomCheck {
+                name: "Сертификат не истёк".to_owned(),
+                kind: asiba_core::CheckKind::Script,
+                source: "openssl x509 -checkend 604800 -noout -in /etc/ssl/site.pem".to_owned(),
+                as_root: true,
+                ..asiba_core::CustomCheck::new("custom:1")
+            }],
+            ..AppConfig::default()
+        };
         let raw = toml::to_string(&config).unwrap_or_default();
         let parsed: AppConfig = toml::from_str(&raw).unwrap_or_default();
         assert_eq!(parsed, config);

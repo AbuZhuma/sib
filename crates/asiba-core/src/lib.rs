@@ -1,6 +1,7 @@
 pub mod action;
 pub mod alert;
 pub mod audit;
+pub mod check;
 pub mod event;
 pub mod incident;
 pub mod module;
@@ -15,6 +16,7 @@ pub mod transport;
 pub use action::{ActionOutcome, ActionRecord, ActionRequest, ActionSpec, Danger};
 pub use alert::{Alert, AlertRule, Condition, METRIC_OFFLINE};
 pub use audit::{AuditReport, AuditScope, AuditStatus, AuditTarget};
+pub use check::{CheckExpect, CheckKind, CustomCheck, OUTPUT_LIMIT};
 pub use event::{Event, Severity};
 pub use incident::{IgnoredIncident, Incident, IncidentDraft, IncidentKind};
 pub use module::{
