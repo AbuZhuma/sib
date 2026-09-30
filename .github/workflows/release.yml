@@ -1,0 +1,38 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+  PACKAGE: sib-x86_64-linux
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install system libraries
+        run: sudo apt-get update && sudo apt-get install -y libxkbcommon-dev libwayland-dev libdbus-1-dev
+      - uses: Swatinem/rust-cache@v2
+      - name: Build
+        run: cargo build --release -p sib-app
+      - name: Package
+        run: |
+          install -D target/release/sib "$PACKAGE/sib"
+          cp README.md LICENSE "$PACKAGE/"
+          tar czf "$PACKAGE.tar.gz" "$PACKAGE"
+          sha256sum "$PACKAGE.tar.gz" > "$PACKAGE.tar.gz.sha256"
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --title "$GITHUB_REF_NAME" \
+            --generate-notes \
+            "$PACKAGE.tar.gz" "$PACKAGE.tar.gz.sha256"

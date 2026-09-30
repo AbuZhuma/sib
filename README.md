@@ -15,9 +15,20 @@
 - **Терминал** — кнопка `>_` на карточке и «Терминал» на странице сервера открывают системный эмулятор терминала с уже запущенным `ssh` (порт, jump host и ключ подставляются). Ищутся `$TERMINAL`, `x-terminal-emulator`, ptyxis, gnome-terminal, konsole, tilix, wezterm, xfce4-terminal, alacritty, kitty, foot, xterm.
 - **Файлы сервера** — два файла в папке серверов, обновляются после каждого цикла сбора (не чаще раза в 10 с, только при изменениях). `<имя>.md` — для человека: всё, что показывает программа (проблемы, описание, система, ресурсы со сводкой за час и сутки, алерты, безопасность, аномалии, сервисы, Docker, деплои, процессы, порты, пользователи, обновления, журнал, GPU, действия, события); блок между `<!-- notes:start -->` и `<!-- notes:end -->` — ваш, не перезаписывается. `<имя>.llm.md` — те же данные в компактном виде на английском для языковой модели (см. `docs/AI-PLAN.md`).
 
-## Сборка и запуск
+## Установка
 
-Нужен Rust 1.88+ (let-chains) и системные библиотеки для окна (на Fedora: `libxkbcommon-devel wayland-devel`; для keyring — Secret Service, например GNOME Keyring или KWallet).
+Готовая сборка для x86_64 Linux — на странице [Releases](https://github.com/AbuZhuma/sib/releases):
+
+```
+curl -L https://github.com/AbuZhuma/sib/releases/latest/download/sib-x86_64-linux.tar.gz | tar xz
+./sib
+```
+
+Нужен рабочий стол с Secret Service для keyring (GNOME Keyring, KWallet) и обычные библиотеки окна — `libxkbcommon`, `libwayland-client` или `libX11`, `libdbus-1`, драйвер OpenGL. SQLite собран внутрь бинарника.
+
+## Сборка из исходников
+
+Нужен Rust 1.88+ (let-chains) и заголовочные файлы этих библиотек (Fedora: `libxkbcommon-devel wayland-devel dbus-devel`; Debian/Ubuntu: `libxkbcommon-dev libwayland-dev libdbus-1-dev`).
 
 ```
 cargo run -p sib-app --release
@@ -42,7 +53,6 @@ cargo test --workspace
 | `~/.local/state/sib/audits/<имя>/` | отчёты аудитов модели |
 | системный keyring | пароли, passphrase, пароль sudo, ключ API провайдера ИИ |
 | `~/.local/share/sib/history.db` | история метрик и журнал действий |
-| `~/.local/state/sib/layout.toml` | раскладка виджетов сводки |
 | `~/.cache/sib/` | геолокация, страны адресов, тайлы карты |
 
 ## Файл сервера `servers/<имя>.toml`
