@@ -69,7 +69,7 @@ pub const LOG_SOURCE: &str = "Источник";
 pub const LOG_LEVEL: &str = "Уровень";
 pub const LOG_COUNT: &str = "Раз";
 pub const LOG_ENTRIES: &str = "записей";
-pub const LOG_LOADING_OLDER: &str = "подгружаем более ранние записи...";
+pub const LOG_LOADING_OLDER: &str = "загрузка более ранних записей…";
 pub const LOG_ALL_LOADED: &str = "весь журнал загружен";
 
 pub const USERS_SESSIONS: &str = "Активные сессии";
@@ -161,7 +161,7 @@ pub const SEC_SUB_ACCESS: &str = "Входы и sudo";
 pub const SEC_SUB_ATTACKS: &str = "Атаки и баны";
 pub const SEC_OPEN_PROBLEM: &str = "открыть подробности";
 pub const SEC_BACK_TO_LIST: &str = "← к списку проверок";
-pub const SEC_PROBLEM_GONE: &str = "Проверка больше не выполняется - данные обновились.";
+pub const SEC_PROBLEM_GONE: &str = "Проверка не выполняется: данные обновились.";
 pub const SEC_STATE: &str = "Состояние";
 pub const SEC_WHAT_IS_CHECKED: &str = "Что проверяется";
 pub const SEC_WHAT_TO_DO: &str = "Что делать";

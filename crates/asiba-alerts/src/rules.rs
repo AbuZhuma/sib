@@ -59,7 +59,7 @@ const BUILTIN: [BuiltinRule; 10] = [
     },
     BuiltinRule {
         id: "services-failed",
-        name: "Есть упавшие сервисы",
+        name: "Упавшие сервисы",
         metric: services::KEY_FAILED,
         condition: Condition::Above,
         threshold: 0.5,
@@ -68,7 +68,7 @@ const BUILTIN: [BuiltinRule; 10] = [
     },
     BuiltinRule {
         id: "log-errors",
-        name: "Много ошибок в журнале",
+        name: "Ошибки в журнале",
         metric: logs::KEY_ERRORS_PER_MIN,
         condition: Condition::Above,
         threshold: 30.0,

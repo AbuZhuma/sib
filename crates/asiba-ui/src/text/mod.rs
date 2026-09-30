@@ -39,7 +39,7 @@ pub const SECTION_INCIDENTS: &str = "Инциденты";
 pub const INCIDENT_NOTICE: &str = "инцидент";
 pub const INCIDENT_OPEN_HINT: &str = "открыть раздел с подробностями";
 pub const INCIDENT_IGNORE: &str = "забыть";
-pub const INCIDENT_IGNORE_HINT: &str = "Убрать в архив: такой инцидент на этом сервере больше не будет открываться, алертить и показываться. Вернуть можно на странице «Алерты».";
+pub const INCIDENT_IGNORE_HINT: &str = "Убрать в архив: инцидент этого вида на этом сервере не открывается, не попадает в алерты и не показывается в списках. Вернуть - на странице «Алерты».";
 pub const INCIDENTS_ARCHIVE: &str = "Архив инцидентов";
 pub const INCIDENTS_ARCHIVE_EMPTY: &str = "архив пуст";
 pub const INCIDENT_RESTORE: &str = "вернуть";
@@ -62,7 +62,7 @@ pub const EVENTS_LEVEL: &str = "уровень от";
 pub const COL_ALERTS: &str = "Алерты";
 pub const SECTION_SERVERS: &str = "Серверы";
 pub const EMPTY_EVENTS: &str = "Событий пока нет";
-pub const EMPTY_SERVERS: &str = "Серверов пока нет. Добавьте первый.";
+pub const EMPTY_SERVERS: &str = "Серверов нет. Добавьте сервер.";
 
 pub const SERVERS_TITLE: &str = "Серверы";
 pub const SERVERS_SEARCH: &str = "поиск: имя, хост, проект, тег";
@@ -141,7 +141,7 @@ pub const TEST_OK: &str = "Подключение успешно";
 pub const TEST_FAILED: &str = "Ошибка";
 pub const TEST_MODULES: &str = "Модули";
 pub const TEST_UNKNOWN_KEY: &str = "Сервер с таким ключом не встречался. Отпечаток:";
-pub const TEST_CHANGED_KEY: &str = "Ключ хоста ИЗМЕНИЛСЯ. Возможна подмена сервера. Отпечаток:";
+pub const TEST_CHANGED_KEY: &str = "Ключ хоста изменился. Возможна подмена сервера. Отпечаток:";
 
 pub const AVAIL_AVAILABLE: &str = "доступен";
 pub const AVAIL_PARTIAL: &str = "частично";
@@ -210,8 +210,7 @@ pub const SEVERITY_INFO: &str = "info";
 pub const SEVERITY_WARNING: &str = "warning";
 pub const SEVERITY_CRITICAL: &str = "critical";
 pub const MAP_TITLE: &str = "Карта";
-pub const MAP_EMPTY: &str =
-    "Ни у одного сервера нет координат: геолокация ещё не определена или недоступна.";
+pub const MAP_EMPTY: &str = "Серверов с координатами нет: геолокация не определена или выключена.";
 pub const MAP_LEGEND_HOME: &str = "эта машина";
 pub const SECTION_MAP: &str = "Карта";
 pub const DETAIL_LOCATION: &str = "расположение";
