@@ -9,6 +9,7 @@ pub enum Subpage {
     Audit,
     Access,
     Attacks,
+    Checks,
     Problem {
         key: String,
         is_evidence_requested: bool,

@@ -1,7 +1,7 @@
 mod draft;
 mod editor;
 mod import;
-mod popup;
+mod page;
 mod rows;
 
-pub use popup::{body, controls, load, store};
+pub use page::show;

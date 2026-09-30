@@ -10,7 +10,7 @@ use asiba_modules::security::{self, SecuritySnapshot};
 use egui::{RichText, Ui};
 
 use super::{DetailContext, audit as ai_audit, section_analysis};
-use crate::components::block_settings::{self, Popup};
+use crate::components::block_settings;
 use crate::components::{cached_audit, chip, panel, panel_plain};
 use crate::modules::Tab;
 use crate::pages::Action;
@@ -35,34 +35,17 @@ pub fn show(ui: &mut Ui, ctx: &DetailContext<'_>) -> Option<Action> {
             Subpage::Audit => audit_list::show(ui, ctx, &audit, &mut subpage),
             Subpage::Access => access::show(ui, ctx),
             Subpage::Attacks => attacks::show(ui, ctx),
+            Subpage::Checks => checks::show(ui, ctx.server, ctx.state),
             Subpage::Problem { key, .. } => problem::show(ui, ctx, &audit, &key, &mut subpage),
         }
     });
     state::store(ui.ctx(), server, subpage);
     ui.add_space(GAP);
-    let checks_action = check_settings(ui, ctx);
     let ai_action = panel(ui, text::AI_AUDIT_TITLE, |ui| ai_audit::show(ui, ctx));
-    page_action
-        .or(checks_action)
-        .or(analysis_action)
-        .or(ai_action)
+    page_action.or(analysis_action).or(ai_action)
 }
 
 const CHECKS_KEY: &str = "audit-checks";
-
-fn check_settings(ui: &mut Ui, ctx: &DetailContext<'_>) -> Option<Action> {
-    let spec = Popup {
-        key: CHECKS_KEY,
-        title: text::CHECKS_TITLE,
-    };
-    let mut draft = checks::load(ui.ctx(), ctx.server);
-    let action = block_settings::popup(ui, &spec, |ui| {
-        block_settings::scrolled(ui, |ui| checks::body(ui, &mut draft, ctx.server, ctx.state));
-        checks::controls(ui, &mut draft, ctx.server)
-    })?;
-    checks::store(ui.ctx(), ctx.server, draft, action.is_some());
-    action
-}
 
 fn available_subpages(server: &ServerState) -> Vec<(Subpage, &'static str)> {
     let snapshot = server.data::<SecuritySnapshot>(security::ID);
@@ -78,8 +61,10 @@ fn available_subpages(server: &ServerState) -> Vec<(Subpage, &'static str)> {
 }
 
 fn is_available(subpages: &[(Subpage, &'static str)], subpage: &Subpage) -> bool {
-    matches!(subpage, Subpage::Audit | Subpage::Problem { .. })
-        || subpages.iter().any(|(target, _)| target == subpage)
+    matches!(
+        subpage,
+        Subpage::Audit | Subpage::Checks | Subpage::Problem { .. }
+    ) || subpages.iter().any(|(target, _)| target == subpage)
 }
 
 fn subpage_bar(ui: &mut Ui, subpage: &mut Subpage, items: &[(Subpage, &'static str)]) {
@@ -94,7 +79,9 @@ fn subpage_bar(ui: &mut Ui, subpage: &mut Subpage, items: &[(Subpage, &'static s
             }
         }
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            block_settings::gear(ui, CHECKS_KEY);
+            if block_settings::gear(ui, CHECKS_KEY) {
+                *subpage = Subpage::Checks;
+            }
         });
     });
 }

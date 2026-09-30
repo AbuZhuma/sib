@@ -1,14 +1,16 @@
 use asiba_core::{Area, Weight};
 use asiba_incidents::Pattern;
-use egui::{ComboBox, RichText, Ui};
+use egui::{ComboBox, Label, RichText, Ui};
 
 use super::draft::Draft;
 use crate::components::{Table, chip_value};
 use crate::text;
-use crate::theme::Palette;
+use crate::theme::{Palette, ROW_HEIGHT};
 
-const AREA_FIELD: f32 = 150.0;
-const WEIGHT_FIELD: f32 = 96.0;
+const NAME_FIELD: f32 = 300.0;
+const AREA_FIELD: f32 = 170.0;
+const WEIGHT_FIELD: f32 = 110.0;
+const ACTION_FIELD: f32 = 150.0;
 
 enum Change {
     Edit(String),
@@ -38,7 +40,6 @@ pub fn show(ui: &mut Ui, draft: &mut Draft) {
         text::CHECK_AREA,
         text::CHECK_WEIGHT,
         text::RULE_ENABLED,
-        "",
         "",
     ];
     let rows = ordered(draft);
@@ -83,8 +84,10 @@ fn ordered(draft: &Draft) -> Vec<Row> {
 
 fn builtin_row(ui: &mut Ui, draft: &mut Draft, pattern: &'static Pattern) -> Option<Change> {
     let p = Palette::current(ui.ctx());
-    ui.label(pattern.subject).on_hover_text(pattern.description);
-    ui.label(RichText::new(pattern.area.label()).color(p.text_secondary));
+    name_cell(ui, pattern.subject, None).on_hover_text(pattern.description);
+    cell_ui(ui, AREA_FIELD, |ui| {
+        ui.label(RichText::new(pattern.area.label()).color(p.text_secondary));
+    });
     let mut weight = draft.weight_of(pattern.id, pattern.weight);
     if weight_picker(ui, pattern.id, &mut weight) {
         draft.set_weight(pattern.id, weight, pattern.weight);
@@ -93,33 +96,56 @@ fn builtin_row(ui: &mut Ui, draft: &mut Draft, pattern: &'static Pattern) -> Opt
     if ui.checkbox(&mut enabled, "").changed() {
         draft.set_enabled(pattern.id, enabled);
     }
-    ui.label("");
-    if !draft.is_overridden(pattern.id) {
-        ui.label("");
-        return None;
-    }
-    ui.small_button(text::RULE_RESET)
-        .clicked()
-        .then(|| Change::Reset(pattern.id.to_owned()))
+    let is_reset = actions(ui, |ui| {
+        draft.is_overridden(pattern.id) && ui.small_button(text::RULE_RESET).clicked()
+    });
+    is_reset.then(|| Change::Reset(pattern.id.to_owned()))
 }
 
 fn custom_row(ui: &mut Ui, draft: &mut Draft, index: usize) -> Option<Change> {
-    let p = Palette::current(ui.ctx());
     let check = draft.checks.get_mut(index)?;
     let id = check.id.clone();
-    ui.horizontal(|ui| {
-        ui.label(&check.name);
-        ui.label(RichText::new(text::CHECK_OWN).small().color(p.accent));
-    });
+    name_cell(ui, &check.name, Some(text::CHECK_OWN));
     area_picker(ui, &id, &mut check.area);
     weight_picker(ui, &id, &mut check.weight);
     ui.checkbox(&mut check.enabled, "");
-    let is_edited = ui.small_button(text::CHECK_EDIT).clicked();
-    let is_removed = ui.small_button(text::RULE_REMOVE).clicked();
-    if is_removed {
-        return Some(Change::Remove(id));
-    }
-    is_edited.then_some(Change::Edit(id))
+    let mut change = None;
+    actions(ui, |ui| {
+        if ui.small_button(text::CHECK_EDIT).clicked() {
+            change = Some(Change::Edit(id.clone()));
+        }
+        if ui.small_button(text::RULE_REMOVE).clicked() {
+            change = Some(Change::Remove(id.clone()));
+        }
+    });
+    change
+}
+
+fn name_cell(ui: &mut Ui, name: &str, mark: Option<&str>) -> egui::Response {
+    let p = Palette::current(ui.ctx());
+    cell_ui(ui, NAME_FIELD, |ui| {
+        ui.add(Label::new(name).truncate());
+        if let Some(mark) = mark {
+            ui.label(RichText::new(mark).small().color(p.accent));
+        }
+    })
+    .response
+}
+
+fn actions<R>(ui: &mut Ui, add_contents: impl FnOnce(&mut Ui) -> R) -> R {
+    cell_ui(ui, ACTION_FIELD, add_contents).inner
+}
+
+pub fn cell_ui<R>(
+    ui: &mut Ui,
+    width: f32,
+    add_contents: impl FnOnce(&mut Ui) -> R,
+) -> egui::InnerResponse<R> {
+    let rect = egui::Rect::from_min_size(ui.cursor().min, egui::vec2(width, ROW_HEIGHT));
+    let scope = ui.scope_builder(egui::UiBuilder::new().max_rect(rect), |ui| {
+        ui.horizontal(|ui| add_contents(ui)).inner
+    });
+    egui::InnerResponse::new(scope.inner, scope.response)
 }
 
 pub fn area_picker(ui: &mut Ui, id: &str, area: &mut Area) {
