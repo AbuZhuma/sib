@@ -12,18 +12,19 @@ const ERRORS_HOUR_WARN: usize = 10;
 const ERRORS_HOUR_FAIL: usize = 100;
 const CRITICAL_PRIORITY: u8 = 2;
 const ERROR_PRIORITY: u8 = 3;
-const NO_DATA: &str = "модуль не собрал данные";
+const NO_DATA: &str = "the module has not collected data";
 
-const ADVICE_ERRORS: &str = "Откройте вкладку «Логи»: повторы сгруппированы по источнику.";
-const ADVICE_CRITICAL: &str = "Записи уровня crit, alert и emerg относятся к оборудованию, файловой системе или ядру. Разберите каждую.";
-const ADVICE_CLOCK: &str = "Включите синхронизацию времени: timedatectl set-ntp true, затем проверьте chrony или systemd-timesyncd.";
+const ADVICE_ERRORS: &str = "Open the Logs tab: repeats are grouped by source.";
+const ADVICE_CRITICAL: &str = "Entries at crit, alert and emerg level come from hardware, the file system or the kernel. Look at each one.";
+const ADVICE_CLOCK: &str =
+    "Turn on time sync: timedatectl set-ntp true, then check chrony or systemd-timesyncd.";
 
 pub static PATTERNS: &[Pattern] = &[
     Pattern {
         id: "logs.errors_hour",
         area: Area::Logs,
-        subject: "Ошибки в журнале за час",
-        description: "Число записей уровня err и выше за последний час.",
+        subject: "Journal errors in the last hour",
+        description: "Number of entries at err level and above in the last hour.",
         weight: Weight::Medium,
         advice: ADVICE_ERRORS,
         evidence: EvidenceSource::Tab(TAB_LOGS),
@@ -32,8 +33,8 @@ pub static PATTERNS: &[Pattern] = &[
     Pattern {
         id: "logs.critical_day",
         area: Area::Logs,
-        subject: "Критичные записи за сутки",
-        description: "Записи уровня crit, alert и emerg за последние сутки.",
+        subject: "Critical entries in the last day",
+        description: "Entries at crit, alert and emerg level in the last day.",
         weight: Weight::High,
         advice: ADVICE_CRITICAL,
         evidence: EvidenceSource::Tab(TAB_LOGS),
@@ -42,8 +43,8 @@ pub static PATTERNS: &[Pattern] = &[
     Pattern {
         id: "logs.clock",
         area: Area::Logs,
-        subject: "Часы сервера",
-        description: "Расхождение часов сервера с локальной машиной: при большом расхождении журналы разных серверов не сопоставляются.",
+        subject: "Server clock",
+        description: "How far the server clock is from this machine. With a large gap, journals from different servers no longer line up.",
         weight: Weight::Low,
         advice: ADVICE_CLOCK,
         evidence: EvidenceSource::Tab(TAB_SUMMARY),
@@ -59,7 +60,7 @@ fn errors_hour(ctx: &AuditContext<'_>) -> Vec<Verdict> {
     Verdict::graded(
         errors >= ERRORS_HOUR_FAIL,
         errors >= ERRORS_HOUR_WARN,
-        format!("{errors} записей уровня err и выше"),
+        format!("{errors} entries at err level and above"),
     )
     .single()
 }
@@ -72,7 +73,7 @@ fn critical_day(ctx: &AuditContext<'_>) -> Vec<Verdict> {
     Verdict::graded(
         critical > 0,
         false,
-        format!("{critical} записей уровня crit и выше"),
+        format!("{critical} entries at crit level and above"),
     )
     .single()
 }
@@ -85,7 +86,7 @@ fn clock(ctx: &AuditContext<'_>) -> Vec<Verdict> {
     Verdict::graded(
         offset >= CLOCK_FAIL_SECS,
         offset >= CLOCK_WARN_SECS,
-        format!("расхождение с этой машиной {} с", info.clock_offset_secs),
+        format!("{} s off this machine", info.clock_offset_secs),
     )
     .single()
 }

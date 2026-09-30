@@ -34,7 +34,7 @@ fn space_draft(fs: &Filesystem) -> Option<IncidentDraft> {
         severity,
         fs.mount.clone(),
         format!(
-            "{} заполнен на {used:.0} % (свободно {} МиБ)",
+            "{} is {used:.0} % full ({} MiB free)",
             fs.mount,
             fs.available_bytes / 1024 / 1024
         ),
@@ -50,6 +50,6 @@ fn inodes_draft(fs: &Filesystem) -> Option<IncidentDraft> {
         IncidentKind::DiskFull,
         Severity::Warning,
         format!("{} inodes", fs.mount),
-        format!("inode на {} заняты на {used:.0} %", fs.mount),
+        format!("inodes on {} are {used:.0} % used", fs.mount),
     ))
 }

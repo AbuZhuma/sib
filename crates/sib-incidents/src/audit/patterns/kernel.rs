@@ -8,8 +8,8 @@ use crate::audit::pattern::{Area, Pattern, Verdict, Weight};
 
 const SYSCTL_CONF: &str = "/etc/sysctl.conf";
 const ADVICE_SYSCTL: &str =
-    "Задайте параметр в /etc/sysctl.d/99-hardening.conf и примените sysctl --system.";
-const ADVICE_FORWARD: &str = "Если сервер не маршрутизатор и не хост контейнеров, задайте net.ipv4.ip_forward=0 в /etc/sysctl.d/.";
+    "Set the value in /etc/sysctl.d/99-hardening.conf and apply it with sysctl --system.";
+const ADVICE_FORWARD: &str = "If the server is not a router and not a container host, set net.ipv4.ip_forward=0 in /etc/sysctl.d/.";
 
 pub(super) struct SysctlRule {
     pub(super) key: &'static str,
@@ -44,7 +44,7 @@ pub static PATTERNS: &[Pattern] = &[
     sysctl_pattern(
         "kernel.syncookies",
         "SYN cookies",
-        "net.ipv4.tcp_syncookies=1 позволяет принимать соединения во время SYN-флуда, не исчерпывая очередь.",
+        "net.ipv4.tcp_syncookies=1 keeps accepting connections during a SYN flood without filling the queue.",
         Weight::Medium,
         |ctx| {
             rule(
@@ -58,8 +58,8 @@ pub static PATTERNS: &[Pattern] = &[
     ),
     sysctl_pattern(
         "kernel.rp_filter",
-        "Фильтр обратного пути",
-        "net.ipv4.conf.all.rp_filter=1 отбрасывает пакеты с подделанным адресом источника, пришедшие не с того интерфейса.",
+        "Reverse path filter",
+        "net.ipv4.conf.all.rp_filter=1 drops packets with a forged source address that arrive on the wrong interface.",
         Weight::Low,
         |ctx| {
             rule(
@@ -73,15 +73,15 @@ pub static PATTERNS: &[Pattern] = &[
     ),
     sysctl_pattern(
         "kernel.accept_redirects",
-        "Приём ICMP-редиректов",
-        "ICMP redirect позволяет узлу той же сети подменить маршрут; серверу такие пакеты не нужны (IPv4 и IPv6).",
+        "Accepting ICMP redirects",
+        "An ICMP redirect lets a host on the same network change a route. A server does not need such packets, for IPv4 or IPv6.",
         Weight::Low,
         accept_redirects,
     ),
     sysctl_pattern(
         "kernel.send_redirects",
-        "Отправка ICMP-редиректов",
-        "Сервер, не являющийся маршрутизатором, не должен рассылать редиректы.",
+        "Sending ICMP redirects",
+        "A server that is not a router should not send redirects.",
         Weight::Low,
         |ctx| {
             rule(
@@ -96,7 +96,7 @@ pub static PATTERNS: &[Pattern] = &[
     sysctl_pattern(
         "kernel.source_route",
         "Source routing",
-        "Пакеты с маршрутом от источника обходят правила маршрутизации; accept_source_route должен быть 0.",
+        "Source routed packets get around the routing rules. accept_source_route must be 0.",
         Weight::Low,
         |ctx| {
             rule(
@@ -110,8 +110,8 @@ pub static PATTERNS: &[Pattern] = &[
     ),
     sysctl_pattern(
         "kernel.log_martians",
-        "Журнал подозрительных пакетов",
-        "log_martians=1 записывает в журнал пакеты с некорректными адресами источника.",
+        "Logging of suspicious packets",
+        "log_martians=1 writes packets with impossible source addresses to the journal.",
         Weight::Low,
         |ctx| {
             rule(
@@ -125,8 +125,8 @@ pub static PATTERNS: &[Pattern] = &[
     ),
     sysctl_pattern(
         "kernel.broadcast_ping",
-        "Ответ на broadcast-ping",
-        "icmp_echo_ignore_broadcasts=1 не даёт использовать сервер как усилитель smurf-атаки.",
+        "Answering broadcast ping",
+        "icmp_echo_ignore_broadcasts=1 stops the server from being used to amplify a smurf attack.",
         Weight::Low,
         |ctx| {
             rule(
@@ -141,8 +141,8 @@ pub static PATTERNS: &[Pattern] = &[
     Pattern {
         id: "kernel.ip_forward",
         area: Area::Kernel,
-        subject: "Маршрутизация пакетов",
-        description: "net.ipv4.ip_forward=1 включает маршрутизацию пакетов. Docker задаёт его сам; без контейнеров и VPN параметр не нужен.",
+        subject: "Packet forwarding",
+        description: "net.ipv4.ip_forward=1 turns on packet forwarding. Docker sets it itself. Without containers or a VPN it is not needed.",
         weight: Weight::Low,
         advice: ADVICE_FORWARD,
         evidence: EvidenceSource::File(SYSCTL_CONF),
@@ -156,7 +156,7 @@ pub(super) fn rule(ctx: &AuditContext<'_>, rule: SysctlRule) -> Vec<Verdict> {
 
 pub(super) fn verdict(snapshot: &SecuritySnapshot, rule: &SysctlRule) -> Verdict {
     let Some(value) = snapshot.hardening.sysctl(rule.key) else {
-        return Verdict::skipped(format!("{} не прочитан", rule.key));
+        return Verdict::skipped(format!("{} was not read", rule.key));
     };
     let is_ok = match rule.wanted {
         Wanted::Exactly(wanted) => value == wanted,
@@ -169,7 +169,7 @@ pub(super) fn verdict(snapshot: &SecuritySnapshot, rule: &SysctlRule) -> Verdict
         Wanted::Exactly(wanted) => wanted.to_owned(),
         Wanted::AtLeast(min) => format!(">= {min}"),
     };
-    Verdict::warn(format!("{} = {value}, нужно {wanted}", rule.key))
+    Verdict::warn(format!("{} = {value}, should be {wanted}", rule.key))
 }
 
 fn accept_redirects(ctx: &AuditContext<'_>) -> Vec<Verdict> {
@@ -195,9 +195,9 @@ fn accept_redirects(ctx: &AuditContext<'_>) -> Vec<Verdict> {
 fn ip_forward(ctx: &AuditContext<'_>) -> Vec<Verdict> {
     let has_docker = ctx.data::<DockerSnapshot>(docker::ID).is_some();
     with_security(ctx, |s| match s.hardening.sysctl("net.ipv4.ip_forward") {
-        Some("1") if has_docker => Verdict::pass("включена, требуется Docker"),
-        Some("1") => Verdict::warn("включена (net.ipv4.ip_forward = 1), Docker не обнаружен"),
+        Some("1") if has_docker => Verdict::pass("on, Docker needs it"),
+        Some("1") => Verdict::warn("on (net.ipv4.ip_forward = 1), no Docker found"),
         Some(value) => Verdict::pass(format!("net.ipv4.ip_forward = {value}")),
-        None => Verdict::skipped("net.ipv4.ip_forward не прочитан"),
+        None => Verdict::skipped("net.ipv4.ip_forward was not read"),
     })
 }

@@ -4,16 +4,16 @@ use crate::audit::context::{AuditContext, list_or};
 use crate::audit::evidence::{EvidenceSource, TAB_SUMMARY};
 use crate::audit::pattern::{Area, Pattern, Verdict, Weight};
 
-const ADVICE_MODULES: &str = "Смотрите текст ошибки в таблице модулей в сводке сервера.";
-const ADVICE_PARTIAL: &str = "Настройте sudo или добавьте пользователя в нужные группы.";
-const ADVICE_SUDO: &str = "Задайте sudo в настройках сервера.";
+const ADVICE_MODULES: &str = "Look at the error text in the module table on the server summary.";
+const ADVICE_PARTIAL: &str = "Set up sudo or add the user to the groups it needs.";
+const ADVICE_SUDO: &str = "Set sudo in the server settings.";
 
 pub static PATTERNS: &[Pattern] = &[
     Pattern {
         id: "collection.module_errors",
         area: Area::Collection,
-        subject: "Ошибки сбора модулей",
-        description: "Модули, чей последний сбор завершился ошибкой; их данные в аудите устарели или отсутствуют.",
+        subject: "Module collection errors",
+        description: "Modules whose last collect failed. Their data in the audit is stale or missing.",
         weight: Weight::Low,
         advice: ADVICE_MODULES,
         evidence: EvidenceSource::Tab(TAB_SUMMARY),
@@ -22,8 +22,8 @@ pub static PATTERNS: &[Pattern] = &[
     Pattern {
         id: "collection.partial",
         area: Area::Collection,
-        subject: "Неполные данные модулей",
-        description: "Модули, которым не хватает прав на часть данных.",
+        subject: "Incomplete module data",
+        description: "Modules that lack permissions for part of their data.",
         weight: Weight::Low,
         advice: ADVICE_PARTIAL,
         evidence: EvidenceSource::Tab(TAB_SUMMARY),
@@ -32,8 +32,8 @@ pub static PATTERNS: &[Pattern] = &[
     Pattern {
         id: "collection.root",
         area: Area::Collection,
-        subject: "Права root для проверок",
-        description: "Без root часть проверок безопасности пропускается: sshd -T, /etc/shadow, правила файрвола.",
+        subject: "Root access for checks",
+        description: "Without root some security checks are skipped: sshd -T, /etc/shadow, firewall rules.",
         weight: Weight::Low,
         advice: ADVICE_SUDO,
         evidence: EvidenceSource::Tab(TAB_SUMMARY),
@@ -48,7 +48,7 @@ fn module_errors(ctx: &AuditContext<'_>) -> Vec<Verdict> {
         .iter()
         .filter_map(|(id, state)| state.last_error.as_ref().map(|e| format!("{}: {e}", id.0)))
         .collect();
-    Verdict::graded(false, !failing.is_empty(), list_or(&failing, "ошибок нет")).single()
+    Verdict::graded(false, !failing.is_empty(), list_or(&failing, "no errors")).single()
 }
 
 fn partial(ctx: &AuditContext<'_>) -> Vec<Verdict> {
@@ -61,12 +61,7 @@ fn partial(ctx: &AuditContext<'_>) -> Vec<Verdict> {
             _ => None,
         })
         .collect();
-    Verdict::graded(
-        false,
-        !partial.is_empty(),
-        list_or(&partial, "ограничений нет"),
-    )
-    .single()
+    Verdict::graded(false, !partial.is_empty(), list_or(&partial, "no limits")).single()
 }
 
 fn root(ctx: &AuditContext<'_>) -> Vec<Verdict> {
@@ -75,7 +70,7 @@ fn root(ctx: &AuditContext<'_>) -> Vec<Verdict> {
     Verdict::graded(
         false,
         !has_sudo,
-        format!("пользователь {}, sudo {:?}", spec.user, spec.sudo),
+        format!("user {}, sudo {:?}", spec.user, spec.sudo),
     )
     .single()
 }

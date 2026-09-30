@@ -7,7 +7,7 @@ pub static PATTERNS: &[Pattern] = &[
     sysctl_pattern(
         "kernel.aslr",
         "ASLR",
-        "kernel.randomize_va_space=2 рандомизирует адреса стека, кучи и библиотек; без этого адреса предсказуемы.",
+        "kernel.randomize_va_space=2 randomizes the addresses of the stack, the heap and libraries. Without it the addresses are predictable.",
         Weight::Medium,
         |ctx| {
             rule(
@@ -21,8 +21,8 @@ pub static PATTERNS: &[Pattern] = &[
     ),
     sysctl_pattern(
         "kernel.kptr_restrict",
-        "Скрытие адресов ядра",
-        "kernel.kptr_restrict>=1 скрывает адреса ядра в /proc и dmesg; по ним обходят KASLR.",
+        "Hiding kernel addresses",
+        "kernel.kptr_restrict>=1 hides kernel addresses in /proc and dmesg. They are used to get around KASLR.",
         Weight::Low,
         |ctx| {
             rule(
@@ -36,8 +36,8 @@ pub static PATTERNS: &[Pattern] = &[
     ),
     sysctl_pattern(
         "kernel.dmesg_restrict",
-        "Доступ к dmesg",
-        "kernel.dmesg_restrict=1 закрывает журнал ядра от обычных пользователей.",
+        "Access to dmesg",
+        "kernel.dmesg_restrict=1 closes the kernel log to ordinary users.",
         Weight::Low,
         |ctx| {
             rule(
@@ -51,8 +51,8 @@ pub static PATTERNS: &[Pattern] = &[
     ),
     sysctl_pattern(
         "kernel.ptrace_scope",
-        "Ограничение ptrace",
-        "kernel.yama.ptrace_scope>=1 запрещает процессу подключаться отладчиком к другому процессу того же пользователя и читать его память.",
+        "ptrace limit",
+        "kernel.yama.ptrace_scope>=1 stops a process from attaching a debugger to another process of the same user and reading its memory.",
         Weight::Low,
         |ctx| {
             rule(
@@ -66,8 +66,8 @@ pub static PATTERNS: &[Pattern] = &[
     ),
     sysctl_pattern(
         "kernel.sysrq",
-        "Магический SysRq",
-        "kernel.sysrq=0 отключает комбинации, которыми можно перезагрузить или убить процессы с консоли.",
+        "Magic SysRq",
+        "kernel.sysrq=0 turns off the key combinations that reboot the machine or kill processes from the console.",
         Weight::Low,
         |ctx| {
             rule(
@@ -81,8 +81,8 @@ pub static PATTERNS: &[Pattern] = &[
     ),
     sysctl_pattern(
         "kernel.unprivileged_bpf",
-        "BPF без привилегий",
-        "kernel.unprivileged_bpf_disabled=1 запрещает обычным пользователям загружать BPF-программы; через них повышают привилегии.",
+        "Unprivileged BPF",
+        "kernel.unprivileged_bpf_disabled=1 stops ordinary users from loading BPF programs. They are used to raise privileges.",
         Weight::Low,
         |ctx| {
             rule(
@@ -96,8 +96,8 @@ pub static PATTERNS: &[Pattern] = &[
     ),
     sysctl_pattern(
         "kernel.perf_paranoid",
-        "Доступ к perf",
-        "kernel.perf_event_paranoid>=2 не даёт обычным пользователям профилировать ядро и чужие процессы.",
+        "Access to perf",
+        "kernel.perf_event_paranoid>=2 stops ordinary users from profiling the kernel and other users processes.",
         Weight::Low,
         |ctx| {
             rule(
@@ -111,8 +111,8 @@ pub static PATTERNS: &[Pattern] = &[
     ),
     sysctl_pattern(
         "kernel.protected_links",
-        "Защита символических ссылок",
-        "fs.protected_symlinks и fs.protected_hardlinks закрывают атаки через символические и жёсткие ссылки в общедоступных каталогах.",
+        "Symlink protection",
+        "fs.protected_symlinks and fs.protected_hardlinks close attacks through symbolic and hard links in world-writable directories.",
         Weight::Low,
         protected_links,
     ),

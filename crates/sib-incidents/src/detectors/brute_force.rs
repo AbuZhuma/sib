@@ -16,9 +16,9 @@ impl Detector for BruteForceDetector {
             .filter(|a| a.is_brute_force())
             .map(|attacker| {
                 let banned = if snapshot.is_banned(&attacker.ip) {
-                    "уже забанен"
+                    "already banned"
                 } else {
-                    "без бана"
+                    "not banned"
                 };
                 let country = state.country_of(&attacker.ip).unwrap_or("?");
                 IncidentDraft::new(
@@ -26,7 +26,7 @@ impl Detector for BruteForceDetector {
                     Severity::Critical,
                     attacker.ip.clone(),
                     format!(
-                        "Перебор паролей SSH с {} ({country}): {} неудачных попыток за 10 минут, пользователи {} ({banned})",
+                        "SSH password guessing from {} ({country}): {} failed attempts in 10 minutes, users {} ({banned})",
                         attacker.ip,
                         attacker.recent_failures,
                         attacker.users_label()

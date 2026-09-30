@@ -11,26 +11,27 @@ const RESTARTS_FAIL: u32 = 10;
 const RESTART_LOOP: u32 = 5;
 const DANGLING_WARN: usize = 5;
 const DANGLING_FAIL: usize = 30;
-const NO_DATA: &str = "модуль не собрал данные";
+const NO_DATA: &str = "the module has not collected data";
 
-const ADVICE_FAILED_UNITS: &str = "Откройте journalctl -u <юнит> (кнопка «журнал» на вкладке «Сервисы»), устраните причину и перезапустите юнит.";
+const ADVICE_FAILED_UNITS: &str = "Open journalctl -u <unit> (the journal button on the Services tab), fix the cause and restart the unit.";
 const ADVICE_RESTARTS: &str =
-    "Проверьте журнал юнита: частые перезапуски означают повторяющуюся ошибку.";
+    "Check the unit journal. Frequent restarts mean the same error keeps happening.";
 const ADVICE_CONTAINERS_DOWN: &str =
-    "Посмотрите docker logs (кнопка «логи») и код выхода, затем запустите контейнер.";
-const ADVICE_UNHEALTHY: &str = "Проверьте зависимости контейнера (база данных, сеть) и его логи.";
-const ADVICE_RESTART_LOOP: &str = "Ошибка видна в логах контейнера при старте.";
-const ADVICE_NO_POLICY: &str = "Задайте --restart unless-stopped или опишите контейнер в compose.";
-const ADVICE_DANGLING: &str = "Старые слои занимают диск - docker image prune.";
+    "Look at docker logs (the logs button) and the exit code, then start the container.";
+const ADVICE_UNHEALTHY: &str =
+    "Check what the container depends on (database, network) and its logs.";
+const ADVICE_RESTART_LOOP: &str = "The error shows up in the container logs at startup.";
+const ADVICE_NO_POLICY: &str = "Set --restart unless-stopped or describe the container in compose.";
+const ADVICE_DANGLING: &str = "Old layers take up disk space: docker image prune.";
 const ADVICE_DEPLOYS: &str =
-    "Откройте вкладку «Деплой»: там стадия, на которой деплой остановился, и хвост лога.";
+    "Open the Deploys tab: it shows the stage where the deploy stopped and the tail of the log.";
 
 pub static PATTERNS: &[Pattern] = &[
     Pattern {
         id: "reliability.failed_units",
         area: Area::Reliability,
-        subject: "Упавшие юниты systemd",
-        description: "Юниты в состоянии failed: сервис не запустился или упал и не был перезапущен.",
+        subject: "Failed systemd units",
+        description: "Units in the failed state. The service did not start, or it crashed and was not restarted.",
         weight: Weight::High,
         advice: ADVICE_FAILED_UNITS,
         evidence: EvidenceSource::Tab(TAB_SERVICES),
@@ -39,8 +40,8 @@ pub static PATTERNS: &[Pattern] = &[
     Pattern {
         id: "reliability.unit_restarts",
         area: Area::Reliability,
-        subject: "Перезапуски юнитов",
-        description: "Счётчик NRestarts: сколько раз systemd поднимал юнит после падения.",
+        subject: "Unit restarts",
+        description: "The NRestarts counter: how many times systemd brought the unit back after a crash.",
         weight: Weight::Medium,
         advice: ADVICE_RESTARTS,
         evidence: EvidenceSource::Tab(TAB_SERVICES),
@@ -49,8 +50,8 @@ pub static PATTERNS: &[Pattern] = &[
     Pattern {
         id: "reliability.containers_down",
         area: Area::Reliability,
-        subject: "Остановленные контейнеры",
-        description: "Контейнеры, которые должны работать (по restart policy или завершились с ошибкой), но не запущены.",
+        subject: "Stopped containers",
+        description: "Containers that should be running, by restart policy or because they exited with an error, but are not.",
         weight: Weight::High,
         advice: ADVICE_CONTAINERS_DOWN,
         evidence: EvidenceSource::Tab(TAB_DOCKER),
@@ -59,8 +60,8 @@ pub static PATTERNS: &[Pattern] = &[
     Pattern {
         id: "reliability.unhealthy",
         area: Area::Reliability,
-        subject: "Healthcheck контейнеров",
-        description: "Запущенные контейнеры, чей healthcheck возвращает unhealthy.",
+        subject: "Container healthchecks",
+        description: "Running containers whose healthcheck reports unhealthy.",
         weight: Weight::Medium,
         advice: ADVICE_UNHEALTHY,
         evidence: EvidenceSource::Tab(TAB_DOCKER),
@@ -69,8 +70,8 @@ pub static PATTERNS: &[Pattern] = &[
     Pattern {
         id: "reliability.restart_loop",
         area: Area::Reliability,
-        subject: "Петля перезапусков контейнеров",
-        description: "Контейнер с большим RestartCount падает сразу после старта и поднимается снова.",
+        subject: "Container restart loop",
+        description: "A container with a high RestartCount crashes right after starting and comes back again.",
         weight: Weight::Medium,
         advice: ADVICE_RESTART_LOOP,
         evidence: EvidenceSource::Tab(TAB_DOCKER),
@@ -79,8 +80,8 @@ pub static PATTERNS: &[Pattern] = &[
     Pattern {
         id: "reliability.restart_policy",
         area: Area::Reliability,
-        subject: "Политика перезапуска контейнеров",
-        description: "Контейнеры без restart policy не поднимутся после перезагрузки сервера.",
+        subject: "Container restart policy",
+        description: "Containers without a restart policy will not come back after the server reboots.",
         weight: Weight::Low,
         advice: ADVICE_NO_POLICY,
         evidence: EvidenceSource::Tab(TAB_DOCKER),
@@ -89,8 +90,8 @@ pub static PATTERNS: &[Pattern] = &[
     Pattern {
         id: "reliability.dangling_images",
         area: Area::Reliability,
-        subject: "Висячие образы Docker",
-        description: "Образы без тега, оставшиеся после сборок и pull. Занимают место на диске.",
+        subject: "Dangling Docker images",
+        description: "Images without a tag left over from builds and pulls. They take up disk space.",
         weight: Weight::Low,
         advice: ADVICE_DANGLING,
         evidence: EvidenceSource::Tab(TAB_DOCKER),
@@ -99,8 +100,8 @@ pub static PATTERNS: &[Pattern] = &[
     Pattern {
         id: "reliability.deploys",
         area: Area::Reliability,
-        subject: "Последние деплои",
-        description: "Деплои со статусом failed в истории модуля deploy.",
+        subject: "Recent deploys",
+        description: "Deploys with the failed status in the deploy module history.",
         weight: Weight::Medium,
         advice: ADVICE_DEPLOYS,
         evidence: EvidenceSource::Tab(TAB_DEPLOY),
@@ -116,7 +117,7 @@ fn failed_units(ctx: &AuditContext<'_>) -> Vec<Verdict> {
     Verdict::graded(
         !failed.is_empty(),
         false,
-        list_or(&failed, "все юниты в порядке"),
+        list_or(&failed, "all units are fine"),
     )
     .single()
 }
@@ -135,7 +136,7 @@ fn unit_restarts(ctx: &AuditContext<'_>) -> Vec<Verdict> {
     Verdict::graded(
         max_restarts >= RESTARTS_FAIL,
         !restarting.is_empty(),
-        list_or(&restarting, "рестартов нет"),
+        list_or(&restarting, "no restarts"),
     )
     .single()
 }
@@ -152,9 +153,9 @@ fn containers_down(ctx: &AuditContext<'_>) -> Vec<Verdict> {
         .containers
         .iter()
         .filter(|c| !c.is_running() && (c.exit_code != 0 || should_run(&c.restart_policy)))
-        .map(|c| format!("{} (код {})", c.name, c.exit_code))
+        .map(|c| format!("{} (code {})", c.name, c.exit_code))
         .collect();
-    Verdict::graded(!down.is_empty(), false, list_or(&down, "все запущены")).single()
+    Verdict::graded(!down.is_empty(), false, list_or(&down, "all are running")).single()
 }
 
 fn unhealthy(ctx: &AuditContext<'_>) -> Vec<Verdict> {
@@ -170,7 +171,7 @@ fn unhealthy(ctx: &AuditContext<'_>) -> Vec<Verdict> {
     Verdict::graded(
         false,
         !unhealthy.is_empty(),
-        list_or(&unhealthy, "unhealthy нет"),
+        list_or(&unhealthy, "none are unhealthy"),
     )
     .single()
 }
@@ -185,7 +186,7 @@ fn restart_loop(ctx: &AuditContext<'_>) -> Vec<Verdict> {
         .filter(|c| c.restart_count >= RESTART_LOOP)
         .map(|c| format!("{} ({})", c.name, c.restart_count))
         .collect();
-    Verdict::graded(false, !looping.is_empty(), list_or(&looping, "петель нет")).single()
+    Verdict::graded(false, !looping.is_empty(), list_or(&looping, "no loops")).single()
 }
 
 fn restart_policy(ctx: &AuditContext<'_>) -> Vec<Verdict> {
@@ -201,7 +202,7 @@ fn restart_policy(ctx: &AuditContext<'_>) -> Vec<Verdict> {
     Verdict::graded(
         false,
         !no_policy.is_empty(),
-        list_or(&no_policy, "у всех задана"),
+        list_or(&no_policy, "all of them have one"),
     )
     .single()
 }
@@ -214,7 +215,7 @@ fn dangling_images(ctx: &AuditContext<'_>) -> Vec<Verdict> {
     Verdict::graded(
         dangling >= DANGLING_FAIL,
         dangling >= DANGLING_WARN,
-        format!("{dangling} dangling-образов"),
+        format!("{dangling} dangling images"),
     )
     .single()
 }
@@ -233,7 +234,7 @@ fn deploys(ctx: &AuditContext<'_>) -> Vec<Verdict> {
     Verdict::graded(
         !failed.is_empty(),
         false,
-        list_or(&failed, "упавших деплоев нет"),
+        list_or(&failed, "no failed deploys"),
     )
     .single()
 }

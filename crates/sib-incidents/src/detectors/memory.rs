@@ -20,7 +20,7 @@ impl Detector for MemoryDetector {
                 IncidentKind::Memory,
                 Severity::Warning,
                 "oom",
-                format!("OOM killer сработал {recent} раз за сутки"),
+                format!("OOM killer fired {recent} times in a day"),
             ));
         }
         if snapshot.swap_total_bytes > 0 && snapshot.swap_used_pct() >= SWAP_WARNING_PCT {
@@ -28,7 +28,7 @@ impl Detector for MemoryDetector {
                 IncidentKind::Memory,
                 Severity::Warning,
                 "swap",
-                format!("Swap занят на {:.0} %", snapshot.swap_used_pct()),
+                format!("Swap is {:.0} % used", snapshot.swap_used_pct()),
             ));
         }
         drafts

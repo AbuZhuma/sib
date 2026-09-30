@@ -7,17 +7,18 @@ use crate::audit::pattern::{Area, Pattern, Verdict, Weight};
 
 const ERRORS_WARN: u64 = 1;
 const ERRORS_FAIL: u64 = 1000;
-const NO_DATA: &str = "модуль не собрал данные";
+const NO_DATA: &str = "the module has not collected data";
 
-const ADVICE_ERRORS: &str = "Проверьте кабель, драйвер, MTU и нагрузку интерфейса.";
-const ADVICE_ATTACK: &str = "Откройте вкладку «Аномалии», забаньте адреса-источники, ограничьте скорость новых подключений.";
+const ADVICE_ERRORS: &str = "Check the cable, the driver, the MTU and the load on the interface.";
+const ADVICE_ATTACK: &str =
+    "Open the Anomalies tab, ban the source addresses, limit the rate of new connections.";
 
 pub static PATTERNS: &[Pattern] = &[
     Pattern {
         id: "network.interface_errors",
         area: Area::Network,
-        subject: "Ошибки и дропы интерфейсов",
-        description: "Счётчики ошибок и отброшенных пакетов по интерфейсам с момента загрузки.",
+        subject: "Interface errors and drops",
+        description: "Error and dropped packet counters per interface since boot.",
         weight: Weight::Low,
         advice: ADVICE_ERRORS,
         evidence: EvidenceSource::Tab(TAB_NETWORK),
@@ -26,8 +27,8 @@ pub static PATTERNS: &[Pattern] = &[
     Pattern {
         id: "network.attack_signs",
         area: Area::Network,
-        subject: "Признаки DDoS и сканирования",
-        description: "Признаки атаки из модуля аномалий: SYN-флуд, всплеск соединений с одного адреса, превышение порога по пакетам в секунду.",
+        subject: "Signs of DDoS and scanning",
+        description: "Attack signs from the anomalies module: SYN flood, a burst of connections from one address, packets per second over the threshold.",
         weight: Weight::High,
         advice: ADVICE_ATTACK,
         evidence: EvidenceSource::Tab(TAB_ANOMALIES),
@@ -59,7 +60,7 @@ fn interface_errors(ctx: &AuditContext<'_>) -> Vec<Verdict> {
     Verdict::graded(
         worst >= ERRORS_FAIL,
         !noisy.is_empty(),
-        list_or(&noisy, "ошибок нет"),
+        list_or(&noisy, "no errors"),
     )
     .single()
 }
@@ -76,7 +77,7 @@ fn attack_signs(ctx: &AuditContext<'_>) -> Vec<Verdict> {
     Verdict::graded(
         snapshot.is_under_attack(),
         snapshot.has_signs(),
-        list_or(&signs, "трафик в норме"),
+        list_or(&signs, "traffic looks normal"),
     )
     .single()
 }

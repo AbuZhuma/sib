@@ -8,21 +8,20 @@ use crate::audit::pattern::{Area, Pattern, Verdict, Weight};
 const UPTIME_WARN_DAYS: i64 = 180;
 const UPTIME_FAIL_DAYS: i64 = 365;
 const PENDING_WARN: u32 = 50;
-const NO_DATA: &str = "модуль не собрал данные";
+const NO_DATA: &str = "the module has not collected data";
 
-const ADVICE_UPTIME: &str =
-    "Запланируйте перезагрузку: длительный аптайм означает, что ядро не обновлялось.";
+const ADVICE_UPTIME: &str = "Plan a reboot. A long uptime means the kernel has not been updated.";
 const ADVICE_SECURITY_UPDATES: &str =
-    "Установите обновления безопасности (apt upgrade / dnf upgrade --security).";
-const ADVICE_PENDING: &str = "Обновите систему в ближайшее окно обслуживания.";
-const ADVICE_REBOOT: &str = "Обновлённое ядро или libc заработают только после перезагрузки.";
+    "Install the security updates (apt upgrade, dnf upgrade --security).";
+const ADVICE_PENDING: &str = "Update the system in the next maintenance window.";
+const ADVICE_REBOOT: &str = "A new kernel or libc only takes effect after a reboot.";
 
 pub static PATTERNS: &[Pattern] = &[
     Pattern {
         id: "updates.security",
         area: Area::Updates,
-        subject: "Обновления безопасности",
-        description: "Пакеты с исправлениями уязвимостей, которые ещё не установлены.",
+        subject: "Security updates",
+        description: "Packages with security fixes that are not installed yet.",
         weight: Weight::High,
         advice: ADVICE_SECURITY_UPDATES,
         evidence: EvidenceSource::Tab(TAB_SUMMARY),
@@ -31,8 +30,8 @@ pub static PATTERNS: &[Pattern] = &[
     Pattern {
         id: "updates.pending",
         area: Area::Updates,
-        subject: "Ожидающие обновления",
-        description: "Общее число пакетов, для которых доступна новая версия.",
+        subject: "Pending updates",
+        description: "How many packages have a newer version available.",
         weight: Weight::Low,
         advice: ADVICE_PENDING,
         evidence: EvidenceSource::Tab(TAB_SUMMARY),
@@ -41,8 +40,8 @@ pub static PATTERNS: &[Pattern] = &[
     Pattern {
         id: "updates.reboot",
         area: Area::Updates,
-        subject: "Перезагрузка после обновлений",
-        description: "Система сообщает, что обновлённые ядро или библиотеки требуют перезагрузки.",
+        subject: "Reboot after updates",
+        description: "The system reports that the updated kernel or libraries need a reboot.",
         weight: Weight::Medium,
         advice: ADVICE_REBOOT,
         evidence: EvidenceSource::Tab(TAB_SUMMARY),
@@ -51,8 +50,8 @@ pub static PATTERNS: &[Pattern] = &[
     Pattern {
         id: "updates.uptime",
         area: Area::Updates,
-        subject: "Аптайм",
-        description: "Аптайм больше полугода означает, что ядро не перезагружалось после обновлений.",
+        subject: "Uptime",
+        description: "An uptime over six months means the kernel has not been restarted after updates.",
         weight: Weight::Low,
         advice: ADVICE_UPTIME,
         evidence: EvidenceSource::Tab(TAB_SUMMARY),
@@ -67,7 +66,7 @@ fn security_updates(ctx: &AuditContext<'_>) -> Vec<Verdict> {
     Verdict::graded(
         snapshot.security > 0,
         false,
-        format!("{} ожидают установки", snapshot.security),
+        format!("{} waiting to be installed", snapshot.security),
     )
     .single()
 }
@@ -80,7 +79,7 @@ fn pending(ctx: &AuditContext<'_>) -> Vec<Verdict> {
         false,
         snapshot.pending >= PENDING_WARN,
         format!(
-            "{} пакетов ({})",
+            "{} packages ({})",
             snapshot.pending,
             snapshot.manager.label()
         ),
@@ -93,9 +92,9 @@ fn reboot(ctx: &AuditContext<'_>) -> Vec<Verdict> {
         return Verdict::skipped(NO_DATA).single();
     };
     if snapshot.reboot_required {
-        return Verdict::warn("требуется").single();
+        return Verdict::warn("needed").single();
     }
-    Verdict::pass("не требуется").single()
+    Verdict::pass("not needed").single()
 }
 
 fn uptime(ctx: &AuditContext<'_>) -> Vec<Verdict> {
@@ -106,7 +105,7 @@ fn uptime(ctx: &AuditContext<'_>) -> Vec<Verdict> {
     Verdict::graded(
         days >= UPTIME_FAIL_DAYS,
         days >= UPTIME_WARN_DAYS,
-        format!("{days} дней"),
+        format!("{days} days"),
     )
     .single()
 }

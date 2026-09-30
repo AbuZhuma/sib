@@ -5,7 +5,7 @@ use super::check::AuditCheck;
 use super::evidence::{Evidence, TAB_CHECKS};
 use super::pattern::Outcome;
 
-const PASSED: &str = "проверка пройдена";
+const PASSED: &str = "check passed";
 const SOURCE_LIMIT: usize = 200;
 
 pub fn checks(server: &ServerState) -> Vec<AuditCheck> {
@@ -36,9 +36,9 @@ fn description(check: &CustomCheck) -> String {
     }
     let source: String = check.source.trim().chars().take(SOURCE_LIMIT).collect();
     let prefix = match check.kind {
-        CheckKind::Script => "Своя проверка, команда:",
-        CheckKind::LocalFile => "Своя проверка, скрипт с этой машины:",
-        CheckKind::RemoteFile => "Своя проверка, скрипт на сервере:",
+        CheckKind::Script => "Your own check, command:",
+        CheckKind::LocalFile => "Your own check, script from this machine:",
+        CheckKind::RemoteFile => "Your own check, script on the server:",
     };
     format!("{prefix} {source}")
 }
@@ -56,7 +56,7 @@ fn detail(result: &CheckResult) -> String {
         CheckOutcome::Passed => PASSED.to_owned(),
         CheckOutcome::Skipped => result.output.clone(),
         CheckOutcome::Failed if result.first_line().is_empty() => {
-            format!("код возврата {}", result.exit_code)
+            format!("exit code {}", result.exit_code)
         }
         CheckOutcome::Failed => result.first_line().to_owned(),
     }
@@ -100,9 +100,9 @@ mod tests {
     fn result(outcome: CheckOutcome, output: &str) -> CheckResult {
         CheckResult {
             check: CustomCheck {
-                name: "Сертификат".to_owned(),
+                name: "Certificate".to_owned(),
                 weight: Weight::High,
-                advice: "продлить".to_owned(),
+                advice: "renew it".to_owned(),
                 source: "openssl x509 -checkend 604800".to_owned(),
                 ..CustomCheck::new("custom:1")
             },
@@ -115,18 +115,18 @@ mod tests {
 
     #[test]
     fn failed_check_becomes_a_high_weight_failure() {
-        let audit = checks(&server(vec![result(CheckOutcome::Failed, "истекает")]));
+        let audit = checks(&server(vec![result(CheckOutcome::Failed, "expiring")]));
         assert_eq!(audit.len(), 1);
         assert_eq!(audit[0].outcome, Outcome::Fail);
         assert_eq!(audit[0].weight, Weight::High);
-        assert_eq!(audit[0].detail, "истекает");
+        assert_eq!(audit[0].detail, "expiring");
         assert_eq!(audit[0].area, Area::Custom);
     }
 
     #[test]
     fn failed_check_without_output_shows_the_exit_code() {
         let audit = checks(&server(vec![result(CheckOutcome::Failed, "")]));
-        assert_eq!(audit[0].detail, "код возврата 1");
+        assert_eq!(audit[0].detail, "exit code 1");
     }
 
     #[test]

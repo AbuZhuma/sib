@@ -25,27 +25,27 @@ const ZOMBIES_WARN: usize = 1;
 const ZOMBIES_FAIL: usize = 20;
 const GPU_TEMP_WARN: f64 = 80.0;
 const GPU_TEMP_FAIL: f64 = 90.0;
-const NO_DATA: &str = "модуль не собрал данные";
+const NO_DATA: &str = "the module has not collected data";
 
-const ADVICE_CPU: &str = "Найдите процессы-потребители на вкладке «Процессы». При постоянной нагрузке добавьте ядер или разнесите сервисы.";
-const ADVICE_LOAD: &str = "Load выше числа ядер означает очередь на CPU или ожидание диска. Смотрите «Процессы» и I/O дисков.";
-const ADVICE_MEMORY: &str = "Проверьте процессы и контейнеры с наибольшим потреблением, добавьте памяти или задайте лимиты контейнерам.";
-const ADVICE_SWAP: &str =
-    "Уменьшите потребление памяти или увеличьте RAM: обмен со swap замедляет работу.";
+const ADVICE_CPU: &str = "Find the heavy processes on the Processes tab. If the load never drops, add cores or move services apart.";
+const ADVICE_LOAD: &str = "A load above the core count means a queue for the CPU or waiting on disk. Look at Processes and at disk I/O.";
+const ADVICE_MEMORY: &str = "Check the processes and containers that use the most memory, add RAM or set limits on the containers.";
+const ADVICE_SWAP: &str = "Use less memory or add RAM. Swapping slows everything down.";
 const ADVICE_OOM: &str =
-    "Найдите процесс в журнале (dmesg, journalctl -k) и ограничьте его потребление памяти.";
-const ADVICE_DISK: &str = "Освободите место: журналы (journalctl --vacuum-size), кэш пакетов, старые образы Docker (docker system prune).";
-const ADVICE_INODES: &str = "Найдите каталог с большим числом мелких файлов (кэши, сессии, почта).";
+    "Find the process in the journal (dmesg, journalctl -k) and limit how much memory it can take.";
+const ADVICE_DISK: &str = "Free up space: journals (journalctl --vacuum-size), the package cache, old Docker images (docker system prune).";
+const ADVICE_INODES: &str = "Find the directory with many small files (caches, sessions, mail).";
 const ADVICE_ZOMBIES: &str =
-    "Перезапустите родительский процесс: он не читает статус завершившихся потомков.";
-const ADVICE_GPU: &str = "Проверьте охлаждение и нагрузку на GPU; при перегреве снижается частота.";
+    "Restart the parent process. It is not reading the status of its finished children.";
+const ADVICE_GPU: &str =
+    "Check the cooling and the load on the GPU. When it overheats the clock drops.";
 
 pub static PATTERNS: &[Pattern] = &[
     Pattern {
         id: "resources.cpu_hour",
         area: Area::Resources,
-        subject: "Загрузка CPU за час",
-        description: "Среднее по точкам за последний час: постоянная высокая загрузка означает нехватку ядер или процесс в цикле.",
+        subject: "CPU load over an hour",
+        description: "The average over the points of the last hour. A load that stays high means too few cores or a process stuck in a loop.",
         weight: Weight::Medium,
         advice: ADVICE_CPU,
         evidence: EvidenceSource::Tab(TAB_PROCESSES),
@@ -55,7 +55,7 @@ pub static PATTERNS: &[Pattern] = &[
         id: "resources.load",
         area: Area::Resources,
         subject: "Load average",
-        description: "Отношение load5 к числу ядер: значение больше единицы означает ожидание CPU или диска.",
+        description: "load5 divided by the number of cores. Above one means waiting for the CPU or for disk.",
         weight: Weight::Medium,
         advice: ADVICE_LOAD,
         evidence: EvidenceSource::Tab(TAB_PROCESSES),
@@ -64,8 +64,8 @@ pub static PATTERNS: &[Pattern] = &[
     Pattern {
         id: "resources.memory",
         area: Area::Resources,
-        subject: "Память",
-        description: "Доля занятой памяти без учёта кэша страниц.",
+        subject: "Memory",
+        description: "How much memory is used, not counting the page cache.",
         weight: Weight::Medium,
         advice: ADVICE_MEMORY,
         evidence: EvidenceSource::Tab(TAB_RESOURCES),
@@ -75,7 +75,7 @@ pub static PATTERNS: &[Pattern] = &[
         id: "resources.oom",
         area: Area::Resources,
         subject: "OOM killer",
-        description: "Срабатывания OOM killer: при нехватке памяти ядро завершает процесс.",
+        description: "How often the OOM killer fired. When memory runs out the kernel stops a process.",
         weight: Weight::Medium,
         advice: ADVICE_OOM,
         evidence: EvidenceSource::Tab(TAB_RESOURCES),
@@ -84,8 +84,8 @@ pub static PATTERNS: &[Pattern] = &[
     Pattern {
         id: "resources.swap",
         area: Area::Resources,
-        subject: "Использование swap",
-        description: "Занятый swap означает, что рабочий набор процессов не помещается в RAM.",
+        subject: "Swap usage",
+        description: "Used swap means the working set of the processes does not fit in RAM.",
         weight: Weight::Low,
         advice: ADVICE_SWAP,
         evidence: EvidenceSource::Tab(TAB_RESOURCES),
@@ -94,8 +94,8 @@ pub static PATTERNS: &[Pattern] = &[
     Pattern {
         id: "resources.disk_space",
         area: Area::Resources,
-        subject: "Место на",
-        description: "Заполнение файловой системы: при 100 % прекращается запись журналов и баз данных.",
+        subject: "Space on",
+        description: "How full the file system is. At 100 % journals and databases stop writing.",
         weight: Weight::High,
         advice: ADVICE_DISK,
         evidence: EvidenceSource::Tab(TAB_RESOURCES),
@@ -104,8 +104,8 @@ pub static PATTERNS: &[Pattern] = &[
     Pattern {
         id: "resources.inodes",
         area: Area::Resources,
-        subject: "Inode на",
-        description: "При исчерпании inode запись прекращается, хотя свободное место на диске есть.",
+        subject: "Inodes on",
+        description: "When inodes run out writing stops, even though there is free space on the disk.",
         weight: Weight::Medium,
         advice: ADVICE_INODES,
         evidence: EvidenceSource::Tab(TAB_RESOURCES),
@@ -114,8 +114,8 @@ pub static PATTERNS: &[Pattern] = &[
     Pattern {
         id: "resources.zombies",
         area: Area::Resources,
-        subject: "Зомби-процессы",
-        description: "Процессы, завершившиеся, но не прочитанные родителем. В большом количестве исчерпывают таблицу процессов.",
+        subject: "Zombie processes",
+        description: "Processes that finished but whose status the parent never read. In large numbers they fill the process table.",
         weight: Weight::Low,
         advice: ADVICE_ZOMBIES,
         evidence: EvidenceSource::Tab(TAB_PROCESSES),
@@ -124,8 +124,8 @@ pub static PATTERNS: &[Pattern] = &[
     Pattern {
         id: "resources.gpu_temperature",
         area: Area::Resources,
-        subject: "Температура GPU",
-        description: "Перегрев GPU включает троттлинг и сокращает срок службы.",
+        subject: "GPU temperature",
+        description: "An overheating GPU throttles itself and wears out sooner.",
         weight: Weight::Low,
         advice: ADVICE_GPU,
         evidence: EvidenceSource::Tab(TAB_GPU),
@@ -139,13 +139,13 @@ fn cpu_hour(ctx: &AuditContext<'_>) -> Vec<Verdict> {
     };
     let points: Vec<f64> = series.since(Duration::hours(1)).map(|p| p.value).collect();
     if points.is_empty() {
-        return Verdict::skipped("нет точек за час").single();
+        return Verdict::skipped("no points for the last hour").single();
     }
     let average = points.iter().sum::<f64>() / points.len() as f64;
     Verdict::graded(
         average >= CPU_FAIL_PCT,
         average >= CPU_WARN_PCT,
-        format!("среднее {average:.0}% по {} точкам", points.len()),
+        format!("{average:.0}% on average over {} points", points.len()),
     )
     .single()
 }
@@ -159,7 +159,7 @@ fn load(ctx: &AuditContext<'_>) -> Vec<Verdict> {
     Verdict::graded(
         ratio >= LOAD_FAIL_RATIO,
         ratio >= LOAD_WARN_RATIO,
-        format!("load5 {:.2} на {} ядер", info.load.five, info.cpu_cores),
+        format!("load5 {:.2} on {} cores", info.load.five, info.cpu_cores),
     )
     .single()
 }
@@ -172,7 +172,7 @@ fn memory(ctx: &AuditContext<'_>) -> Vec<Verdict> {
     Verdict::graded(
         used >= MEMORY_FAIL_PCT,
         used >= MEMORY_WARN_PCT,
-        format!("занято {used:.0}%"),
+        format!("{used:.0}% used"),
     )
     .single()
 }
@@ -185,7 +185,7 @@ fn oom(ctx: &AuditContext<'_>) -> Vec<Verdict> {
     Verdict::graded(
         false,
         recent > 0,
-        format!("{recent} за сутки, {} с загрузки", snapshot.oom_kills),
+        format!("{recent} in a day, {} since boot", snapshot.oom_kills),
     )
     .single()
 }
@@ -195,13 +195,13 @@ fn swap(ctx: &AuditContext<'_>) -> Vec<Verdict> {
         return Verdict::skipped(NO_DATA).single();
     };
     if snapshot.swap_total_bytes == 0 {
-        return Verdict::skipped("swap не настроен").single();
+        return Verdict::skipped("no swap set up").single();
     }
     let used = snapshot.swap_used_pct();
     Verdict::graded(
         used >= SWAP_FAIL_PCT,
         used >= SWAP_WARN_PCT,
-        format!("занято {used:.0}%"),
+        format!("{used:.0}% used"),
     )
     .single()
 }
@@ -219,7 +219,7 @@ fn disk_space(ctx: &AuditContext<'_>) -> Vec<Verdict> {
                 used >= DISK_FAIL_PCT,
                 used >= DISK_WARN_PCT,
                 format!(
-                    "занято {used:.0}%, свободно {} MiB",
+                    "{used:.0}% used, {} MiB free",
                     fs.available_bytes / 1024 / 1024
                 ),
             )
@@ -241,7 +241,7 @@ fn inodes(ctx: &AuditContext<'_>) -> Vec<Verdict> {
             Verdict::graded(
                 used >= INODES_FAIL_PCT,
                 used >= INODES_WARN_PCT,
-                format!("занято {used:.0}%"),
+                format!("{used:.0}% used"),
             )
             .for_instance(&fs.mount)
         })
@@ -256,7 +256,10 @@ fn zombies(ctx: &AuditContext<'_>) -> Vec<Verdict> {
     Verdict::graded(
         zombies >= ZOMBIES_FAIL,
         zombies >= ZOMBIES_WARN,
-        format!("{zombies} зомби из {} процессов", snapshot.processes.len()),
+        format!(
+            "{zombies} zombies out of {} processes",
+            snapshot.processes.len()
+        ),
     )
     .single()
 }
@@ -274,7 +277,7 @@ fn gpu_temperature(ctx: &AuditContext<'_>) -> Vec<Verdict> {
                 Verdict::graded(
                     temperature >= GPU_TEMP_FAIL,
                     temperature >= GPU_TEMP_WARN,
-                    format!("{temperature:.0} °C, память {:.0}%", card.memory_pct()),
+                    format!("{temperature:.0} C, memory {:.0}%", card.memory_pct()),
                 )
                 .for_instance(card.index.to_string()),
             )

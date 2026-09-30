@@ -38,7 +38,7 @@ fn down(container: &Container) -> Option<IncidentDraft> {
             severity,
             container.name.clone(),
             format!(
-                "Контейнер {} не запущен: {} (код выхода {}, политика перезапуска {})",
+                "Container {} is not running: {} (exit code {}, restart policy {})",
                 container.name, container.state, container.exit_code, container.restart_policy
             ),
         )
@@ -62,7 +62,7 @@ fn unhealthy(container: &Container) -> Option<IncidentDraft> {
             IncidentKind::ContainerDown,
             Severity::Warning,
             container.name.clone(),
-            format!("Контейнер {} unhealthy", container.name),
+            format!("Container {} is unhealthy", container.name),
         ));
     }
     if container.restart_count >= RESTART_LOOP_THRESHOLD {
@@ -71,7 +71,7 @@ fn unhealthy(container: &Container) -> Option<IncidentDraft> {
             Severity::Warning,
             container.name.clone(),
             format!(
-                "Контейнер {} перезапускался {} раз",
+                "Container {} restarted {} times",
                 container.name, container.restart_count
             ),
         ));

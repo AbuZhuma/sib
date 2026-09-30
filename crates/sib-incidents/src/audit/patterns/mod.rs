@@ -16,8 +16,8 @@ use sib_modules::security::{self, SecuritySnapshot};
 use super::context::AuditContext;
 use super::pattern::{Pattern, Verdict};
 
-pub const NO_SECURITY_DATA: &str = "модуль security ещё не собрал данные";
-pub const NEEDS_SUDO: &str = "недоступно без sudo";
+pub const NO_SECURITY_DATA: &str = "the security module has not collected data yet";
+pub const NEEDS_SUDO: &str = "not available without sudo";
 
 pub fn all() -> impl Iterator<Item = &'static Pattern> {
     ssh::PATTERNS

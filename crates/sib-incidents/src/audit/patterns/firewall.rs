@@ -12,23 +12,24 @@ const SHOWN: usize = 6;
 const DEFAULT_SSH_PORT: u16 = 22;
 
 const ADVICE_FIREWALL: &str =
-    "Включите nftables, ufw или firewalld и разрешите снаружи только нужные порты (SSH, 80/443).";
-const ADVICE_RISKY: &str = "Закройте порт или привяжите сервис к 127.0.0.1 / внутренней сети; наружу такие сервисы публикуют через VPN или TLS с аутентификацией.";
-const ADVICE_EXPOSED: &str = "Порт слушает на всех адресах и доступен снаружи без явного правила файрвола. Закройте его или ограничьте адреса источника.";
+    "Turn on nftables, ufw or firewalld and open only the ports you need (SSH, 80, 443).";
+const ADVICE_RISKY: &str = "Close the port or bind the service to 127.0.0.1 or an internal network. Such services are published outside through a VPN or TLS with authentication.";
+const ADVICE_EXPOSED: &str = "The port listens on all addresses and answers from outside with no firewall rule for it. Close it or limit the source addresses.";
 const ADVICE_PUBLIC: &str =
-    "Привяжите служебные порты к 127.0.0.1: каждый публичный порт увеличивает поверхность атаки.";
-const ADVICE_FAIL2BAN: &str = "Установите fail2ban и включите джейл sshd: он блокирует адрес после нескольких неудачных попыток.";
+    "Bind service ports to 127.0.0.1. Every public port widens the attack surface.";
+const ADVICE_FAIL2BAN: &str =
+    "Install fail2ban and turn on the sshd jail. It blocks an address after a few failed attempts.";
 const ADVICE_BRUTE_FORCE: &str =
-    "Забаньте адреса в подразделе «Атаки и баны», отключите вход по паролю, включите fail2ban.";
-const ADVICE_UNBANNED: &str = "Забаньте адреса вручную или включите fail2ban.";
-const ADVICE_SSH_EXPOSED: &str = "Отключите вход по паролю и установите fail2ban.";
+    "Ban the addresses on the Attacks and bans subpage, turn off password login, turn on fail2ban.";
+const ADVICE_UNBANNED: &str = "Ban the addresses by hand or turn on fail2ban.";
+const ADVICE_SSH_EXPOSED: &str = "Turn off password login and install fail2ban.";
 
 pub static PATTERNS: &[Pattern] = &[
     Pattern {
         id: "firewall.active",
         area: Area::Firewall,
-        subject: "Файрвол",
-        description: "Без файрвола снаружи доступны все сокеты, слушающие 0.0.0.0, включая служебные.",
+        subject: "Firewall",
+        description: "Without a firewall every socket listening on 0.0.0.0 is reachable from outside, service ports included.",
         weight: Weight::High,
         advice: ADVICE_FIREWALL,
         evidence: EvidenceSource::Tab(TAB_PORTS),
@@ -37,8 +38,8 @@ pub static PATTERNS: &[Pattern] = &[
     Pattern {
         id: "firewall.risky_ports",
         area: Area::Firewall,
-        subject: "Опасные открытые порты",
-        description: "telnet (23), ftp (21), rsh (512-514), Docker API (2375/2376), Redis (6379), MongoDB (27017), Elasticsearch (9200) работают без шифрования или без аутентификации по умолчанию и не должны быть доступны снаружи.",
+        subject: "Risky open ports",
+        description: "telnet (23), ftp (21), rsh (512-514), the Docker API (2375, 2376), Redis (6379), MongoDB (27017) and Elasticsearch (9200) run without encryption or without authentication by default and should not be reachable from outside.",
         weight: Weight::High,
         advice: ADVICE_RISKY,
         evidence: EvidenceSource::Tab(TAB_PORTS),
@@ -47,8 +48,8 @@ pub static PATTERNS: &[Pattern] = &[
     Pattern {
         id: "firewall.exposed_ports",
         area: Area::Firewall,
-        subject: "Порты снаружи мимо файрвола",
-        description: "Порт отвечает на внешнее подключение, правила файрвола для него нет.",
+        subject: "Ports open past the firewall",
+        description: "The port answers a connection from outside and has no firewall rule.",
         weight: Weight::Medium,
         advice: ADVICE_EXPOSED,
         evidence: EvidenceSource::Tab(TAB_PORTS),
@@ -57,8 +58,8 @@ pub static PATTERNS: &[Pattern] = &[
     Pattern {
         id: "firewall.public_ports",
         area: Area::Firewall,
-        subject: "Число публичных портов",
-        description: "Каждый порт, слушающий не на localhost, - отдельная точка входа, которую нужно защищать и обновлять.",
+        subject: "Number of public ports",
+        description: "Every port that listens somewhere other than localhost is another way in that has to be guarded and updated.",
         weight: Weight::Low,
         advice: ADVICE_PUBLIC,
         evidence: EvidenceSource::Tab(TAB_PORTS),
@@ -67,8 +68,8 @@ pub static PATTERNS: &[Pattern] = &[
     Pattern {
         id: "firewall.fail2ban",
         area: Area::Firewall,
-        subject: "Защита от перебора (fail2ban)",
-        description: "fail2ban читает журнал sshd и блокирует адрес после нескольких неудачных попыток.",
+        subject: "Brute force protection (fail2ban)",
+        description: "fail2ban reads the sshd journal and blocks an address after a few failed attempts.",
         weight: Weight::Medium,
         advice: ADVICE_FAIL2BAN,
         evidence: EvidenceSource::Tab(SECURITY_ATTACKS),
@@ -77,8 +78,8 @@ pub static PATTERNS: &[Pattern] = &[
     Pattern {
         id: "firewall.ssh_exposed",
         area: Area::Firewall,
-        subject: "SSH с паролями без защиты",
-        description: "Порт SSH доступен снаружи, вход по паролю разрешён, fail2ban отсутствует. Скорость перебора ничем не ограничена.",
+        subject: "SSH with passwords and no protection",
+        description: "The SSH port is reachable from outside, password login is allowed and fail2ban is missing. Nothing limits how fast passwords can be guessed.",
         weight: Weight::High,
         advice: ADVICE_SSH_EXPOSED,
         evidence: EvidenceSource::File("/etc/ssh/sshd_config"),
@@ -87,8 +88,8 @@ pub static PATTERNS: &[Pattern] = &[
     Pattern {
         id: "firewall.brute_force",
         area: Area::Firewall,
-        subject: "Перебор паролей сейчас",
-        description: "Адреса с десятью и более неудачными попытками за последние 10 минут.",
+        subject: "Password guessing right now",
+        description: "Addresses with ten or more failed attempts in the last 10 minutes.",
         weight: Weight::Medium,
         advice: ADVICE_BRUTE_FORCE,
         evidence: EvidenceSource::Tab(SECURITY_ATTACKS),
@@ -97,8 +98,8 @@ pub static PATTERNS: &[Pattern] = &[
     Pattern {
         id: "firewall.unbanned_attackers",
         area: Area::Firewall,
-        subject: "Атакующие без бана",
-        description: "Адреса, которые перебирают пароли и не заблокированы fail2ban или файрволом.",
+        subject: "Attackers that are not banned",
+        description: "Addresses that guess passwords and are not blocked by fail2ban or the firewall.",
         weight: Weight::Medium,
         advice: ADVICE_UNBANNED,
         evidence: EvidenceSource::Tab(SECURITY_ATTACKS),
@@ -110,11 +111,11 @@ fn firewall(ctx: &AuditContext<'_>) -> Vec<Verdict> {
     if let Ok(snapshot) = security_snapshot(ctx) {
         match &snapshot.firewall {
             FirewallState::Active(name) => {
-                return Verdict::pass(format!("активен ({name})")).single();
+                return Verdict::pass(format!("active ({name})")).single();
             }
             FirewallState::Inactive => {
                 return Verdict::fail(
-                    "не активен: ufw, firewalld, nftables и iptables не запущены",
+                    "not active: ufw, firewalld, nftables and iptables are not running",
                 )
                 .single();
             }
@@ -122,18 +123,19 @@ fn firewall(ctx: &AuditContext<'_>) -> Vec<Verdict> {
         }
     }
     let Some(ports) = ctx.data::<PortsSnapshot>(ports::ID) else {
-        return Verdict::skipped("нет данных о файрволе").single();
+        return Verdict::skipped("no firewall data").single();
     };
     match &ports.firewall {
         Some(firewall) if firewall.active => Verdict::pass(format!(
-            "активен ({:?}), правил на порты: {}",
+            "active ({:?}), port rules: {}",
             firewall.backend,
             firewall.allowed.len()
         )),
-        Some(firewall) => {
-            Verdict::fail(format!("{:?} установлен, но не активен", firewall.backend))
-        }
-        None => Verdict::skipped("нет данных о файрволе"),
+        Some(firewall) => Verdict::fail(format!(
+            "{:?} is installed but not active",
+            firewall.backend
+        )),
+        None => Verdict::skipped("no firewall data"),
     }
     .single()
 }
@@ -142,26 +144,29 @@ fn risky_ports(ctx: &AuditContext<'_>) -> Vec<Verdict> {
     with_security(ctx, |s: &SecuritySnapshot| {
         let ports = &s.hardening.risky_ports;
         if ports.is_empty() {
-            return Verdict::pass("telnet, ftp, rsh, docker api, redis, mongo, elastic закрыты");
+            return Verdict::pass(
+                "telnet, ftp, rsh, docker api, redis, mongo and elastic are closed",
+            );
         }
         let list: Vec<String> = ports.iter().map(u16::to_string).collect();
-        Verdict::fail(format!("слушают снаружи: {}", list.join(", ")))
+        Verdict::fail(format!("listening to the outside: {}", list.join(", ")))
     })
 }
 
 fn exposed_ports(ctx: &AuditContext<'_>) -> Vec<Verdict> {
     let Some(snapshot) = ctx.data::<PortsSnapshot>(ports::ID) else {
-        return Verdict::skipped("модуль ports не собрал данные").single();
+        return Verdict::skipped("the ports module has not collected data").single();
     };
     let exposed: Vec<String> = snapshot
         .exposed_without_firewall()
         .map(|p| format!("{}/{} {}", p.port, p.protocol.label(), p.process_label()))
         .collect();
     if exposed.is_empty() {
-        return Verdict::pass("все доступные снаружи порты разрешены файрволом явно").single();
+        return Verdict::pass("every port reachable from outside is allowed by an explicit rule")
+            .single();
     }
     Verdict::warn(format!(
-        "доступны снаружи без правила: {}",
+        "reachable from outside with no rule: {}",
         list_or(&exposed[..exposed.len().min(SHOWN)], "")
     ))
     .single()
@@ -169,7 +174,7 @@ fn exposed_ports(ctx: &AuditContext<'_>) -> Vec<Verdict> {
 
 fn public_ports(ctx: &AuditContext<'_>) -> Vec<Verdict> {
     let Some(snapshot) = ctx.data::<PortsSnapshot>(ports::ID) else {
-        return Verdict::skipped("модуль ports не собрал данные").single();
+        return Verdict::skipped("the ports module has not collected data").single();
     };
     let mut public: Vec<String> = snapshot
         .public_ports()
@@ -181,7 +186,7 @@ fn public_ports(ctx: &AuditContext<'_>) -> Vec<Verdict> {
     let hidden = total.saturating_sub(PUBLIC_LISTED);
     public.truncate(PUBLIC_LISTED);
     if hidden > 0 {
-        public.push(format!("и ещё {hidden}"));
+        public.push(format!("and {hidden} more"));
     }
     Verdict::graded(
         false,
@@ -195,9 +200,9 @@ fn fail2ban(ctx: &AuditContext<'_>) -> Vec<Verdict> {
     with_security(ctx, |s| {
         if s.has_fail2ban {
             let jails: Vec<&str> = s.jails.iter().map(|j| j.name.as_str()).collect();
-            return Verdict::pass(format!("активен, джейлы: {}", list_or(&jails, "нет")));
+            return Verdict::pass(format!("active, jails: {}", list_or(&jails, "none")));
         }
-        Verdict::warn("не установлен или не запущен")
+        Verdict::warn("not installed or not running")
     })
 }
 
@@ -206,7 +211,7 @@ fn ssh_exposed(ctx: &AuditContext<'_>) -> Vec<Verdict> {
         return Verdict::skipped(super::NO_SECURITY_DATA).single();
     };
     let Some(ports) = ctx.data::<PortsSnapshot>(ports::ID) else {
-        return Verdict::skipped("модуль ports не собрал данные").single();
+        return Verdict::skipped("the ports module has not collected data").single();
     };
     let ssh_port = security.sshd.port.unwrap_or(DEFAULT_SSH_PORT);
     let is_public = ports
@@ -215,15 +220,15 @@ fn ssh_exposed(ctx: &AuditContext<'_>) -> Vec<Verdict> {
     let passwords = security.sshd.password_auth == Some(Switch::On);
     match (is_public, passwords, security.has_fail2ban) {
         (true, true, false) => Verdict::fail(format!(
-            "порт {ssh_port} открыт наружу, пароли разрешены, fail2ban нет"
+            "port {ssh_port} is open to the outside, passwords are allowed, no fail2ban"
         )),
         (true, true, true) => Verdict::warn(format!(
-            "порт {ssh_port} открыт наружу с паролями, перебор сдерживает только fail2ban"
+            "port {ssh_port} is open to the outside with passwords, only fail2ban holds guessing back"
         )),
         (true, false, _) => {
-            Verdict::pass(format!("порт {ssh_port} открыт наружу, но только по ключу"))
+            Verdict::pass(format!("port {ssh_port} is open to the outside but keys only"))
         }
-        (false, _, _) => Verdict::pass(format!("порт {ssh_port} снаружи не виден")),
+        (false, _, _) => Verdict::pass(format!("port {ssh_port} is not visible from outside")),
     }
     .single()
 }
@@ -238,7 +243,7 @@ fn brute_force(ctx: &AuditContext<'_>) -> Vec<Verdict> {
         .filter(|a| a.is_brute_force())
         .map(|a| {
             format!(
-                "{} ({}, {} попыток за 10 мин)",
+                "{} ({}, {} attempts in 10 min)",
                 a.ip,
                 ctx.state.country_of(&a.ip).unwrap_or("?"),
                 a.recent_failures
@@ -247,13 +252,13 @@ fn brute_force(ctx: &AuditContext<'_>) -> Vec<Verdict> {
         .collect();
     if attackers.is_empty() {
         return Verdict::pass(format!(
-            "активного перебора нет, за сутки {} адресов с неудачными попытками",
+            "no active guessing, {} addresses with failed attempts in the last day",
             snapshot.attackers.len()
         ))
         .single();
     }
     Verdict::fail(format!(
-        "идёт перебор с {}: {}",
+        "guessing in progress from {}: {}",
         attackers.len(),
         list_or(&attackers[..attackers.len().min(SHOWN)], "")
     ))
@@ -270,12 +275,12 @@ fn unbanned_attackers(ctx: &AuditContext<'_>) -> Vec<Verdict> {
             .collect();
         if unbanned.is_empty() {
             return Verdict::pass(format!(
-                "все атакующие заблокированы, банов всего {}",
+                "every attacker is blocked, {} bans in total",
                 s.bans.len()
             ));
         }
         Verdict::warn(format!(
-            "{} без бана: {}",
+            "{} not banned: {}",
             unbanned.len(),
             list_or(&unbanned[..unbanned.len().min(SHOWN)], "")
         ))

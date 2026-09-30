@@ -15,7 +15,7 @@ impl Detector for ModulesDetector {
                     IncidentKind::ModuleError,
                     Severity::Warning,
                     id.0,
-                    format!("Модуль {} не собрал данные: {error}", id.0),
+                    format!("Module {} collected no data: {error}", id.0),
                 ))
             })
             .collect()
