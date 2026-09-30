@@ -99,6 +99,7 @@ mod tests {
             description: Default::default(),
             location: None,
             modules: Default::default(),
+            checks: Vec::new(),
         })
     }
 

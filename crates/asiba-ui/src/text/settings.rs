@@ -96,7 +96,6 @@ pub const JOURNAL_EMPTY: &str = "действий ещё не было";
 pub const JOURNAL_ACTION: &str = "Действие";
 pub const JOURNAL_RESULT: &str = "Результат";
 
-pub const SETTINGS_SECTION_CHECKS: &str = "Свои проверки";
 pub const CHECK_ADD: &str = "Добавить проверку";
 pub const CHECK_RUNS: &str = "Что запускает";
 pub const CHECK_CONDITION: &str = "Условие";
@@ -118,3 +117,9 @@ pub const CHECK_EDIT: &str = "правка";
 pub const CHECK_EDIT_DONE: &str = "готово";
 pub const CHECK_INCOMPLETE: &str = "заполните название, команду и текст условия";
 pub const CHECKS_HINT: &str = "Проверка выполняется на каждом сервере раз в интервал «редкие проверки» (по умолчанию 5 минут), время работы ограничено 20 секундами. Команда или скрипт передаётся серверу и запускается через sh; «файл на этом компьютере» читается при каждом запуске, так что правка файла применяется сразу; «файл на сервере» запускается как sh <путь>. Провалившаяся проверка попадает в аудит, инциденты и уведомления; для алертов есть метрика checks.<id>.failed. Для отдельного сервера проверки отключаются строкой [modules.checks] enabled = \"false\" в servers/<имя>.toml.";
+pub const SEC_CHECKS_TITLE: &str = "Свои проверки";
+pub const SEC_CHECKS_EMPTY: &str = "Для этого сервера проверок нет";
+pub const CHECK_IMPORT: &str = "Импортировать";
+pub const CHECK_IMPORT_FROM: &str = "Сервер";
+pub const CHECK_IMPORT_TAKE: &str = "взять";
+pub const CHECK_IMPORT_EMPTY: &str = "На других серверах проверок нет";

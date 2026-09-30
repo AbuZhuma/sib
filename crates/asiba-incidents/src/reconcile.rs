@@ -91,6 +91,7 @@ mod tests {
             description: ServerDescription::default(),
             location: None,
             modules: Default::default(),
+            checks: Vec::new(),
         };
         let mut state = AppState::default();
         state

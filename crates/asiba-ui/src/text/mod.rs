@@ -84,6 +84,7 @@ pub const BTN_TRUST_KEY: &str = "Доверять ключу и повторит
 pub const BTN_TRUST_KEY_SERVER: &str = "Доверять ключу";
 pub const BTN_CONFIRM_DELETE: &str = "Удалить навсегда";
 pub const BTN_CLOSE: &str = "Закрыть";
+pub const BLOCK_SETTINGS: &str = "Настройки блока";
 pub const BTN_SERVER_FILE: &str = "Файл";
 pub const BTN_TERMINAL: &str = "Терминал";
 pub const BTN_TERMINAL_SHORT: &str = ">_";

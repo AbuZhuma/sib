@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 use chrono::{DateTime, Utc};
 
+use crate::check::CustomCheck;
 use crate::event::Event;
 use crate::server::ModuleSettings;
 
@@ -70,6 +71,7 @@ pub struct CollectContext {
     pub previous: Option<Snapshot>,
     pub host: String,
     pub settings: ModuleSettings,
+    pub checks: Vec<CustomCheck>,
 }
 
 impl CollectContext {
@@ -109,8 +111,7 @@ mod tests {
         snapshot.taken_at -= chrono::Duration::seconds(2);
         let context = CollectContext {
             previous: Some(snapshot),
-            host: String::new(),
-            settings: ModuleSettings::default(),
+            ..CollectContext::default()
         };
         let (value, elapsed) = context.previous::<u32>().expect("previous");
         assert_eq!(*value, 42);

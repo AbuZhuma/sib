@@ -15,18 +15,16 @@ enum Section {
     Collection,
     Ai,
     Alerts,
-    Checks,
     Journal,
     About,
 }
 
 impl Section {
-    const ALL: [Self; 7] = [
+    const ALL: [Self; 6] = [
         Self::General,
         Self::Collection,
         Self::Ai,
         Self::Alerts,
-        Self::Checks,
         Self::Journal,
         Self::About,
     ];
@@ -37,7 +35,6 @@ impl Section {
             Self::Collection => text::SETTINGS_SECTION_COLLECTION,
             Self::Ai => text::SETTINGS_SECTION_AI,
             Self::Alerts => text::SETTINGS_SECTION_ALERTS,
-            Self::Checks => text::SETTINGS_SECTION_CHECKS,
             Self::Journal => text::SETTINGS_SECTION_JOURNAL,
             Self::About => text::SETTINGS_SECTION_ABOUT,
         }
@@ -91,7 +88,6 @@ fn body(ui: &mut Ui, ctx: &SettingsContext<'_>, section: Section) -> Option<Acti
         Section::Collection => super::collection_settings::show(ui, config),
         Section::Ai => super::ai_settings::show(ui, config, ctx.state),
         Section::Alerts => super::alert_rules::show(ui, config),
-        Section::Checks => super::checks::show(ui, config),
         Section::Journal => {
             super::journal::show(ui, ctx.state);
             None

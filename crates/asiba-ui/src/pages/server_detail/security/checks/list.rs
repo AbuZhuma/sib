@@ -8,7 +8,7 @@ use crate::pages::alert_rules::severity_label;
 use crate::text;
 use crate::theme::Palette;
 
-const SOURCE_LIMIT: usize = 60;
+const SOURCE_LIMIT: usize = 44;
 
 enum Change {
     Edit(String),

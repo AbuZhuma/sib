@@ -30,6 +30,7 @@ fn server() -> ServerState {
         description: ServerDescription::default(),
         location: None,
         modules: Default::default(),
+        checks: Vec::new(),
     })
 }
 

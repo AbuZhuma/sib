@@ -1,6 +1,7 @@
 mod access;
 mod attacks;
 mod audit_list;
+mod checks;
 mod problem;
 mod state;
 
@@ -20,6 +21,7 @@ pub fn show(ui: &mut Ui, ctx: &DetailContext<'_>) -> Option<Action> {
     let mut subpage = state::load(ui.ctx(), server);
     let analysis_action = section_analysis(ui, ctx, Tab::Security);
     let audit = cached_audit(ui.ctx(), ctx.server, ctx.state);
+    let checks_action = checks::show(ui, ctx.server, ctx.state);
     let page_action = panel_plain(ui, |ui| {
         subpage_bar(ui, &mut subpage);
         ui.add_space(GAP);
@@ -33,7 +35,10 @@ pub fn show(ui: &mut Ui, ctx: &DetailContext<'_>) -> Option<Action> {
     state::store(ui.ctx(), server, subpage);
     ui.add_space(GAP);
     let ai_action = panel(ui, text::AI_AUDIT_TITLE, |ui| ai_audit::show(ui, ctx));
-    page_action.or(analysis_action).or(ai_action)
+    page_action
+        .or(checks_action)
+        .or(analysis_action)
+        .or(ai_action)
 }
 
 fn subpage_bar(ui: &mut Ui, subpage: &mut Subpage) {

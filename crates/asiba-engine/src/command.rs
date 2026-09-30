@@ -53,7 +53,10 @@ pub enum Command {
     SetIntervals(Intervals),
     SetRetention(Retention),
     SetGeolocation(bool),
-    SetChecks(Vec<CustomCheck>),
+    SetServerChecks {
+        server: ServerId,
+        checks: Vec<CustomCheck>,
+    },
     Audit {
         target: AuditTarget,
         scope: AuditScope,

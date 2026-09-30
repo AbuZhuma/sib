@@ -70,6 +70,7 @@ async fn fetch(
         previous,
         host: ctx.worker.spec.external_host(),
         settings: ctx.worker.spec.module_settings(ctx.module.id().0),
+        checks: ctx.worker.spec.checks.clone(),
     };
     if is_backfill {
         return ctx.module.backfill(ctx.transport.as_ref(), &context).await;

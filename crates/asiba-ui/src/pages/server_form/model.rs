@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
 use asiba_core::{
-    AuthMethod, Credentials, Environment, JumpHost, ManualLocation, ModuleSettings,
+    AuthMethod, Credentials, CustomCheck, Environment, JumpHost, ManualLocation, ModuleSettings,
     ServerDescription, ServerId, ServerSpec, SudoMode,
 };
 
@@ -41,6 +41,7 @@ pub struct FormFields {
     pub location: String,
     pub location_label: String,
     pub modules: BTreeMap<String, ModuleSettings>,
+    pub checks: Vec<CustomCheck>,
 }
 
 impl FormFields {
@@ -86,6 +87,7 @@ impl FormFields {
                 .map(|l| l.label.clone())
                 .unwrap_or_default(),
             modules: spec.modules.clone(),
+            checks: spec.checks.clone(),
             ..Self::from_description(&spec.description)
         }
     }
@@ -123,6 +125,7 @@ impl FormFields {
             description: self.description(),
             location: self.location()?,
             modules: self.modules.clone(),
+            checks: self.checks.clone(),
         };
         Ok((spec, self.credentials()))
     }

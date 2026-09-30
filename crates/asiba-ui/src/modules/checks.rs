@@ -23,6 +23,12 @@ impl ModuleView for ChecksView {
         Tab::Checks
     }
 
+    fn has_content(&self, server: &ServerState) -> bool {
+        server
+            .data::<ChecksSnapshot>(checks::ID)
+            .is_some_and(|snapshot| !snapshot.results.is_empty())
+    }
+
     fn summary(&self, ui: &mut Ui, server: &ServerState, _shared: &ViewShared) {
         let p = Palette::current(ui.ctx());
         let Some(snapshot) = server.data::<ChecksSnapshot>(checks::ID) else {

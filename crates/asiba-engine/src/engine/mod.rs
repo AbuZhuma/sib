@@ -10,8 +10,8 @@ use std::sync::{Arc, Mutex};
 
 use asiba_config::AiConfig;
 use asiba_core::{
-    Credentials, CustomCheck, IgnoredIncident, Intervals, ModuleId, ModuleRegistry, ServerId,
-    ServerSpec, SharedState,
+    Credentials, IgnoredIncident, Intervals, ModuleId, ModuleRegistry, ServerId, ServerSpec,
+    SharedState,
 };
 use asiba_storage::StorageWriter;
 use asiba_transport::HostKeyPolicy;
@@ -69,7 +69,6 @@ pub struct EngineDeps {
     pub history_path: Option<PathBuf>,
     pub geo_cache: Option<PathBuf>,
     pub geolocation: bool,
-    pub checks: asiba_modules::checks::Defined,
     pub alert_settings: AlertSettings,
     pub intervals: Intervals,
     pub ai: AiConfig,
@@ -85,7 +84,6 @@ struct Engine {
     history_path: Option<PathBuf>,
     geo_cache: Option<PathBuf>,
     geolocation: Arc<AtomicBool>,
-    checks: asiba_modules::checks::Defined,
     intervals: Intervals,
     notify: RepaintNotifier,
     events: mpsc::UnboundedSender<EngineEvent>,
@@ -103,14 +101,6 @@ impl Engine {
             return;
         }
         self.intervals = clamped;
-        let ids: Vec<ServerId> = self.workers.keys().cloned().collect();
-        for id in ids {
-            self.restart(&id, HostKeyPolicy::KnownHostsOnly);
-        }
-    }
-
-    fn set_checks(&mut self, checks: Vec<CustomCheck>) {
-        self.checks.set(checks);
         let ids: Vec<ServerId> = self.workers.keys().cloned().collect();
         for id in ids {
             self.restart(&id, HostKeyPolicy::KnownHostsOnly);
@@ -169,6 +159,9 @@ impl Engine {
                 credentials,
             } => self.update(previous, spec, credentials).await,
             Command::RemoveServer(id) => self.remove(id).await,
+            Command::SetServerChecks { server, checks } => {
+                self.set_server_checks(server, checks).await;
+            }
             Command::Reconnect(id) => self.restart(&id, HostKeyPolicy::KnownHostsOnly),
             Command::TrustHostKey {
                 server,
@@ -221,7 +214,6 @@ impl Engine {
             }
             Command::SetIntervals(intervals) => self.set_intervals(intervals),
             Command::SetGeolocation(enabled) => self.set_geolocation(enabled),
-            Command::SetChecks(checks) => self.set_checks(checks),
             Command::SetRetention(retention) => {
                 if let Some(storage) = &self.storage
                     && storage.set_retention(retention).is_err()

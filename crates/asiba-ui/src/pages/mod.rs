@@ -1,7 +1,6 @@
 pub mod ai_settings;
 pub mod alert_rules;
 pub mod alerts;
-pub mod checks;
 pub mod collection_settings;
 pub mod inspector;
 pub mod journal;
@@ -89,7 +88,10 @@ pub enum Action {
         intervals: Intervals,
         retention: Retention,
     },
-    SaveChecks(Vec<CustomCheck>),
+    SaveServerChecks {
+        server: ServerId,
+        checks: Vec<CustomCheck>,
+    },
     SaveAiConfig(AiConfig),
     Audit {
         target: AuditTarget,

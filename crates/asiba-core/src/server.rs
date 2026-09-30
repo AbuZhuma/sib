@@ -4,6 +4,8 @@ use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
+use crate::check::CustomCheck;
+
 const MAX_NAME_LEN: usize = 32;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
@@ -66,6 +68,8 @@ pub struct ServerSpec {
     pub location: Option<ManualLocation>,
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub modules: BTreeMap<String, ModuleSettings>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub checks: Vec<CustomCheck>,
 }
 
 pub type ModuleSettings = BTreeMap<String, String>;
@@ -233,6 +237,7 @@ mod tests {
             description: ServerDescription::default(),
             location: None,
             modules: Default::default(),
+            checks: Vec::new(),
         };
         assert_eq!(spec.external_host(), "");
         spec.host = "neo.example".into();

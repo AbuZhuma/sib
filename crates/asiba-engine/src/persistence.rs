@@ -33,6 +33,10 @@ impl Persistence {
         (spec, credentials)
     }
 
+    pub fn save_spec(&self, spec: &ServerSpec) -> Result<(), ConfigError> {
+        self.servers.save(spec)
+    }
+
     pub fn save(&self, spec: &ServerSpec, credentials: &Credentials) -> Result<(), ConfigError> {
         self.servers.save(spec)?;
         self.secrets.save_credentials(&spec.id, credentials)

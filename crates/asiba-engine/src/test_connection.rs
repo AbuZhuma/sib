@@ -30,6 +30,7 @@ async fn probe(
         previous: None,
         host: request.spec.external_host(),
         settings: request.spec.module_settings(request.probe_module.0),
+        checks: request.spec.checks.clone(),
     };
     let probe = match registry.get(request.probe_module) {
         Some(module) => module
@@ -161,6 +162,7 @@ mod tests {
             description: Default::default(),
             location: None,
             modules: Default::default(),
+            checks: Vec::new(),
         };
         let result = detect_all(&transport, &registry, &spec).await;
         assert!(matches!(result, Err(TransportError::Disconnected(_))));

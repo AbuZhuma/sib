@@ -124,6 +124,7 @@ mod tests {
             description: ServerDescription::default(),
             location: None,
             modules: Default::default(),
+            checks: Vec::new(),
         };
         let args = ssh_arguments(&spec);
         assert_eq!(

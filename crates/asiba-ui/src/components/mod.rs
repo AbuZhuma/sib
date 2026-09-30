@@ -1,6 +1,7 @@
 mod ai_block;
 mod audit_cache;
 mod badge;
+pub mod block_settings;
 mod chip;
 mod fields;
 mod file_icon;

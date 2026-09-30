@@ -21,9 +21,9 @@ pub mod users;
 
 use asiba_core::ModuleRegistry;
 
-pub fn default_registry(checks: checks::Defined) -> ModuleRegistry {
+pub fn default_registry() -> ModuleRegistry {
     ModuleRegistry::new()
-        .register(checks::ChecksModule::new(checks))
+        .register(checks::ChecksModule)
         .register(system::SystemModule)
         .register(cpu::CpuModule)
         .register(memory::MemoryModule)
