@@ -85,6 +85,9 @@ fn fixed_panels(columns: &mut [Ui], server: &ServerState) {
     panel(&mut columns[short], text::DETAIL_SECTION_MODULES, |ui| {
         modules_table::show(ui, server)
     });
+    if !header::has_description(server) {
+        return;
+    }
     columns[short].add_space(GAP);
     let short = shorter_column(columns);
     panel(

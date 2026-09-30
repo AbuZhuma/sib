@@ -31,6 +31,12 @@ impl ModuleView for GpuView {
         Tab::Gpu
     }
 
+    fn has_content(&self, server: &ServerState) -> bool {
+        server
+            .data::<GpuSnapshot>(gpu::ID)
+            .is_some_and(|snapshot| !snapshot.gpus.is_empty())
+    }
+
     fn summary(&self, ui: &mut Ui, server: &ServerState, _shared: &ViewShared) {
         let Some(snapshot) = server.data::<GpuSnapshot>(gpu::ID) else {
             return;

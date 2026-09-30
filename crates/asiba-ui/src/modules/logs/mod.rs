@@ -66,6 +66,12 @@ impl ModuleView for LogsView {
         Tab::Logs
     }
 
+    fn has_content(&self, server: &ServerState) -> bool {
+        server
+            .data::<LogsSnapshot>(logs::ID)
+            .is_some_and(|snapshot| !snapshot.entries.is_empty())
+    }
+
     fn summary(&self, ui: &mut Ui, server: &ServerState, _shared: &ViewShared) {
         let p = Palette::current(ui.ctx());
         let Some(snapshot) = server.data::<LogsSnapshot>(logs::ID) else {

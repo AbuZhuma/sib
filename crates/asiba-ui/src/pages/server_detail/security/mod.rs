@@ -5,6 +5,8 @@ mod checks;
 mod problem;
 mod state;
 
+use asiba_core::ServerState;
+use asiba_modules::security::{self, SecuritySnapshot};
 use egui::{RichText, Ui};
 
 use super::{DetailContext, audit as ai_audit, section_analysis};
@@ -19,11 +21,15 @@ pub use state::{Subpage, store as select_subpage};
 
 pub fn show(ui: &mut Ui, ctx: &DetailContext<'_>) -> Option<Action> {
     let server = &ctx.server.spec.id;
+    let subpages = available_subpages(ctx.server);
     let mut subpage = state::load(ui.ctx(), server);
+    if !is_available(&subpages, &subpage) {
+        subpage = Subpage::Audit;
+    }
     let analysis_action = section_analysis(ui, ctx, Tab::Security);
     let audit = cached_audit(ui.ctx(), ctx.server, ctx.state);
     let page_action = panel_plain(ui, |ui| {
-        subpage_bar(ui, &mut subpage);
+        subpage_bar(ui, &mut subpage, &subpages);
         ui.add_space(GAP);
         match subpage.clone() {
             Subpage::Audit => audit_list::show(ui, ctx, &audit, &mut subpage),
@@ -58,16 +64,29 @@ fn check_settings(ui: &mut Ui, ctx: &DetailContext<'_>) -> Option<Action> {
     action
 }
 
-fn subpage_bar(ui: &mut Ui, subpage: &mut Subpage) {
+fn available_subpages(server: &ServerState) -> Vec<(Subpage, &'static str)> {
+    let snapshot = server.data::<SecuritySnapshot>(security::ID);
+    let has_rows = |rows: fn(&SecuritySnapshot) -> bool| snapshot.is_some_and(rows);
+    let mut items = vec![(Subpage::Audit, text::SEC_SUB_AUDIT)];
+    if has_rows(|s| !s.logins.is_empty() || !s.sudo_calls.is_empty()) {
+        items.push((Subpage::Access, text::SEC_SUB_ACCESS));
+    }
+    if has_rows(|s| !s.attackers.is_empty() || !s.bans.is_empty()) {
+        items.push((Subpage::Attacks, text::SEC_SUB_ATTACKS));
+    }
+    items
+}
+
+fn is_available(subpages: &[(Subpage, &'static str)], subpage: &Subpage) -> bool {
+    matches!(subpage, Subpage::Audit | Subpage::Problem { .. })
+        || subpages.iter().any(|(target, _)| target == subpage)
+}
+
+fn subpage_bar(ui: &mut Ui, subpage: &mut Subpage, items: &[(Subpage, &'static str)]) {
     let p = Palette::current(ui.ctx());
     let is_problem = matches!(subpage, Subpage::Problem { .. });
     ui.horizontal_wrapped(|ui| {
-        let items = [
-            (Subpage::Audit, text::SEC_SUB_AUDIT),
-            (Subpage::Access, text::SEC_SUB_ACCESS),
-            (Subpage::Attacks, text::SEC_SUB_ATTACKS),
-        ];
-        for (target, label) in items {
+        for (target, label) in items.iter().cloned() {
             let selected = *subpage == target || (is_problem && target == Subpage::Audit);
             let color = if selected { p.text } else { p.text_secondary };
             if chip(ui, selected, RichText::new(label).color(color)).clicked() {

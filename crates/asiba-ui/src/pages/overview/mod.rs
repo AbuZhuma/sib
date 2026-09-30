@@ -48,7 +48,9 @@ pub fn show(ui: &mut Ui, ctx: OverviewContext<'_>) -> Option<Action> {
         ui.add_space(GAP);
         set(blocks::top_servers(ui, state));
         set(mini_map(ui, state, map));
-        panel(ui, text::SECTION_EVENTS, |ui| events(ui, state));
+        if !state.events.is_empty() {
+            panel(ui, text::SECTION_EVENTS, |ui| events(ui, state));
+        }
     });
     action
 }

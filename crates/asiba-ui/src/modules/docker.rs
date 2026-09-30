@@ -35,6 +35,12 @@ impl ModuleView for DockerView {
         Tab::Docker
     }
 
+    fn has_content(&self, server: &ServerState) -> bool {
+        server
+            .data::<DockerSnapshot>(docker::ID)
+            .is_some_and(|snapshot| !snapshot.containers.is_empty() || !snapshot.images.is_empty())
+    }
+
     fn summary(&self, ui: &mut Ui, server: &ServerState, _shared: &ViewShared) {
         let p = Palette::current(ui.ctx());
         let Some(snapshot) = server.data::<DockerSnapshot>(docker::ID) else {

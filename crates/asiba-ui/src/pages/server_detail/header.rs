@@ -77,8 +77,11 @@ fn facts_line(ui: &mut Ui, server: &ServerState) {
     ui.label(RichText::new(facts.join("  ·  ")).color(p.text_secondary));
 }
 
-pub fn description(ui: &mut Ui, server: &ServerState) {
-    let p = Palette::current(ui.ctx());
+pub fn has_description(server: &ServerState) -> bool {
+    !filled_rows(server).is_empty()
+}
+
+fn filled_rows(server: &ServerState) -> Vec<(&'static str, String)> {
     let d = &server.spec.description;
     let rows = [
         (text::FORM_PROJECT, d.project.clone()),
@@ -88,17 +91,17 @@ pub fn description(ui: &mut Ui, server: &ServerState) {
         (text::FORM_LINKS, d.links.join("\n")),
         (text::FORM_NOTES, d.notes.clone()),
     ];
-    let filled: Vec<_> = rows.iter().filter(|(_, v)| !v.is_empty()).collect();
-    if filled.is_empty() {
-        ui.label(RichText::new(text::DETAIL_NO_DESCRIPTION).color(p.text_muted));
-        return;
-    }
+    rows.into_iter().filter(|(_, v)| !v.is_empty()).collect()
+}
+
+pub fn description(ui: &mut Ui, server: &ServerState) {
+    let p = Palette::current(ui.ctx());
     egui::Grid::new("server-description")
         .num_columns(2)
         .spacing([16.0, 4.0])
         .show(ui, |ui| {
-            for (label, value) in filled {
-                ui.label(RichText::new(*label).color(p.text_secondary));
+            for (label, value) in filled_rows(server) {
+                ui.label(RichText::new(label).color(p.text_secondary));
                 ui.label(value);
                 ui.end_row();
             }

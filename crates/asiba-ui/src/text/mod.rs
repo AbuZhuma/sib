@@ -155,7 +155,6 @@ pub const DETAIL_SECTION_DESCRIPTION: &str = "Описание";
 pub const DETAIL_RETRY_AT: &str = "повтор через";
 pub const DETAIL_ONLINE_SINCE: &str = "в сети с";
 pub const DETAIL_NO_DATA: &str = "данных пока нет";
-pub const DETAIL_NO_DESCRIPTION: &str = "описание не заполнено";
 pub const DETAIL_DELETE_PROMPT: &str = "Для подтверждения введите имя сервера:";
 
 pub const COL_MODULE: &str = "Модуль";
