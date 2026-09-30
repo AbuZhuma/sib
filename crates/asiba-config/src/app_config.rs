@@ -118,6 +118,7 @@ mod tests {
                 threshold: 8.0,
                 for_secs: 120,
                 severity: asiba_core::Severity::Warning,
+                enabled: true,
                 builtin: false,
             }],
             ..AppConfig::default()

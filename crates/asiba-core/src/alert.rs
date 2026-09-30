@@ -38,8 +38,14 @@ pub struct AlertRule {
     pub threshold: f64,
     pub for_secs: u64,
     pub severity: Severity,
+    #[serde(default = "enabled_by_default")]
+    pub enabled: bool,
     #[serde(default)]
     pub builtin: bool,
+}
+
+fn enabled_by_default() -> bool {
+    true
 }
 
 impl AlertRule {

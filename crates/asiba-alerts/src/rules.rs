@@ -115,6 +115,7 @@ pub fn builtin_rules() -> Vec<AlertRule> {
             threshold: rule.threshold,
             for_secs: rule.for_secs,
             severity: rule.severity,
+            enabled: true,
             builtin: true,
         })
         .collect()
@@ -155,6 +156,7 @@ mod tests {
             threshold: 50.0,
             for_secs: 10,
             severity: Severity::Critical,
+            enabled: true,
             builtin: true,
         };
         let merged = merge_rules(&[custom]);

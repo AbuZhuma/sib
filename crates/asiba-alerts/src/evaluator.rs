@@ -72,6 +72,7 @@ impl Evaluator {
     ) -> Vec<Check> {
         self.rules
             .iter()
+            .filter(|rule| rule.enabled)
             .filter(|rule| {
                 !state.is_incident_ignored(&server.spec.id, IncidentKind::Alert, &rule.id)
             })
@@ -195,6 +196,7 @@ mod tests {
             threshold: 90.0,
             for_secs,
             severity: Severity::Warning,
+            enabled: true,
             builtin: true,
         }
     }
