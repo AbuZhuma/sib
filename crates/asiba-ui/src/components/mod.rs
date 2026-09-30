@@ -4,6 +4,7 @@ mod badge;
 mod chip;
 mod fields;
 mod file_icon;
+mod help;
 mod incidents;
 mod map;
 mod meter;
@@ -25,6 +26,7 @@ pub use badge::{badge, severity_color};
 pub use chip::{chip, chip_value};
 pub use fields::{field, password_field, section_label};
 pub use file_icon::{FileIcon, file_icon};
+pub use help::{help, help_after};
 pub use incidents::{
     IncidentLine, has_report, incident_line, incident_scope, incident_tab, kind_label,
 };

@@ -3,7 +3,7 @@ use asiba_core::AppState;
 use egui::{Grid, RichText, Ui};
 
 use super::Action;
-use crate::components::{chip_value, page_title, panel, scroll};
+use crate::components::{chip_value, help, page_title, panel, scroll};
 use crate::text;
 use crate::theme::{GAP, Palette};
 
@@ -89,10 +89,11 @@ fn theme_picker(ui: &mut Ui, current: ThemeChoice) -> Option<Action> {
 }
 
 fn geolocation_toggle(ui: &mut Ui, current: bool) -> Option<Action> {
-    let p = Palette::current(ui.ctx());
     let mut enabled = current;
-    ui.checkbox(&mut enabled, text::SETTINGS_GEOLOCATION);
-    ui.label(RichText::new(text::SETTINGS_GEOLOCATION_HINT).color(p.text_secondary));
+    ui.horizontal(|ui| {
+        ui.checkbox(&mut enabled, text::SETTINGS_GEOLOCATION);
+        help(ui, text::SETTINGS_GEOLOCATION_HINT);
+    });
     (enabled != current).then_some(Action::SetGeolocation(enabled))
 }
 

@@ -3,7 +3,7 @@ use asiba_core::{AlertRule, Condition, Severity};
 use egui::{ComboBox, Id, RichText, TextEdit, Ui};
 
 use super::Action;
-use crate::components::{Table, badge, chip_value, severity_color};
+use crate::components::{Table, badge, chip_value, help, severity_color};
 use crate::text;
 use crate::theme::{FIELD_WIDTH, GAP, Palette};
 
@@ -125,15 +125,17 @@ fn draft_fields(ui: &mut Ui, draft: &mut Draft) {
 }
 
 fn add_form(ui: &mut Ui, custom: &mut Vec<AlertRule>) -> bool {
-    let p = Palette::current(ui.ctx());
     let id = Id::new(DRAFT_KEY);
     let mut draft: Draft = ui.ctx().data(|d| d.get_temp(id)).unwrap_or_default();
-    ui.label(RichText::new(text::RULE_HINT).small().color(p.text_muted));
     ui.horizontal_wrapped(|ui| draft_fields(ui, &mut draft));
     let rule = draft.build();
-    let added = ui
-        .add_enabled(rule.is_some(), egui::Button::new(text::RULE_ADD))
-        .clicked();
+    let mut added = false;
+    ui.horizontal(|ui| {
+        added = ui
+            .add_enabled(rule.is_some(), egui::Button::new(text::RULE_ADD))
+            .clicked();
+        help(ui, text::RULE_HINT);
+    });
     if added && let Some(rule) = rule {
         custom.retain(|r| r.id != rule.id);
         custom.push(rule);

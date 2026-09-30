@@ -3,7 +3,7 @@ use asiba_core::{AppState, Severity};
 use egui::{ComboBox, Grid, Id, RichText, TextEdit, Ui};
 
 use super::Action;
-use crate::components::chip_value;
+use crate::components::{chip_value, help, help_after};
 use crate::modules::Tab;
 use crate::text;
 use crate::theme::{GAP, Palette};
@@ -83,9 +83,10 @@ pub fn show(ui: &mut Ui, config: &AppConfig, state: &AppState) -> Option<Action>
         .unwrap_or_else(|| Draft::from_config(&config.ai));
     status_line(ui, &config.ai, state);
     ui.add_space(GAP);
-    ui.label(RichText::new(text::AI_PRIVACY).color(p.text_secondary));
-    ui.add_space(GAP);
-    ui.checkbox(&mut draft.consent, text::AI_CONSENT);
+    ui.horizontal(|ui| {
+        ui.checkbox(&mut draft.consent, text::AI_CONSENT);
+        help(ui, text::AI_PRIVACY);
+    });
     ui.add_space(GAP);
     provider_picker(ui, &mut draft, &p);
     Grid::new("ai-grid")
@@ -95,8 +96,7 @@ pub fn show(ui: &mut Ui, config: &AppConfig, state: &AppState) -> Option<Action>
     ui.add_space(GAP);
     auto_audit_fields(ui, &mut draft, &p);
     ui.add_space(GAP);
-    section_picker(ui, &mut draft, &p);
-    ui.label(RichText::new(text::AI_HINT).small().color(p.text_muted));
+    section_picker(ui, &mut draft);
     ui.add_space(GAP);
     let action = apply_button(ui, &draft, config, state);
     ui.ctx().data_mut(|d| d.insert_temp(id, draft));
@@ -125,13 +125,11 @@ fn auto_audit_fields(ui: &mut Ui, draft: &mut Draft, p: &Palette) {
     });
 }
 
-fn section_picker(ui: &mut Ui, draft: &mut Draft, p: &Palette) {
-    ui.checkbox(&mut draft.auto_sections, text::AI_AUTO_SECTIONS);
-    ui.label(
-        RichText::new(text::AI_SECTIONS_HINT)
-            .small()
-            .color(p.text_muted),
-    );
+fn section_picker(ui: &mut Ui, draft: &mut Draft) {
+    ui.horizontal(|ui| {
+        ui.checkbox(&mut draft.auto_sections, text::AI_AUTO_SECTIONS);
+        help(ui, text::AI_SECTIONS_HINT);
+    });
     let mut seen: Vec<&str> = Vec::new();
     ui.horizontal_wrapped(|ui| {
         for tab in Tab::ALL {
@@ -186,7 +184,7 @@ fn provider_picker(ui: &mut Ui, draft: &mut Draft, p: &Palette) {
 
 fn fields(ui: &mut Ui, draft: &mut Draft) {
     let p = Palette::current(ui.ctx());
-    ui.label(RichText::new(text::AI_API_KEY).color(p.text_secondary));
+    help_after(ui, text::AI_API_KEY, text::AI_HINT);
     ui.add(
         TextEdit::singleline(&mut draft.api_key)
             .password(true)

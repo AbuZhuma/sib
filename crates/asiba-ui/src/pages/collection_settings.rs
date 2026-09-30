@@ -3,6 +3,7 @@ use asiba_core::{Intervals, Retention};
 use egui::{Grid, Id, RichText, TextEdit, Ui};
 
 use super::Action;
+use crate::components::help;
 use crate::text;
 use crate::theme::{GAP, Palette};
 
@@ -86,27 +87,25 @@ fn draft_grid(ui: &mut Ui, draft: &mut Draft) {
 }
 
 pub fn show(ui: &mut Ui, config: &AppConfig) -> Option<Action> {
-    let p = Palette::current(ui.ctx());
     let id = Id::new(DRAFT_KEY);
     let mut draft: Draft = ui
         .ctx()
         .data(|d| d.get_temp(id))
         .unwrap_or_else(|| Draft::from_config(config));
     draft_grid(ui, &mut draft);
-    ui.label(
-        RichText::new(text::SETTINGS_COLLECTION_HINT)
-            .small()
-            .color(p.text_muted),
-    );
     ui.add_space(GAP);
     let parsed = draft.build();
     let is_dirty = draft != Draft::from_config(config);
-    let clicked = ui
-        .add_enabled(
-            parsed.is_some() && is_dirty,
-            egui::Button::new(text::BTN_APPLY),
-        )
-        .clicked();
+    let mut clicked = false;
+    ui.horizontal(|ui| {
+        clicked = ui
+            .add_enabled(
+                parsed.is_some() && is_dirty,
+                egui::Button::new(text::BTN_APPLY),
+            )
+            .clicked();
+        help(ui, text::SETTINGS_COLLECTION_HINT);
+    });
     ui.ctx().data_mut(|d| d.insert_temp(id, draft));
     if !clicked {
         return None;
