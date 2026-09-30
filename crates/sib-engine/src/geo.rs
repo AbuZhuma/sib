@@ -15,7 +15,7 @@ const SELF_KEY: &str = "self";
 const CACHE_TTL_SECS: i64 = 30 * 24 * 3600;
 const LOOKUP_URL: &str = "http://ip-api.com/json/";
 const LOOKUP_FIELDS: &str = "status,message,country,city,lat,lon,isp,org";
-const LANGUAGE: &str = "ru";
+const LANGUAGE: &str = "en";
 
 static CACHE_LOCK: Mutex<()> = Mutex::new(());
 
