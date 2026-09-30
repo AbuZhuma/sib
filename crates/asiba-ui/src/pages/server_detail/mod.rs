@@ -1,6 +1,5 @@
 pub mod audit;
 mod connection;
-mod events;
 pub mod files;
 mod header;
 mod modules_table;
@@ -70,9 +69,6 @@ pub fn show(ui: &mut Ui, ctx: &DetailContext<'_>) -> Option<Action> {
     scroll::vertical().show(ui, |ui| {
         if let Some(next) = tab_content(ui, ctx, tab) {
             action = Some(next);
-        }
-        if matches!(tab, Tab::Summary | Tab::Logs) {
-            events::show(ui, server);
         }
     });
     action

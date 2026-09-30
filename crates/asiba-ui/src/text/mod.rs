@@ -148,7 +148,6 @@ pub const AVAIL_PARTIAL: &str = "частично";
 pub const AVAIL_UNAVAILABLE: &str = "недоступен";
 
 pub const DETAIL_SECTION_CONNECTION: &str = "Соединение";
-pub const DETAIL_SECTION_EVENTS: &str = "События сервера";
 pub const DETAIL_OPEN: &str = "перейти →";
 pub const DETAIL_SECTION_MODULES: &str = "Модули";
 pub const DETAIL_SECTION_DESCRIPTION: &str = "Описание";
