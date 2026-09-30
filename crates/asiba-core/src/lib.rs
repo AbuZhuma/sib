@@ -16,7 +16,9 @@ pub mod transport;
 pub use action::{ActionOutcome, ActionRecord, ActionRequest, ActionSpec, Danger};
 pub use alert::{Alert, AlertRule, Condition, METRIC_OFFLINE};
 pub use audit::{AuditReport, AuditScope, AuditStatus, AuditTarget};
-pub use check::{CheckExpect, CheckKind, CustomCheck, OUTPUT_LIMIT};
+pub use check::{
+    Area, CheckExpect, CheckKind, CheckOverride, CheckOverrides, CustomCheck, OUTPUT_LIMIT, Weight,
+};
 pub use event::{Event, Severity};
 pub use incident::{IgnoredIncident, Incident, IncidentDraft, IncidentKind};
 pub use module::{

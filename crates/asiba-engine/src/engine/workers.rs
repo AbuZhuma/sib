@@ -1,6 +1,8 @@
 use std::sync::{Arc, Mutex};
 
-use asiba_core::{Credentials, CustomCheck, ModuleId, ServerId, ServerSpec, ServerState};
+use asiba_core::{
+    CheckOverrides, Credentials, CustomCheck, ModuleId, ServerId, ServerSpec, ServerState,
+};
 use asiba_transport::HostKeyPolicy;
 use tokio::sync::broadcast;
 
@@ -24,11 +26,17 @@ impl Engine {
         self.start_worker(spec, credentials, HostKeyPolicy::KnownHostsOnly);
     }
 
-    pub(super) async fn set_server_checks(&mut self, id: ServerId, checks: Vec<CustomCheck>) {
+    pub(super) async fn set_server_checks(
+        &mut self,
+        id: ServerId,
+        checks: Vec<CustomCheck>,
+        overrides: CheckOverrides,
+    ) {
         let Some(entry) = self.workers.get_mut(&id) else {
             return;
         };
         entry.spec.checks = checks;
+        entry.spec.check_overrides = overrides;
         let spec = entry.spec.clone();
         let persistence = self.persistence.clone();
         let saved = tokio::task::spawn_blocking(move || persistence.save_spec(&spec)).await;

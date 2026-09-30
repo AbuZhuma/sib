@@ -13,8 +13,9 @@ pub mod settings;
 
 use asiba_config::{AiConfig, ThemeChoice};
 use asiba_core::{
-    ActionRequest, ActionSpec, AlertRule, AuditScope, AuditTarget, Credentials, CustomCheck,
-    IgnoredIncident, Intervals, ModuleId, QueryRequest, Retention, ServerId, ServerSpec,
+    ActionRequest, ActionSpec, AlertRule, AuditScope, AuditTarget, CheckOverrides, Credentials,
+    CustomCheck, IgnoredIncident, Intervals, ModuleId, QueryRequest, Retention, ServerId,
+    ServerSpec,
 };
 use asiba_engine::TestRequest;
 use chrono::{DateTime, Utc};
@@ -91,6 +92,7 @@ pub enum Action {
     SaveServerChecks {
         server: ServerId,
         checks: Vec<CustomCheck>,
+        overrides: CheckOverrides,
     },
     SaveAiConfig(AiConfig),
     Audit {

@@ -1,3 +1,5 @@
+pub use asiba_core::{Area, Weight};
+
 use super::context::AuditContext;
 use super::evidence::{Evidence, EvidenceSource};
 
@@ -7,80 +9,6 @@ pub enum Outcome {
     Warn,
     Fail,
     Skipped,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Area {
-    Ssh,
-    Access,
-    Firewall,
-    Kernel,
-    Hardening,
-    Resources,
-    Reliability,
-    Network,
-    Updates,
-    Logs,
-    Collection,
-    Custom,
-}
-
-impl Area {
-    pub const ALL: [Area; 12] = [
-        Area::Ssh,
-        Area::Access,
-        Area::Firewall,
-        Area::Kernel,
-        Area::Hardening,
-        Area::Resources,
-        Area::Reliability,
-        Area::Network,
-        Area::Updates,
-        Area::Logs,
-        Area::Collection,
-        Area::Custom,
-    ];
-
-    pub fn label(self) -> &'static str {
-        match self {
-            Self::Ssh => "SSH",
-            Self::Access => "Доступ и права",
-            Self::Firewall => "Сеть и файрвол",
-            Self::Kernel => "Ядро",
-            Self::Hardening => "Защита системы",
-            Self::Resources => "Ресурсы",
-            Self::Reliability => "Надёжность",
-            Self::Network => "Сетевые интерфейсы",
-            Self::Updates => "Обновления",
-            Self::Logs => "Журнал",
-            Self::Collection => "Сбор данных",
-            Self::Custom => "Свои проверки",
-        }
-    }
-
-    pub fn is_security(self) -> bool {
-        matches!(
-            self,
-            Self::Ssh | Self::Access | Self::Firewall | Self::Kernel | Self::Hardening
-        )
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Weight {
-    Low,
-    Medium,
-    High,
-}
-
-impl Weight {
-    pub fn points(self) -> u32 {
-        match self {
-            Self::Low => 1,
-            Self::Medium => 2,
-            Self::High => 3,
-        }
-    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

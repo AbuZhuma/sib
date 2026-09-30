@@ -1,8 +1,129 @@
+use std::collections::BTreeMap;
+
 use serde::{Deserialize, Serialize};
 
 use crate::event::Severity;
 
 pub const OUTPUT_LIMIT: usize = 4000;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Area {
+    Ssh,
+    Access,
+    Firewall,
+    Kernel,
+    Hardening,
+    Resources,
+    Reliability,
+    Network,
+    Updates,
+    Logs,
+    Collection,
+    Custom,
+}
+
+impl Area {
+    pub const ALL: [Self; 12] = [
+        Self::Ssh,
+        Self::Access,
+        Self::Firewall,
+        Self::Kernel,
+        Self::Hardening,
+        Self::Resources,
+        Self::Reliability,
+        Self::Network,
+        Self::Updates,
+        Self::Logs,
+        Self::Collection,
+        Self::Custom,
+    ];
+
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Ssh => "SSH",
+            Self::Access => "Доступ и права",
+            Self::Firewall => "Сеть и файрвол",
+            Self::Kernel => "Ядро",
+            Self::Hardening => "Защита системы",
+            Self::Resources => "Ресурсы",
+            Self::Reliability => "Надёжность",
+            Self::Network => "Сетевые интерфейсы",
+            Self::Updates => "Обновления",
+            Self::Logs => "Журнал",
+            Self::Collection => "Сбор данных",
+            Self::Custom => "Свои проверки",
+        }
+    }
+
+    pub fn is_security(self) -> bool {
+        matches!(
+            self,
+            Self::Ssh | Self::Access | Self::Firewall | Self::Kernel | Self::Hardening
+        )
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Weight {
+    Low,
+    Medium,
+    High,
+}
+
+impl Weight {
+    pub const ALL: [Self; 3] = [Self::Low, Self::Medium, Self::High];
+
+    pub fn points(self) -> u32 {
+        match self {
+            Self::Low => 1,
+            Self::Medium => 2,
+            Self::High => 3,
+        }
+    }
+
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Low => "низкий",
+            Self::Medium => "средний",
+            Self::High => "высокий",
+        }
+    }
+
+    pub fn severity(self) -> Severity {
+        match self {
+            Self::Low => Severity::Info,
+            Self::Medium => Severity::Warning,
+            Self::High => Severity::Critical,
+        }
+    }
+}
+
+pub type CheckOverrides = BTreeMap<String, CheckOverride>;
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CheckOverride {
+    #[serde(default = "enabled_by_default")]
+    pub enabled: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub weight: Option<Weight>,
+}
+
+impl Default for CheckOverride {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            weight: None,
+        }
+    }
+}
+
+impl CheckOverride {
+    pub fn is_default(&self) -> bool {
+        *self == Self::default()
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -41,7 +162,8 @@ pub struct CustomCheck {
     pub expect: CheckExpect,
     #[serde(default)]
     pub expect_text: String,
-    pub severity: Severity,
+    pub area: Area,
+    pub weight: Weight,
     #[serde(default)]
     pub description: String,
     #[serde(default)]
@@ -65,7 +187,8 @@ impl CustomCheck {
             source: String::new(),
             expect: CheckExpect::ExitZero,
             expect_text: String::new(),
-            severity: Severity::Warning,
+            area: Area::Custom,
+            weight: Weight::Medium,
             description: String::new(),
             advice: String::new(),
             as_root: false,

@@ -34,7 +34,7 @@ impl CheckResult {
 
     pub fn severity(&self) -> Severity {
         if self.is_failed() {
-            self.check.severity
+            self.check.weight.severity()
         } else {
             Severity::Info
         }

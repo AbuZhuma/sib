@@ -8,6 +8,7 @@ mod state;
 use egui::{RichText, Ui};
 
 use super::{DetailContext, audit as ai_audit, section_analysis};
+use crate::components::block_settings::{self, Popup};
 use crate::components::{cached_audit, chip, panel, panel_plain};
 use crate::modules::Tab;
 use crate::pages::Action;
@@ -21,7 +22,6 @@ pub fn show(ui: &mut Ui, ctx: &DetailContext<'_>) -> Option<Action> {
     let mut subpage = state::load(ui.ctx(), server);
     let analysis_action = section_analysis(ui, ctx, Tab::Security);
     let audit = cached_audit(ui.ctx(), ctx.server, ctx.state);
-    let checks_action = checks::show(ui, ctx.server, ctx.state);
     let page_action = panel_plain(ui, |ui| {
         subpage_bar(ui, &mut subpage);
         ui.add_space(GAP);
@@ -34,11 +34,28 @@ pub fn show(ui: &mut Ui, ctx: &DetailContext<'_>) -> Option<Action> {
     });
     state::store(ui.ctx(), server, subpage);
     ui.add_space(GAP);
+    let checks_action = check_settings(ui, ctx);
     let ai_action = panel(ui, text::AI_AUDIT_TITLE, |ui| ai_audit::show(ui, ctx));
     page_action
         .or(checks_action)
         .or(analysis_action)
         .or(ai_action)
+}
+
+const CHECKS_KEY: &str = "audit-checks";
+
+fn check_settings(ui: &mut Ui, ctx: &DetailContext<'_>) -> Option<Action> {
+    let spec = Popup {
+        key: CHECKS_KEY,
+        title: text::CHECKS_TITLE,
+    };
+    let mut draft = checks::load(ui.ctx(), ctx.server);
+    let action = block_settings::popup(ui, &spec, |ui| {
+        block_settings::scrolled(ui, |ui| checks::body(ui, &mut draft, ctx.server, ctx.state));
+        checks::controls(ui, &mut draft, ctx.server)
+    })?;
+    checks::store(ui.ctx(), ctx.server, draft, action.is_some());
+    action
 }
 
 fn subpage_bar(ui: &mut Ui, subpage: &mut Subpage) {
@@ -57,5 +74,8 @@ fn subpage_bar(ui: &mut Ui, subpage: &mut Subpage) {
                 *subpage = target;
             }
         }
+        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+            block_settings::gear(ui, CHECKS_KEY);
+        });
     });
 }

@@ -1,6 +1,7 @@
-use asiba_core::{CheckExpect, CheckKind, CustomCheck, Severity};
+use asiba_core::{CheckExpect, CheckKind, CustomCheck};
 use egui::{RichText, TextEdit, Ui};
 
+use super::rows::{area_picker, weight_picker};
 use crate::components::{chip_value, help};
 use crate::text;
 use crate::theme::{FIELD_WIDTH, GAP, Palette};
@@ -75,20 +76,13 @@ fn expectation(ui: &mut Ui, check: &mut CustomCheck, p: &Palette) {
 }
 
 fn outcome_row(ui: &mut Ui, check: &mut CustomCheck, p: &Palette) {
+    let id = check.id.clone();
     ui.horizontal_wrapped(|ui| {
-        ui.label(RichText::new(text::CHECK_SEVERITY).color(p.text_secondary));
-        chip_value(
-            ui,
-            &mut check.severity,
-            Severity::Warning,
-            text::SEVERITY_WARNING,
-        );
-        chip_value(
-            ui,
-            &mut check.severity,
-            Severity::Critical,
-            text::SEVERITY_CRITICAL,
-        );
+        ui.label(RichText::new(text::CHECK_AREA).color(p.text_secondary));
+        area_picker(ui, &id, &mut check.area);
+        ui.add_space(GAP);
+        ui.label(RichText::new(text::CHECK_WEIGHT).color(p.text_secondary));
+        weight_picker(ui, &id, &mut check.weight);
         ui.add_space(GAP);
         ui.checkbox(&mut check.as_root, text::CHECK_AS_ROOT);
     });

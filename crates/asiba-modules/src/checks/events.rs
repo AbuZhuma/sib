@@ -21,7 +21,7 @@ fn change(previous: &ChecksSnapshot, result: &CheckResult) -> Option<Event> {
     match result.outcome {
         CheckOutcome::Failed => Some(Event::new(
             ID,
-            result.check.severity,
+            result.check.weight.severity(),
             failed_message(result),
         )),
         CheckOutcome::Passed if before == CheckOutcome::Failed => Some(Event::new(

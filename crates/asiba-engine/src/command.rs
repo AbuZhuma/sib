@@ -2,9 +2,9 @@ use std::time::Duration;
 
 use asiba_config::AiConfig;
 use asiba_core::{
-    ActionRecord, ActionRequest, AuditReport, AuditScope, AuditTarget, Availability, Credentials,
-    CustomCheck, IgnoredIncident, Incident, Intervals, ModuleId, QueryRequest, QueryResponse,
-    Retention, ServerId, ServerSpec, Snapshot, TransportError,
+    ActionRecord, ActionRequest, AuditReport, AuditScope, AuditTarget, Availability,
+    CheckOverrides, Credentials, CustomCheck, IgnoredIncident, Incident, Intervals, ModuleId,
+    QueryRequest, QueryResponse, Retention, ServerId, ServerSpec, Snapshot, TransportError,
 };
 use asiba_transport::HostKeyPolicy;
 use chrono::{DateTime, Utc};
@@ -56,6 +56,7 @@ pub enum Command {
     SetServerChecks {
         server: ServerId,
         checks: Vec<CustomCheck>,
+        overrides: CheckOverrides,
     },
     Audit {
         target: AuditTarget,

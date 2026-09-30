@@ -2,7 +2,7 @@ use asiba_core::{AppState, ServerState};
 use egui::{Button, Id, RichText, Ui};
 
 use super::draft::Draft;
-use super::{editor, import, list};
+use super::{editor, import, rows};
 use crate::components::{help, panel_plain};
 use crate::pages::Action;
 use crate::text;
@@ -31,7 +31,9 @@ pub fn body(ui: &mut Ui, draft: &mut Draft, server: &ServerState, state: &AppSta
         });
         ui.add_space(GAP);
     }
-    list::show(ui, draft);
+    rows::area_filter(ui, draft);
+    ui.add_space(GAP);
+    rows::show(ui, draft);
     ui.add_space(GAP);
     open_editor(ui, draft);
 }
@@ -75,6 +77,7 @@ pub fn controls(ui: &mut Ui, draft: &mut Draft, server: &ServerState) -> Option<
             action = Some(Action::SaveServerChecks {
                 server: server.spec.id.clone(),
                 checks: draft.checks.clone(),
+                overrides: draft.saved_overrides(),
             });
         }
         help(ui, text::CHECKS_HINT);

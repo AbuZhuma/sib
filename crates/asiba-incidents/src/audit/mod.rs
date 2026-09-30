@@ -18,6 +18,15 @@ pub fn patterns() -> impl Iterator<Item = &'static Pattern> {
     patterns::all()
 }
 
+fn apply_overrides(checks: &mut Vec<AuditCheck>, overrides: &asiba_core::CheckOverrides) {
+    checks.retain(|check| overrides.get(&check.id).is_none_or(|value| value.enabled));
+    for check in checks {
+        if let Some(weight) = overrides.get(&check.id).and_then(|value| value.weight) {
+            check.weight = weight;
+        }
+    }
+}
+
 pub fn system_audit(server: &ServerState, state: &AppState) -> SystemAudit {
     let context = AuditContext { server, state };
     let mut checks: Vec<AuditCheck> = patterns::all()
@@ -28,6 +37,7 @@ pub fn system_audit(server: &ServerState, state: &AppState) -> SystemAudit {
         })
         .collect();
     checks.extend(custom::checks(server));
+    apply_overrides(&mut checks, &server.spec.check_overrides);
     checks.sort_by_key(|c| (c.area, std::cmp::Reverse(c.outcome)));
     SystemAudit { checks }
 }
@@ -53,6 +63,7 @@ mod tests {
             location: None,
             modules: Default::default(),
             checks: Vec::new(),
+            check_overrides: Default::default(),
         })
     }
 
@@ -69,6 +80,38 @@ mod tests {
             assert!(!pattern.description.is_empty(), "{}", pattern.id);
             assert!(!pattern.advice.is_empty(), "{}", pattern.id);
         }
+    }
+
+    #[test]
+    fn disabled_pattern_is_dropped_and_weight_override_is_applied() {
+        let mut server = bare_server("deploy");
+        let id = patterns::all()
+            .find(|p| p.area == Area::Collection)
+            .map(|p| p.id.to_owned())
+            .expect("pattern");
+        server.spec.check_overrides.insert(
+            id.clone(),
+            asiba_core::CheckOverride {
+                enabled: true,
+                weight: Some(Weight::Low),
+            },
+        );
+        let audit = system_audit(&server, &AppState::default());
+        assert!(
+            audit
+                .checks
+                .iter()
+                .any(|c| c.id == id && c.weight == Weight::Low)
+        );
+        server.spec.check_overrides.insert(
+            id.clone(),
+            asiba_core::CheckOverride {
+                enabled: false,
+                weight: None,
+            },
+        );
+        let audit = system_audit(&server, &AppState::default());
+        assert!(audit.checks.iter().all(|c| c.id != id));
     }
 
     #[test]

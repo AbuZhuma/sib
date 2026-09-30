@@ -159,9 +159,11 @@ impl Engine {
                 credentials,
             } => self.update(previous, spec, credentials).await,
             Command::RemoveServer(id) => self.remove(id).await,
-            Command::SetServerChecks { server, checks } => {
-                self.set_server_checks(server, checks).await;
-            }
+            Command::SetServerChecks {
+                server,
+                checks,
+                overrides,
+            } => self.set_server_checks(server, checks, overrides).await,
             Command::Reconnect(id) => self.restart(&id, HostKeyPolicy::KnownHostsOnly),
             Command::TrustHostKey {
                 server,

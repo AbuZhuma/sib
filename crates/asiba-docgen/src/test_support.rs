@@ -16,5 +16,6 @@ pub fn server() -> ServerState {
         location: None,
         modules: Default::default(),
         checks: Vec::new(),
+        check_overrides: Default::default(),
     })
 }

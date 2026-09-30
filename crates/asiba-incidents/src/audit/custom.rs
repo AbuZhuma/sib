@@ -1,9 +1,9 @@
-use asiba_core::{CheckKind, CustomCheck, ServerState, Severity};
+use asiba_core::{CheckKind, CustomCheck, ServerState};
 use asiba_modules::checks::{self, CheckOutcome, CheckResult, ChecksSnapshot};
 
 use super::check::AuditCheck;
 use super::evidence::{Evidence, TAB_CHECKS};
-use super::pattern::{Area, Outcome, Weight};
+use super::pattern::Outcome;
 
 const PASSED: &str = "проверка пройдена";
 const SOURCE_LIMIT: usize = 200;
@@ -19,10 +19,10 @@ fn to_check(result: &CheckResult) -> AuditCheck {
     AuditCheck {
         id: result.check.id.clone(),
         instance: None,
-        area: Area::Custom,
+        area: result.check.area,
         subject: result.check.name.clone(),
         description: description(&result.check),
-        weight: weight(result.check.severity),
+        weight: result.check.weight,
         outcome: outcome(result.outcome),
         detail: detail(result),
         advice: result.check.advice.clone(),
@@ -41,14 +41,6 @@ fn description(check: &CustomCheck) -> String {
         CheckKind::RemoteFile => "Своя проверка, скрипт на сервере:",
     };
     format!("{prefix} {source}")
-}
-
-fn weight(severity: Severity) -> Weight {
-    match severity {
-        Severity::Critical => Weight::High,
-        Severity::Warning => Weight::Medium,
-        Severity::Info => Weight::Low,
-    }
 }
 
 fn outcome(outcome: CheckOutcome) -> Outcome {
@@ -73,7 +65,8 @@ fn detail(result: &CheckResult) -> String {
 #[cfg(test)]
 mod tests {
     use asiba_core::{
-        AuthMethod, Availability, ModuleState, ServerId, ServerSpec, Snapshot, SudoMode,
+        Area, AuthMethod, Availability, ModuleState, ServerId, ServerSpec, Snapshot, SudoMode,
+        Weight,
     };
     use chrono::Utc;
 
@@ -100,6 +93,7 @@ mod tests {
             location: None,
             modules: Default::default(),
             checks: Vec::new(),
+            check_overrides: Default::default(),
         })
     }
 
@@ -107,7 +101,7 @@ mod tests {
         CheckResult {
             check: CustomCheck {
                 name: "Сертификат".to_owned(),
-                severity: Severity::Critical,
+                weight: Weight::High,
                 advice: "продлить".to_owned(),
                 source: "openssl x509 -checkend 604800".to_owned(),
                 ..CustomCheck::new("custom:1")

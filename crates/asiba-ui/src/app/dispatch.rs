@@ -105,9 +105,16 @@ impl AsibaApp {
                 self.engine.send(Command::SetGeolocation(enabled));
                 self.save_config();
             }
-            Action::SaveServerChecks { server, checks } => {
-                self.engine
-                    .send(Command::SetServerChecks { server, checks });
+            Action::SaveServerChecks {
+                server,
+                checks,
+                overrides,
+            } => {
+                self.engine.send(Command::SetServerChecks {
+                    server,
+                    checks,
+                    overrides,
+                });
             }
             Action::SaveCollection {
                 intervals,
