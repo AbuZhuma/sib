@@ -1,4 +1,5 @@
 mod anomalies;
+mod checks;
 mod cpu;
 mod deploy;
 mod disk;
@@ -41,11 +42,12 @@ pub enum Tab {
     Deploy,
     Git,
     Gpu,
+    Checks,
     Files,
 }
 
 impl Tab {
-    pub const ALL: [Tab; 15] = [
+    pub const ALL: [Tab; 16] = [
         Tab::Summary,
         Tab::Processes,
         Tab::Resources,
@@ -60,6 +62,7 @@ impl Tab {
         Tab::Deploy,
         Tab::Git,
         Tab::Gpu,
+        Tab::Checks,
         Tab::Files,
     ];
 
@@ -83,6 +86,7 @@ impl Tab {
             Tab::Deploy => "deploy",
             Tab::Git => "git",
             Tab::Gpu => "gpu",
+            Tab::Checks => "checks",
             Tab::Files => "files",
         }
     }
@@ -103,6 +107,7 @@ impl Tab {
             "deploy" => Tab::Deploy,
             "git" => Tab::Git,
             "gpu" => Tab::Gpu,
+            "checks" => Tab::Checks,
             "files" => Tab::Files,
             _ => return None,
         };
@@ -122,7 +127,7 @@ impl Tab {
             Tab::Anomalies => Some("anomalies"),
             Tab::Deploy => Some("deploy"),
             Tab::Gpu => Some("gpu"),
-            Tab::Summary | Tab::Git | Tab::Files => None,
+            Tab::Summary | Tab::Git | Tab::Files | Tab::Checks => None,
         }
     }
 
@@ -147,6 +152,7 @@ impl Tab {
             Tab::Deploy => text::TAB_DEPLOY,
             Tab::Git => text::TAB_GIT,
             Tab::Gpu => text::TAB_GPU,
+            Tab::Checks => text::TAB_CHECKS,
             Tab::Files => text::TAB_FILES,
         }
     }
@@ -232,6 +238,7 @@ pub fn all() -> Vec<Box<dyn ModuleView>> {
         Box::new(deploy::DeployView),
         Box::new(git::GitView),
         Box::new(gpu::GpuView),
+        Box::new(checks::ChecksView),
     ]
 }
 
@@ -258,6 +265,7 @@ pub fn short_label(id: ModuleId) -> &'static str {
         "deploy" => "dpl",
         "git" => "git",
         "gpu" => "gpu",
+        "checks" => "chk",
         "files" => "fil",
         other => other,
     }

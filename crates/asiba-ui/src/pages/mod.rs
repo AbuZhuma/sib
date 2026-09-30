@@ -1,6 +1,7 @@
 pub mod ai_settings;
 pub mod alert_rules;
 pub mod alerts;
+pub mod checks;
 pub mod collection_settings;
 pub mod inspector;
 pub mod journal;
@@ -13,8 +14,8 @@ pub mod settings;
 
 use asiba_config::{AiConfig, ThemeChoice};
 use asiba_core::{
-    ActionRequest, ActionSpec, AlertRule, AuditScope, AuditTarget, Credentials, IgnoredIncident,
-    Intervals, ModuleId, QueryRequest, Retention, ServerId, ServerSpec,
+    ActionRequest, ActionSpec, AlertRule, AuditScope, AuditTarget, Credentials, CustomCheck,
+    IgnoredIncident, Intervals, ModuleId, QueryRequest, Retention, ServerId, ServerSpec,
 };
 use asiba_engine::TestRequest;
 use chrono::{DateTime, Utc};
@@ -88,6 +89,7 @@ pub enum Action {
         intervals: Intervals,
         retention: Retention,
     },
+    SaveChecks(Vec<CustomCheck>),
     SaveAiConfig(AiConfig),
     Audit {
         target: AuditTarget,

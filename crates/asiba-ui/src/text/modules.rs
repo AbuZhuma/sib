@@ -297,3 +297,13 @@ pub const PLOT_ANOM_PPS: &str = "Пакетов в секунду";
 pub const PLOT_GPU_UTIL: &str = "Загрузка GPU";
 pub const PLOT_GPU_MEM: &str = "Память GPU";
 pub const PLOT_GPU_TEMP: &str = "Температура GPU";
+
+pub const TAB_CHECKS: &str = "Проверки";
+pub const MODULE_CHECKS: &str = "Свои проверки";
+pub const CHECK_OUTCOME: &str = "Итог";
+pub const CHECK_PASSED: &str = "пройдена";
+pub const CHECK_FAILED: &str = "не пройдена";
+pub const CHECK_SKIPPED: &str = "пропущена";
+pub const CHECK_EXIT_CODE: &str = "код";
+pub const CHECK_NO_OUTPUT: &str = "вывода нет";
+pub const CHECK_EMPTY: &str = "Проверки ещё не выполнялись";

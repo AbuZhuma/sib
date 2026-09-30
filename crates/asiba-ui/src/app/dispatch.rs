@@ -27,6 +27,7 @@ impl AsibaApp {
             | Action::SetGeolocation(_)
             | Action::SaveCollection { .. }
             | Action::SaveAlertSettings { .. }
+            | Action::SaveChecks(_)
             | Action::SaveAiConfig(_) => self.apply_settings(action, ctx),
             Action::AcknowledgeAlert(_)
             | Action::MuteAlert { .. }
@@ -102,6 +103,11 @@ impl AsibaApp {
             Action::SetGeolocation(enabled) => {
                 self.config.geolocation = enabled;
                 self.engine.send(Command::SetGeolocation(enabled));
+                self.save_config();
+            }
+            Action::SaveChecks(checks) => {
+                self.config.checks = checks.clone();
+                self.engine.send(Command::SetChecks(checks));
                 self.save_config();
             }
             Action::SaveCollection {
