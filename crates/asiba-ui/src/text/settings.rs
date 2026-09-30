@@ -1,6 +1,5 @@
 pub const SETTINGS_TITLE: &str = "Настройки";
-pub const SETTINGS_SECTION_PATHS: &str = "Пути";
-pub const SETTINGS_SECTION_APPEARANCE: &str = "Вид";
+pub const SETTINGS_SECTION_GENERAL: &str = "Общие";
 pub const SETTINGS_SECTION_PRIVACY: &str = "Приватность";
 pub const SETTINGS_GEOLOCATION: &str =
     "Определять расположение серверов и страны адресов через ip-api.com";

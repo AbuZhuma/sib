@@ -4,10 +4,13 @@ use egui::{ComboBox, DragValue, TextEdit, Ui};
 use super::draft::Draft;
 use crate::components::{Table, chip_value};
 use crate::text;
+use crate::theme::ROW_HEIGHT;
 
-const NAME_FIELD: f32 = 170.0;
-const METRIC_FIELD: f32 = 190.0;
-const SYMBOL_FIELD: f32 = 40.0;
+const NAME_FIELD: f32 = 180.0;
+const METRIC_FIELD: f32 = 200.0;
+const SYMBOL_FIELD: f32 = 44.0;
+const NUMBER_FIELD: f32 = 64.0;
+const SEVERITY_FIELD: f32 = 96.0;
 const NUMBER_SPEED: f64 = 0.5;
 const SECONDS_SPEED: f64 = 5.0;
 
@@ -46,21 +49,27 @@ pub fn rules_table(ui: &mut Ui, draft: &mut Draft) {
 }
 
 fn fields(ui: &mut Ui, rule: &mut AlertRule) {
-    ui.add(
-        TextEdit::singleline(&mut rule.name)
-            .hint_text(text::RULE_NAME)
-            .desired_width(NAME_FIELD),
-    );
-    ui.add(
-        TextEdit::singleline(&mut rule.metric)
-            .hint_text(text::RULE_METRIC)
-            .desired_width(METRIC_FIELD),
-    );
+    text_cell(ui, &mut rule.name, text::RULE_NAME, NAME_FIELD);
+    text_cell(ui, &mut rule.metric, text::RULE_METRIC, METRIC_FIELD);
     condition_picker(ui, &rule.id, &mut rule.condition);
-    ui.add(DragValue::new(&mut rule.threshold).speed(NUMBER_SPEED));
-    ui.add(DragValue::new(&mut rule.for_secs).speed(SECONDS_SPEED));
+    let size = [NUMBER_FIELD, ROW_HEIGHT];
+    ui.add_sized(
+        size,
+        DragValue::new(&mut rule.threshold).speed(NUMBER_SPEED),
+    );
+    ui.add_sized(
+        size,
+        DragValue::new(&mut rule.for_secs).speed(SECONDS_SPEED),
+    );
     severity_picker(ui, &rule.id, &mut rule.severity);
     ui.checkbox(&mut rule.enabled, "");
+}
+
+fn text_cell(ui: &mut Ui, value: &mut String, hint: &str, width: f32) {
+    ui.add_sized(
+        [width, ROW_HEIGHT],
+        TextEdit::singleline(value).hint_text(hint),
+    );
 }
 
 fn row_button(ui: &mut Ui, rule: &AlertRule, defaults: &[AlertRule]) -> Option<Change> {
@@ -92,6 +101,7 @@ fn condition_picker(ui: &mut Ui, id: &str, condition: &mut Condition) {
 fn severity_picker(ui: &mut Ui, id: &str, severity: &mut Severity) {
     ComboBox::from_id_salt(("rule-severity", id))
         .selected_text(severity_label(*severity))
+        .width(SEVERITY_FIELD)
         .show_ui(ui, |ui| {
             for level in [Severity::Info, Severity::Warning, Severity::Critical] {
                 chip_value(ui, severity, level, severity_label(level));
