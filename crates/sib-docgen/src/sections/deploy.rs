@@ -15,9 +15,9 @@ fn state<'a>(ctx: &'a DocContext<'_>) -> Option<&'a DeployState> {
 
 fn status_label(status: DeployStatus, english: bool) -> &'static str {
     match (status, english) {
-        (DeployStatus::InProgress, false) => "выполняется",
-        (DeployStatus::Success, false) => "успешно",
-        (DeployStatus::Failed, false) => "ошибка",
+        (DeployStatus::InProgress, false) => "running",
+        (DeployStatus::Success, false) => "ok",
+        (DeployStatus::Failed, false) => "failed",
         (DeployStatus::InProgress, true) => "in_progress",
         (DeployStatus::Success, true) => "success",
         (DeployStatus::Failed, true) => "failed",
@@ -110,28 +110,22 @@ impl Section for DeploySection {
         let Some(state) = state(ctx) else {
             return;
         };
-        heading(out, "Деплой");
+        heading(out, "Deploys");
         if let Some(runner) = runner_label(state) {
-            line(out, format!("Раннер: {runner}\n"));
+            line(out, format!("Runner: {runner}\n"));
         }
         table(
             out,
             &[
-                "Статус",
-                "Проект",
-                "Источник",
-                "Начало",
-                "Конец",
-                "Стадии",
-                "Детали",
+                "Status", "Project", "Source", "Started", "Ended", "Stages", "Details",
             ],
             &rows(state, false),
         );
         if !state.compose_events.is_empty() {
-            line(out, "Последние события compose:\n");
+            line(out, "Recent compose events:\n");
             table(
                 out,
-                &["Время", "Проект", "Контейнер", "Событие", "Код"],
+                &["Time", "Project", "Container", "Event", "Code"],
                 &compose_rows(state),
             );
         }

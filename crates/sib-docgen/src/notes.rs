@@ -29,9 +29,9 @@ mod tests {
 
     #[test]
     fn merge_keeps_manual_notes_from_existing_file() {
-        let existing = "old\n<!-- notes:start -->\nмои заметки\n<!-- notes:end -->\nold body";
+        let existing = "old\n<!-- notes:start -->\nmy notes\n<!-- notes:end -->\nold body";
         let result = merge_notes(Some(existing), "{{notes}}\nnew body");
-        assert!(result.contains("\nмои заметки\n"));
+        assert!(result.contains("\nmy notes\n"));
         assert!(result.ends_with("new body"));
     }
 }

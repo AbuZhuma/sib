@@ -51,18 +51,18 @@ impl Section for ProcessesSection {
             return;
         };
         let (total, running, zombies) = counts(snapshot);
-        heading(out, "Процессы");
+        heading(out, "Processes");
         out.push_str(&format!(
-            "Всего {total}, выполняются {running}, зомби {zombies}.\n\n"
+            "Total {total}, running {running}, zombies {zombies}.\n\n"
         ));
-        let headers = ["PID", "Пользователь", "CPU %", "RSS", "Сост.", "Команда"];
-        subheading(out, "Топ по CPU");
+        let headers = ["PID", "User", "CPU %", "RSS", "State", "Command"];
+        subheading(out, "Top by CPU");
         table(
             out,
             &headers,
             &top_by(snapshot, |p| p.cpu_pct.unwrap_or(0.0)),
         );
-        subheading(out, "Топ по памяти");
+        subheading(out, "Top by memory");
         table(out, &headers, &top_by(snapshot, |p| p.rss_bytes as f64));
     }
 

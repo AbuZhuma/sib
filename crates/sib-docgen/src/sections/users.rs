@@ -85,23 +85,23 @@ impl Section for UsersSection {
         let Some(snapshot) = snapshot(ctx) else {
             return;
         };
-        heading(out, "Пользователи");
-        subheading(out, "Активные сессии");
+        heading(out, "Users");
+        subheading(out, "Active sessions");
         table(
             out,
-            &["Пользователь", "TTY", "Откуда", "С"],
+            &["User", "TTY", "From", "Since"],
             &session_rows(snapshot),
         );
-        subheading(out, "Последние входы");
+        subheading(out, "Recent logins");
         table(
             out,
-            &["Пользователь", "Откуда", "Когда", "Сессия"],
+            &["User", "From", "When", "Session"],
             &login_rows(snapshot),
         );
-        subheading(out, "Учётные записи с shell");
+        subheading(out, "Accounts with a shell");
         table(
             out,
-            &["Имя", "UID", "Shell", "Sudo", "Ключей"],
+            &["Name", "UID", "Shell", "Sudo", "Keys"],
             &account_rows(snapshot),
         );
     }

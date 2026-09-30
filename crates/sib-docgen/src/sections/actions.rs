@@ -42,11 +42,11 @@ impl Section for ActionsSection {
     }
 
     fn human(&self, out: &mut String, ctx: &DocContext<'_>) {
-        heading(out, "Журнал действий");
+        heading(out, "Action journal");
         let rows: Vec<Vec<String>> = records(ctx).into_iter().map(row).collect();
         table(
             out,
-            &["Время", "Действие", "Цель", "Результат", "Сообщение"],
+            &["Time", "Action", "Target", "Result", "Message"],
             &rows,
         );
     }

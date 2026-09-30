@@ -78,26 +78,26 @@ impl Section for LogsSection {
         let Some(snapshot) = snapshot(ctx) else {
             return;
         };
-        heading(out, "Журнал");
+        heading(out, "Journal");
         bullet(
             out,
-            "Ошибок за час",
+            "Errors in an hour",
             snapshot.count_since(HOUR, PRIORITY_ERROR).to_string(),
         );
         bullet(
             out,
-            "Предупреждений за час",
+            "Warnings in an hour",
             snapshot.count_since(HOUR, PRIORITY_WARNING).to_string(),
         );
         bullet(
             out,
-            "Ошибок в минуту",
+            "Errors per minute",
             format!("{:.2}", snapshot.rate_per_minute(PRIORITY_ERROR)),
         );
         blank(out);
         table(
             out,
-            &["Повторов", "Источник", "Уровень", "Последний", "Сообщение"],
+            &["Repeats", "Source", "Level", "Last", "Message"],
             &group_rows(snapshot),
         );
     }

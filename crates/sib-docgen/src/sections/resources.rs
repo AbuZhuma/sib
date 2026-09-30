@@ -19,27 +19,27 @@ type Formatter = fn(f64) -> String;
 const METRICS: [(&str, &str, &str, Formatter); 8] = [
     ("CPU", "cpu_total_pct", cpu::KEY_TOTAL, percent),
     ("CPU iowait", "cpu_iowait_pct", cpu::KEY_IOWAIT, percent),
-    ("Память", "memory_used_pct", memory::KEY_USED_PCT, percent),
+    ("Memory", "memory_used_pct", memory::KEY_USED_PCT, percent),
     ("Swap", "swap_used_pct", memory::KEY_SWAP_USED_PCT, percent),
     (
-        "Диск /",
+        "Disk /",
         "disk_root_used_pct",
         disk::KEY_ROOT_USED_PCT,
         percent,
     ),
     (
-        "Сеть RX",
+        "Network RX",
         "network_rx",
         network::KEY_RX_BPS,
         bytes_per_second,
     ),
     (
-        "Сеть TX",
+        "Network TX",
         "network_tx",
         network::KEY_TX_BPS,
         bytes_per_second,
     ),
-    ("Процессов", "process_count", processes::KEY_COUNT, count),
+    ("Processes", "process_count", processes::KEY_COUNT, count),
 ];
 
 fn count(value: f64) -> String {
@@ -110,15 +110,15 @@ fn interface_rows(snapshot: &NetworkSnapshot) -> Vec<Vec<String>> {
 
 fn memory_rows(snapshot: &MemorySnapshot) -> Vec<(&'static str, &'static str, String)> {
     let mut rows = vec![
-        ("Занято", "used", bytes(snapshot.used_bytes())),
-        ("Доступно", "available", bytes(snapshot.available_bytes)),
-        ("Кэш", "cached", bytes(snapshot.cached_bytes)),
-        ("Swap занят", "swap_used", bytes(snapshot.swap_used_bytes())),
+        ("Used", "used", bytes(snapshot.used_bytes())),
+        ("Available", "available", bytes(snapshot.available_bytes)),
+        ("Cache", "cached", bytes(snapshot.cached_bytes)),
+        ("Swap used", "swap_used", bytes(snapshot.swap_used_bytes())),
         ("OOM kills", "oom_kills", snapshot.oom_kills.to_string()),
     ];
     if let Some(pressure) = snapshot.pressure {
         rows.push((
-            "Давление (some avg10)",
+            "Pressure (some avg10)",
             "pressure_some_avg10",
             format!("{:.1}", pressure.some.avg10),
         ));
@@ -130,7 +130,7 @@ fn human_memory(out: &mut String, ctx: &DocContext<'_>) {
     let Some(memory) = ctx.server.data::<MemorySnapshot>(memory::ID) else {
         return;
     };
-    subheading(out, "Память");
+    subheading(out, "Memory");
     for (label, _, value) in memory_rows(memory) {
         bullet(out, label, value);
     }
@@ -141,15 +141,8 @@ fn human_filesystems(out: &mut String, ctx: &DocContext<'_>) {
     let Some(disk) = ctx.server.data::<DiskSnapshot>(disk::ID) else {
         return;
     };
-    subheading(out, "Файловые системы");
-    let columns = [
-        "Точка",
-        "Устройство",
-        "Занято",
-        "Использовано",
-        "Всего",
-        "Inodes",
-    ];
+    subheading(out, "File systems");
+    let columns = ["Mount", "Device", "Used", "Used", "Total", "Inodes"];
     table(out, &columns, &filesystem_rows(disk));
 }
 
@@ -157,15 +150,15 @@ fn human_interfaces(out: &mut String, ctx: &DocContext<'_>) {
     let Some(net) = ctx.server.data::<NetworkSnapshot>(network::ID) else {
         return;
     };
-    subheading(out, "Интерфейсы");
+    subheading(out, "Interfaces");
     let columns = [
-        "Интерфейс",
-        "Состояние",
-        "Адреса",
+        "Interface",
+        "State",
+        "Addresses",
         "RX",
         "TX",
-        "Ошибки",
-        "Потери",
+        "Errors",
+        "Drops",
     ];
     table(out, &columns, &interface_rows(net));
 }
@@ -180,16 +173,11 @@ impl Section for ResourcesSection {
     }
 
     fn human(&self, out: &mut String, ctx: &DocContext<'_>) {
-        heading(out, "Ресурсы");
+        heading(out, "Resources");
         table(
             out,
             &[
-                "Метрика",
-                "Сейчас",
-                "Ср. 1 ч",
-                "Макс 1 ч",
-                "Ср. 24 ч",
-                "Макс 24 ч",
+                "Metric", "Now", "Avg 1 h", "Max 1 h", "Avg 24 h", "Max 24 h",
             ],
             &metric_rows(ctx, false),
         );

@@ -56,14 +56,14 @@ impl Section for ServicesSection {
             return;
         };
         let (total, active, failed) = summary(snapshot);
-        heading(out, "Сервисы systemd");
+        heading(out, "systemd services");
         out.push_str(&format!(
-            "Юнитов {total}, активных {active}, упавших {failed}. Показаны пользовательские и упавшие.\n\n"
+            "Units {total}, active {active}, failed {failed}. Custom and failed ones are shown.\n\n"
         ));
         let rows: Vec<Vec<String>> = shown(snapshot).into_iter().map(row).collect();
         table(
             out,
-            &["Юнит", "Состояние", "Перезапусков", "Активен с", "Описание"],
+            &["Unit", "State", "Restarts", "Active since", "Description"],
             &rows,
         );
     }

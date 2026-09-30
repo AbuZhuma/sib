@@ -37,9 +37,9 @@ impl Section for EventsSection {
     }
 
     fn human(&self, out: &mut String, ctx: &DocContext<'_>) {
-        heading(out, "Последние события");
+        heading(out, "Recent events");
         let rows: Vec<Vec<String>> = events(ctx).into_iter().map(row).collect();
-        table(out, &["Время", "Уровень", "Модуль", "Сообщение"], &rows);
+        table(out, &["Time", "Level", "Module", "Message"], &rows);
     }
 
     fn llm(&self, out: &mut String, ctx: &DocContext<'_>) {

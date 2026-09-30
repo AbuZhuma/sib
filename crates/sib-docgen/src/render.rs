@@ -4,7 +4,7 @@ use crate::section::{DocContext, Section, SectionId};
 use crate::sections;
 use crate::write;
 
-const HUMAN_STAMP: &str = "_Обновлено:";
+const HUMAN_STAMP: &str = "_Updated:";
 const LLM_STAMP: &str = "generated_at:";
 
 pub fn render_human(ctx: &DocContext<'_>) -> String {
@@ -83,9 +83,9 @@ mod tests {
         let state = AppState::default();
         let server = server();
         let text = render_human(&DocContext::new(&server, &state));
-        assert!(text.starts_with("# neo\n\n{{notes}}\n\n## Что требует внимания\n"));
-        assert!(text.contains("## Описание\n"));
-        assert!(text.contains("Проект: Shop"));
+        assert!(text.starts_with("# neo\n\n{{notes}}\n\n## What needs attention\n"));
+        assert!(text.contains("## Description\n"));
+        assert!(text.contains("Project: Shop"));
         assert!(!text.contains("## Docker"));
     }
 
@@ -104,7 +104,7 @@ mod tests {
         let state = AppState::default();
         let server = server();
         let ctx = DocContext::new(&server, &state);
-        assert!(!strip_timestamp(&render_human(&ctx)).contains("_Обновлено"));
+        assert!(!strip_timestamp(&render_human(&ctx)).contains("_Updated"));
         assert!(!strip_timestamp(&render_llm(&ctx)).contains("generated_at"));
     }
 }

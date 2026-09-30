@@ -61,24 +61,17 @@ impl Section for AlertsSection {
     }
 
     fn human(&self, out: &mut String, ctx: &DocContext<'_>) {
-        heading(out, "Алерты");
-        let headers = [
-            "Уровень",
-            "Правило",
-            "Сообщение",
-            "Начало",
-            "Конец",
-            "Статус",
-        ];
+        heading(out, "Alerts");
+        let headers = ["Level", "Rule", "Message", "Started", "Ended", "Status"];
         let active: Vec<Vec<String>> = active(ctx).into_iter().map(row).collect();
         if active.is_empty() {
-            out.push_str("Активных алертов нет.\n\n");
+            out.push_str("No active alerts.\n\n");
         } else {
             table(out, &headers, &active);
         }
         let resolved: Vec<Vec<String>> = resolved(ctx).into_iter().map(row).collect();
         if !resolved.is_empty() {
-            out.push_str("Недавно закрытые:\n\n");
+            out.push_str("Recently closed:\n\n");
             table(out, &headers, &resolved);
         }
     }

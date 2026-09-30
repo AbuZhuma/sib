@@ -20,9 +20,9 @@ fn severity_name(severity: Severity) -> &'static str {
 
 fn headline(snapshot: &AnomaliesSnapshot, english: bool) -> &'static str {
     match (snapshot.is_under_attack(), snapshot.has_signs(), english) {
-        (true, _, false) => "АТАКА",
-        (false, true, false) => "подозрительно",
-        (false, false, false) => "признаков атаки нет",
+        (true, _, false) => "ATTACK",
+        (false, true, false) => "suspicious",
+        (false, false, false) => "no attack signs",
         (true, _, true) => "UNDER ATTACK",
         (false, true, true) => "suspicious",
         (false, false, true) => "calm",
@@ -38,28 +38,22 @@ fn rate(value: Option<f64>) -> String {
 type RateField = fn(&Rates) -> f64;
 
 const RATE_ROWS: [(&str, &str, RateField); 5] = [
-    (
-        "Новых соединений/с",
-        "new_connections_per_s",
-        |r| r.new_connections,
-    ),
-    (
-        "Неудачных соединений/с",
-        "failed_connections_per_s",
-        |r| r.failed_connections,
-    ),
-    ("SYN cookies/с", "syncookies_per_s", |r| r.syncookies),
-    ("Сбросов accept/с", "listen_drops_per_s", |r| {
-        r.listen_drops
+    ("New connections/s", "new_connections_per_s", |r| {
+        r.new_connections
     }),
-    ("UDP/с", "udp_per_s", |r| r.udp_in),
+    ("Failed connections/s", "failed_connections_per_s", |r| {
+        r.failed_connections
+    }),
+    ("SYN cookies/s", "syncookies_per_s", |r| r.syncookies),
+    ("Accept drops/s", "listen_drops_per_s", |r| r.listen_drops),
+    ("UDP/s", "udp_per_s", |r| r.udp_in),
 ];
 
 fn counters(snapshot: &AnomaliesSnapshot) -> Vec<(&'static str, &'static str, String)> {
     let rates = snapshot.rates;
     let mut rows = connection_rows(snapshot);
     rows.push((
-        "Пакетов/с in / out",
+        "Packets/s in / out",
         "packets_per_s_in_out",
         format!(
             "{} / {}",
@@ -71,7 +65,7 @@ fn counters(snapshot: &AnomaliesSnapshot) -> Vec<(&'static str, &'static str, St
         rows.push((label, key, rate(rates.as_ref().map(field))));
     }
     rows.push((
-        "Доля топ-10 адресов",
+        "Share of top 10 addresses",
         "top10_share_pct",
         format!("{:.0}%", snapshot.top_share_pct()),
     ));
@@ -84,17 +78,17 @@ fn counters(snapshot: &AnomaliesSnapshot) -> Vec<(&'static str, &'static str, St
 fn connection_rows(snapshot: &AnomaliesSnapshot) -> Vec<(&'static str, &'static str, String)> {
     vec![
         (
-            "Полуоткрытых (SYN-RECV)",
+            "Half-open (SYN-RECV)",
             "syn_recv",
             snapshot.syn_recv().to_string(),
         ),
         (
-            "Установлено",
+            "Established",
             "established",
             snapshot.established().to_string(),
         ),
         (
-            "Уникальных адресов",
+            "Unique addresses",
             "distinct_peers",
             snapshot.distinct_peers.to_string(),
         ),
@@ -151,8 +145,8 @@ impl Section for AnomaliesSection {
         let Some(snapshot) = snapshot(ctx) else {
             return;
         };
-        heading(out, "Аномалии и DDoS");
-        bullet(out, "Состояние", headline(snapshot, false));
+        heading(out, "Anomalies and DDoS");
+        bullet(out, "State", headline(snapshot, false));
         for (label, _, value) in counters(snapshot) {
             bullet(out, label, value);
         }
@@ -160,13 +154,13 @@ impl Section for AnomaliesSection {
         if !snapshot.signs.is_empty() {
             table(
                 out,
-                &["Уровень", "Признак", "Детали", "IP"],
+                &["Level", "Sign", "Details", "IP"],
                 &sign_rows(snapshot),
             );
         }
         table(
             out,
-            &["IP", "Страна", "Соединений", "SYN-RECV", "Пометка"],
+            &["IP", "Country", "Connections", "SYN-RECV", "Note"],
             &peer_rows(snapshot, ctx),
         );
     }

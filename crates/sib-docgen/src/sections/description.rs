@@ -26,24 +26,24 @@ fn rows(ctx: &DocContext<'_>) -> Vec<(&'static str, &'static str, String)> {
     let spec = &ctx.server.spec;
     let d = &spec.description;
     let mut rows = vec![
-        ("Проект", "project", d.project.clone()),
-        ("Назначение", "purpose", d.purpose.clone()),
+        ("Project", "project", d.project.clone()),
+        ("Purpose", "purpose", d.purpose.clone()),
         (
-            "Окружение",
+            "Environment",
             "environment",
             environment_key(d.environment).to_owned(),
         ),
-        ("Ответственный", "owner", d.owner.clone()),
-        ("Теги", "tags", d.tags.join(", ")),
-        ("Ссылки", "links", d.links.join(", ")),
+        ("Owner", "owner", d.owner.clone()),
+        ("Tags", "tags", d.tags.join(", ")),
+        ("Links", "links", d.links.join(", ")),
         (
-            "Адрес",
+            "Address",
             "address",
             format!("{}@{}:{}", spec.user, spec.host, spec.port),
         ),
     ];
     if let Some(location) = &ctx.server.location {
-        rows.push(("Расположение", "location", location_label(location)));
+        rows.push(("Location", "location", location_label(location)));
     }
     rows.into_iter().filter(|(_, _, v)| !v.is_empty()).collect()
 }
@@ -58,7 +58,7 @@ impl Section for DescriptionSection {
     }
 
     fn human(&self, out: &mut String, ctx: &DocContext<'_>) {
-        heading(out, "Описание");
+        heading(out, "Description");
         for (label, _, value) in rows(ctx) {
             bullet(out, label, value);
         }

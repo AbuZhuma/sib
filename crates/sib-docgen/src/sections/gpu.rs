@@ -47,12 +47,12 @@ impl Section for GpuSection {
             out,
             &[
                 "#",
-                "Модель",
-                "Загрузка",
-                "Память",
-                "Темп.",
-                "Мощность",
-                "Процессов",
+                "Model",
+                "Load",
+                "Memory",
+                "Temp.",
+                "Power",
+                "Processes",
             ],
             &rows(snapshot),
         );

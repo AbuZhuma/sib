@@ -8,9 +8,9 @@ pub struct FindingsSection;
 
 fn severity_label(severity: Severity) -> &'static str {
     match severity {
-        Severity::Critical => "критично",
-        Severity::Warning => "внимание",
-        Severity::Info => "к сведению",
+        Severity::Critical => "critical",
+        Severity::Warning => "warning",
+        Severity::Info => "info",
     }
 }
 
@@ -23,7 +23,7 @@ fn drafts(ctx: &DocContext<'_>) -> Vec<IncidentDraft> {
                 sib_core::IncidentKind::Alert,
                 Severity::Critical,
                 "offline",
-                "Сервер недоступен",
+                "Server is offline",
             ),
         );
     }
@@ -40,10 +40,10 @@ impl Section for FindingsSection {
     }
 
     fn human(&self, out: &mut String, ctx: &DocContext<'_>) {
-        heading(out, "Что требует внимания");
+        heading(out, "What needs attention");
         let drafts = drafts(ctx);
         if drafts.is_empty() {
-            line(out, "Проблем не обнаружено.\n");
+            line(out, "No problems found.\n");
             return;
         }
         for draft in drafts {

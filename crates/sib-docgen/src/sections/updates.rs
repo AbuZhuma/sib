@@ -37,23 +37,23 @@ impl Section for UpdatesSection {
         let Some(snapshot) = snapshot(ctx) else {
             return;
         };
-        heading(out, "Обновления");
-        bullet(out, "Менеджер пакетов", snapshot.manager.label());
-        bullet(out, "Ожидают", snapshot.pending.to_string());
-        bullet(out, "Из них безопасность", snapshot.security.to_string());
+        heading(out, "Updates");
+        bullet(out, "Package manager", snapshot.manager.label());
+        bullet(out, "Pending", snapshot.pending.to_string());
+        bullet(out, "Security ones", snapshot.security.to_string());
         bullet(
             out,
-            "Нужна перезагрузка",
+            "Reboot needed",
             if snapshot.reboot_required {
-                "да"
+                "yes"
             } else {
-                "нет"
+                "no"
             },
         );
         let (list, hidden) = packages(snapshot);
         if !list.is_empty() {
-            bullet(out, "Пакеты", list);
-            more(out, hidden, "пакетов");
+            bullet(out, "Packages", list);
+            more(out, hidden, "packages");
         }
         blank(out);
     }

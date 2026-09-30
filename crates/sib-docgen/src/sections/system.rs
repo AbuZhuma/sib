@@ -12,8 +12,12 @@ fn info<'a>(ctx: &'a DocContext<'_>) -> Option<&'a SystemInfo> {
 fn rows(info: &SystemInfo) -> Vec<(&'static str, &'static str, String)> {
     let mut rows = vec![
         ("Hostname", "hostname", info.hostname.clone()),
-        ("ОС", "os", info.os_name.clone()),
-        ("Ядро", "kernel", format!("{} ({})", info.kernel, info.arch)),
+        ("OS", "os", info.os_name.clone()),
+        (
+            "Kernel",
+            "kernel",
+            format!("{} ({})", info.kernel, info.arch),
+        ),
         (
             "CPU",
             "cpu",
@@ -32,14 +36,14 @@ fn rows(info: &SystemInfo) -> Vec<(&'static str, &'static str, String)> {
         ),
     ];
     if let Some(virt) = &info.virtualization {
-        rows.push(("Виртуализация", "virtualization", virt.clone()));
+        rows.push(("Virtualization", "virtualization", virt.clone()));
     }
     if let Some(timezone) = &info.timezone {
-        rows.push(("Часовой пояс", "timezone", timezone.clone()));
+        rows.push(("Timezone", "timezone", timezone.clone()));
     }
     if info.clock_offset_secs.abs() > 1 {
         rows.push((
-            "Расхождение часов",
+            "Clock offset",
             "clock_offset_seconds",
             info.clock_offset_secs.to_string(),
         ));
@@ -60,7 +64,7 @@ impl Section for SystemSection {
         let Some(info) = info(ctx) else {
             return;
         };
-        heading(out, "Система");
+        heading(out, "System");
         for (label, _, value) in rows(info) {
             bullet(out, label, value);
         }

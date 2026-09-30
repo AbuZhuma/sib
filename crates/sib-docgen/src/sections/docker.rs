@@ -39,15 +39,15 @@ fn rows(snapshot: &DockerSnapshot) -> Vec<Vec<String>> {
 }
 
 const HEADERS_HUMAN: [&str; 9] = [
-    "Контейнер",
-    "Образ",
-    "Состояние",
-    "Статус",
+    "Container",
+    "Image",
+    "State",
+    "Status",
     "Health",
-    "Рестартов",
-    "Код выхода",
+    "Restarts",
+    "Exit code",
     "Compose",
-    "Порты",
+    "Ports",
 ];
 
 impl Section for DockerSection {
@@ -65,7 +65,7 @@ impl Section for DockerSection {
         };
         heading(out, &format!("Docker ({})", snapshot.version));
         out.push_str(&format!(
-            "Контейнеров {} (работают {}, остановлены {}), образов {} ({}), томов {}, сетей {}.\n\n",
+            "Containers {} ({} running, {} stopped), images {} ({}), volumes {}, networks {}.\n\n",
             snapshot.containers.len(),
             snapshot.running_count(),
             snapshot.stopped_count(),

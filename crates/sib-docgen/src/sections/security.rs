@@ -156,34 +156,34 @@ fn overview(
     audit: &SystemAudit,
 ) -> Vec<(&'static str, &'static str, String)> {
     vec![
-        ("Оценка", "score", score_label(audit)),
+        ("Score", "score", score_label(audit)),
         (
-            "Неудачных входов за 24 ч",
+            "Failed logins in 24 h",
             "failed_logins_24h",
             snapshot.failed_logins.to_string(),
         ),
         (
-            "Атакующих сейчас",
+            "Attackers now",
             "brute_force_now",
             snapshot.brute_force_count().to_string(),
         ),
-        ("Банов", "bans", snapshot.bans.len().to_string()),
+        ("Bans", "bans", snapshot.bans.len().to_string()),
         (
-            "Механизм бана",
+            "Ban backend",
             "ban_backend",
             snapshot
                 .ban_backend
                 .map(|b| b.label().to_owned())
                 .unwrap_or_else(|| "none".to_owned()),
         ),
-        ("Файрвол", "firewall", firewall_label(snapshot)),
+        ("Firewall", "firewall", firewall_label(snapshot)),
         (
             "fail2ban",
             "fail2ban",
             if snapshot.has_fail2ban { "yes" } else { "no" }.to_owned(),
         ),
         (
-            "Данные с sudo",
+            "Data collected with sudo",
             "root_view",
             snapshot.is_root_view.to_string(),
         ),
@@ -197,34 +197,34 @@ fn human_checks(out: &mut String, audit: &SystemAudit) {
             continue;
         }
         subheading(out, area.label());
-        table(out, &["Статус", "Вес", "Проверка", "Детали"], &rows);
+        table(out, &["Status", "Weight", "Check", "Details"], &rows);
     }
 }
 
 fn human_activity(out: &mut String, snapshot: &SecuritySnapshot, ctx: &DocContext<'_>) {
-    subheading(out, "Атакующие IP");
+    subheading(out, "Attacking IPs");
     let attacker_columns = [
         "IP",
-        "Страна",
-        "Ошибок",
-        "За 10 мин",
-        "Логины",
-        "Последняя",
-        "Пометки",
+        "Country",
+        "Errors",
+        "In 10 min",
+        "Logins",
+        "Last",
+        "Notes",
     ];
     table(out, &attacker_columns, &attacker_rows(snapshot, ctx));
-    subheading(out, "Баны");
-    table(out, &["IP", "Источник", "Истекает"], &ban_rows(snapshot));
-    subheading(out, "Последние входы");
+    subheading(out, "Bans");
+    table(out, &["IP", "Source", "Expires"], &ban_rows(snapshot));
+    subheading(out, "Recent logins");
     table(
         out,
-        &["Время", "Пользователь", "Откуда", "Метод"],
+        &["Time", "User", "From", "Method"],
         &login_rows(snapshot),
     );
-    subheading(out, "Вызовы sudo");
+    subheading(out, "sudo calls");
     table(
         out,
-        &["Время", "Пользователь", "Как", "Результат", "Команда"],
+        &["Time", "User", "As", "Result", "Command"],
         &sudo_rows(snapshot),
     );
 }
@@ -243,7 +243,7 @@ impl Section for SecuritySection {
             return;
         };
         let audit = system_audit(ctx.server, ctx.state);
-        heading(out, "Безопасность");
+        heading(out, "Security");
         for (label, _, value) in overview(snapshot, &audit) {
             bullet(out, label, value);
         }

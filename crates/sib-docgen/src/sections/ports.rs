@@ -23,7 +23,7 @@ fn row(port: &ListeningPort, english: bool) -> Vec<String> {
     let (yes, no) = if english {
         ("yes", "no")
     } else {
-        ("да", "нет")
+        ("yes", "no")
     };
     vec![
         port.port.to_string(),
@@ -86,18 +86,18 @@ impl Section for PortsSection {
         let Some(snapshot) = snapshot(ctx) else {
             return;
         };
-        heading(out, "Порты");
-        out.push_str(&format!("Файрвол: {}.\n\n", firewall_label(snapshot)));
+        heading(out, "Ports");
+        out.push_str(&format!("Firewall: {}.\n\n", firewall_label(snapshot)));
         table(
             out,
             &[
-                "Порт",
-                "Протокол",
-                "Адрес",
-                "Процесс",
-                "Соединений",
-                "Снаружи",
-                "В файрволе",
+                "Port",
+                "Protocol",
+                "Address",
+                "Process",
+                "Connections",
+                "From outside",
+                "In the firewall",
             ],
             &rows(snapshot, false),
         );
