@@ -13,19 +13,17 @@ const DANGLING_WARN: usize = 5;
 const DANGLING_FAIL: usize = 30;
 const NO_DATA: &str = "модуль не собрал данные";
 
-const ADVICE_FAILED_UNITS: &str = "Смотрите journalctl -u <юнит> (кнопка «журнал» на вкладке «Сервисы»), исправьте причину и перезапустите.";
+const ADVICE_FAILED_UNITS: &str = "Откройте journalctl -u <юнит> (кнопка «журнал» на вкладке «Сервисы»), устраните причину и перезапустите юнит.";
 const ADVICE_RESTARTS: &str =
-    "Юнит падает и поднимается - проверьте его журнал; частые рестарты означают скрытую ошибку.";
+    "Проверьте журнал юнита: частые перезапуски означают повторяющуюся ошибку.";
 const ADVICE_CONTAINERS_DOWN: &str =
-    "Посмотрите docker logs (кнопка «логи») и код выхода; поднимите контейнер после исправления.";
-const ADVICE_UNHEALTHY: &str =
-    "Healthcheck контейнера не проходит - проверьте зависимости (БД, сеть) и логи.";
-const ADVICE_RESTART_LOOP: &str =
-    "Контейнер в петле перезапусков - логи покажут ошибку при старте.";
-const ADVICE_NO_POLICY: &str = "Запущенные вручную контейнеры без restart policy не поднимутся после перезагрузки - задайте --restart unless-stopped или compose.";
+    "Посмотрите docker logs (кнопка «логи») и код выхода, затем запустите контейнер.";
+const ADVICE_UNHEALTHY: &str = "Проверьте зависимости контейнера (база данных, сеть) и его логи.";
+const ADVICE_RESTART_LOOP: &str = "Ошибка видна в логах контейнера при старте.";
+const ADVICE_NO_POLICY: &str = "Задайте --restart unless-stopped или опишите контейнер в compose.";
 const ADVICE_DANGLING: &str = "Старые слои занимают диск - docker image prune.";
 const ADVICE_DEPLOYS: &str =
-    "Откройте вкладку «Деплой»: там хвост лога и стадия, на которой всё упало.";
+    "Откройте вкладку «Деплой»: там стадия, на которой деплой остановился, и хвост лога.";
 
 pub static PATTERNS: &[Pattern] = &[
     Pattern {
@@ -92,7 +90,7 @@ pub static PATTERNS: &[Pattern] = &[
         id: "reliability.dangling_images",
         area: Area::Reliability,
         subject: "Висячие образы Docker",
-        description: "Образы без тега, оставшиеся после сборок и pull; занимают место и ничего не делают.",
+        description: "Образы без тега, оставшиеся после сборок и pull. Занимают место на диске.",
         weight: Weight::Low,
         advice: ADVICE_DANGLING,
         evidence: EvidenceSource::Tab(TAB_DOCKER),

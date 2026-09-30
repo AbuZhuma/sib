@@ -18,7 +18,7 @@ impl Detector for UnitsDetector {
                     Severity::Critical,
                     unit.name.clone(),
                     format!(
-                        "systemd unit {} failed (result: {}, restarts: {})",
+                        "Юнит {} в состоянии failed (result {}, перезапусков {})",
                         unit.name, unit.result, unit.restarts
                     ),
                 )

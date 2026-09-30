@@ -9,9 +9,8 @@ const ERRORS_WARN: u64 = 1;
 const ERRORS_FAIL: u64 = 1000;
 const NO_DATA: &str = "модуль не собрал данные";
 
-const ADVICE_ERRORS: &str =
-    "Ошибки и дропы на интерфейсе - проверьте кабель, драйвер, MTU и нагрузку.";
-const ADVICE_ATTACK: &str = "Признаки атаки: посмотрите вкладку «Аномалии», забаньте подозрительные адреса, включите rate limit.";
+const ADVICE_ERRORS: &str = "Проверьте кабель, драйвер, MTU и нагрузку интерфейса.";
+const ADVICE_ATTACK: &str = "Откройте вкладку «Аномалии», забаньте адреса-источники, ограничьте скорость новых подключений.";
 
 pub static PATTERNS: &[Pattern] = &[
     Pattern {
@@ -28,7 +27,7 @@ pub static PATTERNS: &[Pattern] = &[
         id: "network.attack_signs",
         area: Area::Network,
         subject: "Признаки DDoS и сканирования",
-        description: "Фиксированные признаки атаки из модуля аномалий: SYN-флуд, всплеск соединений с одного адреса, аномальный pps.",
+        description: "Признаки атаки из модуля аномалий: SYN-флуд, всплеск соединений с одного адреса, превышение порога по пакетам в секунду.",
         weight: Weight::High,
         advice: ADVICE_ATTACK,
         evidence: EvidenceSource::Tab(TAB_ANOMALIES),

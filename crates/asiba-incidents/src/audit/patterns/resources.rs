@@ -27,16 +27,17 @@ const GPU_TEMP_WARN: f64 = 80.0;
 const GPU_TEMP_FAIL: f64 = 90.0;
 const NO_DATA: &str = "модуль не собрал данные";
 
-const ADVICE_CPU: &str = "Найдите процессы-потребители на вкладке «Процессы»; если нагрузка постоянная - добавьте ядер или разнесите сервисы.";
-const ADVICE_LOAD: &str = "Load выше числа ядер означает очередь на CPU или ожидание диска - смотрите «Процессы» и I/O дисков.";
-const ADVICE_MEMORY: &str = "Проверьте самые прожорливые процессы и контейнеры; добавьте памяти или ограничьте лимиты контейнеров.";
+const ADVICE_CPU: &str = "Найдите процессы-потребители на вкладке «Процессы». При постоянной нагрузке добавьте ядер или разнесите сервисы.";
+const ADVICE_LOAD: &str = "Load выше числа ядер означает очередь на CPU или ожидание диска. Смотрите «Процессы» и I/O дисков.";
+const ADVICE_MEMORY: &str = "Проверьте процессы и контейнеры с наибольшим потреблением, добавьте памяти или задайте лимиты контейнерам.";
 const ADVICE_SWAP: &str =
-    "Активный swap замедляет всё - уменьшите потребление памяти или увеличьте RAM.";
-const ADVICE_OOM: &str = "Ядро убивало процессы из-за нехватки памяти - найдите виновника в журнале (dmesg, journalctl -k) и ограничьте его.";
+    "Уменьшите потребление памяти или увеличьте RAM: обмен со swap замедляет работу.";
+const ADVICE_OOM: &str =
+    "Найдите процесс в журнале (dmesg, journalctl -k) и ограничьте его потребление памяти.";
 const ADVICE_DISK: &str = "Освободите место: журналы (journalctl --vacuum-size), кэш пакетов, старые образы Docker (docker system prune).";
-const ADVICE_INODES: &str = "Много мелких файлов исчерпали inode - найдите каталог с тысячами файлов (кэши, сессии, почта).";
+const ADVICE_INODES: &str = "Найдите каталог с большим числом мелких файлов (кэши, сессии, почта).";
 const ADVICE_ZOMBIES: &str =
-    "Зомби копятся, когда родитель не читает статус потомков - перезапустите родительский процесс.";
+    "Перезапустите родительский процесс: он не читает статус завершившихся потомков.";
 const ADVICE_GPU: &str = "Проверьте охлаждение и нагрузку на GPU; при перегреве снижается частота.";
 
 pub static PATTERNS: &[Pattern] = &[
@@ -44,7 +45,7 @@ pub static PATTERNS: &[Pattern] = &[
         id: "resources.cpu_hour",
         area: Area::Resources,
         subject: "Загрузка CPU за час",
-        description: "Среднее по точкам за последний час: постоянная высокая загрузка означает, что серверу не хватает ядер или кто-то крутится в цикле.",
+        description: "Среднее по точкам за последний час: постоянная высокая загрузка означает нехватку ядер или процесс в цикле.",
         weight: Weight::Medium,
         advice: ADVICE_CPU,
         evidence: EvidenceSource::Tab(TAB_PROCESSES),
@@ -54,7 +55,7 @@ pub static PATTERNS: &[Pattern] = &[
         id: "resources.load",
         area: Area::Resources,
         subject: "Load average",
-        description: "load5 относительно числа ядер: больше единицы - процессы ждут CPU или диск.",
+        description: "Отношение load5 к числу ядер: значение больше единицы означает ожидание CPU или диска.",
         weight: Weight::Medium,
         advice: ADVICE_LOAD,
         evidence: EvidenceSource::Tab(TAB_PROCESSES),
@@ -74,7 +75,7 @@ pub static PATTERNS: &[Pattern] = &[
         id: "resources.oom",
         area: Area::Resources,
         subject: "OOM killer",
-        description: "Число срабатываний OOM killer с момента загрузки: каждое - убитый процесс и потерянные данные.",
+        description: "Срабатывания OOM killer: при нехватке памяти ядро завершает процесс.",
         weight: Weight::Medium,
         advice: ADVICE_OOM,
         evidence: EvidenceSource::Tab(TAB_RESOURCES),
@@ -94,7 +95,7 @@ pub static PATTERNS: &[Pattern] = &[
         id: "resources.disk_space",
         area: Area::Resources,
         subject: "Место на",
-        description: "Заполнение файловой системы; при 100% перестают писаться журналы и базы данных.",
+        description: "Заполнение файловой системы: при 100 % прекращается запись журналов и баз данных.",
         weight: Weight::High,
         advice: ADVICE_DISK,
         evidence: EvidenceSource::Tab(TAB_RESOURCES),
@@ -104,7 +105,7 @@ pub static PATTERNS: &[Pattern] = &[
         id: "resources.inodes",
         area: Area::Resources,
         subject: "Inode на",
-        description: "Исчерпание inode выглядит как «нет места» при свободных гигабайтах.",
+        description: "При исчерпании inode запись прекращается, хотя свободное место на диске есть.",
         weight: Weight::Medium,
         advice: ADVICE_INODES,
         evidence: EvidenceSource::Tab(TAB_RESOURCES),
@@ -114,7 +115,7 @@ pub static PATTERNS: &[Pattern] = &[
         id: "resources.zombies",
         area: Area::Resources,
         subject: "Зомби-процессы",
-        description: "Процессы, завершившиеся, но не прочитанные родителем; в большом количестве исчерпывают таблицу процессов.",
+        description: "Процессы, завершившиеся, но не прочитанные родителем. В большом количестве исчерпывают таблицу процессов.",
         weight: Weight::Low,
         advice: ADVICE_ZOMBIES,
         evidence: EvidenceSource::Tab(TAB_PROCESSES),

@@ -16,7 +16,7 @@ impl Detector for UpdatesDetector {
                 IncidentKind::Updates,
                 Severity::Warning,
                 "security",
-                format!("{} security updates pending", snapshot.security),
+                format!("Обновлений безопасности: {}", snapshot.security),
             ));
         }
         if snapshot.reboot_required {
@@ -24,7 +24,7 @@ impl Detector for UpdatesDetector {
                 IncidentKind::Updates,
                 Severity::Info,
                 "reboot",
-                "reboot required to apply updates",
+                "Требуется перезагрузка для применения обновлений",
             ));
         }
         drafts

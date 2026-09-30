@@ -35,14 +35,14 @@ pub static PATTERNS: &[Pattern] = &[
     sshd_pattern(
         "ssh.password_auth",
         "Вход по паролю",
-        "Пароли перебираются ботами круглосуточно. Вход только по ключу (PasswordAuthentication no) делает перебор бессмысленным.",
+        "Пароль подбирается перебором. PasswordAuthentication no оставляет только вход по ключу.",
         Weight::High,
         password_auth,
     ),
     sshd_pattern(
         "ssh.root_login",
         "Вход root по SSH",
-        "Учётная запись root есть на каждом сервере, поэтому её перебирают первой. PermitRootLogin no заставляет входить под обычным пользователем и повышать права через sudo.",
+        "Учётная запись root есть на каждом сервере и подбирается первой. PermitRootLogin no требует входа под обычным пользователем с повышением прав через sudo.",
         Weight::High,
         root_login,
     ),
@@ -56,7 +56,7 @@ pub static PATTERNS: &[Pattern] = &[
     sshd_pattern(
         "ssh.empty_passwords",
         "Пустые пароли",
-        "PermitEmptyPasswords yes пускает пользователей без пароля - любой сканер войдёт с первой попытки.",
+        "PermitEmptyPasswords yes разрешает вход без пароля.",
         Weight::High,
         empty_passwords,
     ),
@@ -70,21 +70,21 @@ pub static PATTERNS: &[Pattern] = &[
     sshd_pattern(
         "ssh.login_grace_time",
         "Время на ввод пароля",
-        "LoginGraceTime - сколько секунд держится неаутентифицированное соединение. Большое значение позволяет занять все слоты sshd и устроить отказ в обслуживании.",
+        "LoginGraceTime задаёт, сколько секунд держится неаутентифицированное соединение. Большое значение позволяет занять все слоты sshd.",
         Weight::Low,
         login_grace_time,
     ),
     sshd_pattern(
         "ssh.max_startups",
         "Лимит одновременных подключений",
-        "MaxStartups - сколько неаутентифицированных соединений sshd держит одновременно; это встроенный rate limit против перебора и флуда.",
+        "MaxStartups задаёт, сколько неаутентифицированных соединений sshd держит одновременно. Это встроенное ограничение скорости перебора.",
         Weight::Low,
         max_startups,
     ),
     sshd_pattern(
         "ssh.x11_forwarding",
         "Проброс X11",
-        "На сервере без графики X11Forwarding не нужен и расширяет поверхность атаки через клиентский X-сервер.",
+        "На сервере без графики X11Forwarding не нужен и расширяет поверхность атаки.",
         Weight::Low,
         x11_forwarding,
     ),
@@ -98,14 +98,14 @@ pub static PATTERNS: &[Pattern] = &[
     sshd_pattern(
         "ssh.client_alive",
         "Обрыв висячих сессий",
-        "ClientAliveInterval заставляет sshd закрывать сессии, клиент которых пропал; иначе брошенные сессии живут бесконечно.",
+        "ClientAliveInterval заставляет sshd закрывать сессии, клиент которых не отвечает; иначе они остаются открытыми.",
         Weight::Low,
         client_alive,
     ),
     sshd_pattern(
         "ssh.port",
         "Порт SSH",
-        "Порт 22 сканируют первым; другой порт не защищает сам по себе, но резко снижает шум в журнале и число попыток.",
+        "Порт 22 сканируют в первую очередь. Смена порта не защищает сама по себе, но снижает число попыток и объём записей в журнале.",
         Weight::Low,
         port,
     ),
@@ -236,7 +236,7 @@ fn tcp_forwarding(ctx: &AuditContext<'_>) -> Vec<Verdict> {
 
 fn client_alive(ctx: &AuditContext<'_>) -> Vec<Verdict> {
     with_security(ctx, |s| match s.sshd.client_alive_interval {
-        Some(0) => Verdict::warn("висячие сессии не закрываются (ClientAliveInterval 0)"),
+        Some(0) => Verdict::warn("ClientAliveInterval 0, неактивные сессии не закрываются"),
         Some(secs) => Verdict::pass(format!("ClientAliveInterval {secs}")),
         None => Verdict::skipped(NEEDS_SUDO),
     })
@@ -244,7 +244,7 @@ fn client_alive(ctx: &AuditContext<'_>) -> Vec<Verdict> {
 
 fn port(ctx: &AuditContext<'_>) -> Vec<Verdict> {
     with_security(ctx, |s| match s.sshd.port {
-        Some(DEFAULT_PORT) => Verdict::warn("стандартный порт 22 - основная цель сканеров"),
+        Some(DEFAULT_PORT) => Verdict::warn("порт 22 (стандартный)"),
         Some(port) => Verdict::pass(format!("порт {port}")),
         None => Verdict::skipped(NEEDS_SUDO),
     })

@@ -14,11 +14,9 @@ const CRITICAL_PRIORITY: u8 = 2;
 const ERROR_PRIORITY: u8 = 3;
 const NO_DATA: &str = "модуль не собрал данные";
 
-const ADVICE_ERRORS: &str =
-    "Смотрите вкладку «Логи» с группировкой повторов: кто пишет ошибки и почему.";
-const ADVICE_CRITICAL: &str =
-    "Записи уровня crit/alert/emerg - железо, файловая система или ядро; разберите каждую.";
-const ADVICE_CLOCK: &str = "Часы разъехались - включите NTP (timedatectl set-ntp true) и проверьте chrony/systemd-timesyncd.";
+const ADVICE_ERRORS: &str = "Откройте вкладку «Логи»: повторы сгруппированы по источнику.";
+const ADVICE_CRITICAL: &str = "Записи уровня crit, alert и emerg относятся к оборудованию, файловой системе или ядру. Разберите каждую.";
+const ADVICE_CLOCK: &str = "Включите синхронизацию времени: timedatectl set-ntp true, затем проверьте chrony или systemd-timesyncd.";
 
 pub static PATTERNS: &[Pattern] = &[
     Pattern {
@@ -45,7 +43,7 @@ pub static PATTERNS: &[Pattern] = &[
         id: "logs.clock",
         area: Area::Logs,
         subject: "Часы сервера",
-        description: "Расхождение часов сервера с этой машиной; при большом расхождении журналы разных серверов не сопоставить.",
+        description: "Расхождение часов сервера с локальной машиной: при большом расхождении журналы разных серверов не сопоставляются.",
         weight: Weight::Low,
         advice: ADVICE_CLOCK,
         evidence: EvidenceSource::Tab(TAB_SUMMARY),

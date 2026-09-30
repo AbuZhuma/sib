@@ -5,18 +5,18 @@ use crate::audit::context::AuditContext;
 use crate::audit::evidence::{EvidenceSource, TAB_SUMMARY};
 use crate::audit::pattern::{Area, Pattern, Verdict, Weight};
 
-const ADVICE_MAC: &str = "Включите SELinux (enforcing) или AppArmor - они ограничивают, что может сделать взломанный сервис.";
+const ADVICE_MAC: &str = "Включите SELinux в режиме enforcing или AppArmor.";
 const ADVICE_NTP: &str =
     "Включите синхронизацию времени: timedatectl set-ntp true (chrony или systemd-timesyncd).";
 const ADVICE_AUTO_UPDATES: &str = "Включите автоматические обновления безопасности: unattended-upgrades (Debian/Ubuntu) или dnf-automatic (RHEL/Fedora).";
-const ADVICE_AUDITD: &str = "Установите и включите auditd - он ведёт журнал вызовов sudo, изменений файлов и входов, который нельзя подделать из userspace.";
+const ADVICE_AUDITD: &str = "Установите и включите auditd.";
 
 pub static PATTERNS: &[Pattern] = &[
     Pattern {
         id: "hardening.mac",
         area: Area::Hardening,
         subject: "SELinux / AppArmor",
-        description: "Мандатный контроль доступа ограничивает сервисы их профилем: взломанный nginx не сможет читать /etc/shadow или запускать шелл.",
+        description: "Мандатный контроль доступа ограничивает сервис его профилем: обращения за пределы профиля запрещены, даже если сервис скомпрометирован.",
         weight: Weight::Medium,
         advice: ADVICE_MAC,
         evidence: EvidenceSource::None,
@@ -26,7 +26,7 @@ pub static PATTERNS: &[Pattern] = &[
         id: "hardening.ntp",
         area: Area::Hardening,
         subject: "Синхронизация времени",
-        description: "Без точного времени не сходятся журналы, ломаются TLS-сертификаты и двухфакторные коды.",
+        description: "Без синхронизации времени расходятся метки в журналах и нарушается проверка TLS-сертификатов и одноразовых кодов.",
         weight: Weight::Low,
         advice: ADVICE_NTP,
         evidence: EvidenceSource::None,
@@ -36,7 +36,7 @@ pub static PATTERNS: &[Pattern] = &[
         id: "hardening.auto_updates",
         area: Area::Hardening,
         subject: "Автообновления безопасности",
-        description: "Уязвимости в openssl, sudo и ядре закрываются пакетами; автообновления ставят их без участия человека.",
+        description: "Автоматические обновления устанавливают исправления уязвимостей без участия оператора.",
         weight: Weight::Low,
         advice: ADVICE_AUTO_UPDATES,
         evidence: EvidenceSource::Tab(TAB_SUMMARY),
@@ -46,7 +46,7 @@ pub static PATTERNS: &[Pattern] = &[
         id: "hardening.auditd",
         area: Area::Hardening,
         subject: "Аудит системных вызовов (auditd)",
-        description: "auditd фиксирует, кто и что делал с правами root, - без него разбор инцидента опирается только на историю shell.",
+        description: "auditd фиксирует действия с правами root; без него разбор инцидента опирается на историю shell.",
         weight: Weight::Low,
         advice: ADVICE_AUDITD,
         evidence: EvidenceSource::None,
@@ -79,7 +79,7 @@ fn auto_updates(ctx: &AuditContext<'_>) -> Vec<Verdict> {
         if s.hardening.auto_updates {
             return Verdict::pass("unattended-upgrades или dnf-automatic активен");
         }
-        Verdict::warn("не настроены - обновления безопасности ставятся только вручную")
+        Verdict::warn("не настроены")
     })
 }
 

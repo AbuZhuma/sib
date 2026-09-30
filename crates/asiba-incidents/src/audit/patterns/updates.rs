@@ -11,11 +11,10 @@ const PENDING_WARN: u32 = 50;
 const NO_DATA: &str = "модуль не собрал данные";
 
 const ADVICE_UPTIME: &str =
-    "Долгий аптайм означает, что ядро не обновлялось - запланируйте перезагрузку после обновлений.";
+    "Запланируйте перезагрузку: длительный аптайм означает, что ядро не обновлялось.";
 const ADVICE_SECURITY_UPDATES: &str =
     "Установите обновления безопасности (apt upgrade / dnf upgrade --security).";
-const ADVICE_PENDING: &str =
-    "Накопилось много обновлений - обновите систему в ближайшее окно обслуживания.";
+const ADVICE_PENDING: &str = "Обновите систему в ближайшее окно обслуживания.";
 const ADVICE_REBOOT: &str = "Обновлённое ядро или libc заработают только после перезагрузки.";
 
 pub static PATTERNS: &[Pattern] = &[
@@ -53,7 +52,7 @@ pub static PATTERNS: &[Pattern] = &[
         id: "updates.uptime",
         area: Area::Updates,
         subject: "Аптайм",
-        description: "Аптайм больше полугода почти наверняка означает старое ядро с известными уязвимостями.",
+        description: "Аптайм больше полугода означает, что ядро не перезагружалось после обновлений.",
         weight: Weight::Low,
         advice: ADVICE_UPTIME,
         evidence: EvidenceSource::Tab(TAB_SUMMARY),
@@ -94,7 +93,7 @@ fn reboot(ctx: &AuditContext<'_>) -> Vec<Verdict> {
         return Verdict::skipped(NO_DATA).single();
     };
     if snapshot.reboot_required {
-        return Verdict::warn("требуется - обновлённые компоненты ещё не загружены").single();
+        return Verdict::warn("требуется").single();
     }
     Verdict::pass("не требуется").single()
 }

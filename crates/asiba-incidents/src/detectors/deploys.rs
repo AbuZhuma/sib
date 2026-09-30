@@ -33,7 +33,7 @@ impl Detector for DeploysDetector {
                     IncidentKind::DeployFailed,
                     Severity::Critical,
                     deploy.key.clone(),
-                    format!("deploy of {} failed: {error}", deploy.project),
+                    format!("Деплой {} завершился ошибкой: {error}", deploy.project),
                 )
                 .evidence(deploy.log_tail[start..].iter().cloned()),
             );

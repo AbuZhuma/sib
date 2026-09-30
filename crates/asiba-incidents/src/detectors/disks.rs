@@ -29,7 +29,7 @@ impl Detector for DisksDetector {
                 severity,
                 fs.mount.clone(),
                 format!(
-                    "{} is {used:.0}% full ({} MiB free)",
+                    "{} заполнен на {used:.0} % (свободно {} МиБ)",
                     fs.mount,
                     fs.available_bytes / 1024 / 1024
                 ),
@@ -41,7 +41,11 @@ impl Detector for DisksDetector {
                     IncidentKind::DiskFull,
                     Severity::Warning,
                     format!("{} inodes", fs.mount),
-                    format!("{} inodes {:.0}% used", fs.mount, fs.inodes_used_pct()),
+                    format!(
+                        "inode на {} заняты на {:.0} %",
+                        fs.mount,
+                        fs.inodes_used_pct()
+                    ),
                 ));
             }
         }

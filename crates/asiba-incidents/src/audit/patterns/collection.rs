@@ -4,11 +4,9 @@ use crate::audit::context::{AuditContext, list_or};
 use crate::audit::evidence::{EvidenceSource, TAB_SUMMARY};
 use crate::audit::pattern::{Area, Pattern, Verdict, Weight};
 
-const ADVICE_MODULES: &str =
-    "Модуль не может собрать данные - смотрите ошибку в таблице модулей в сводке.";
-const ADVICE_PARTIAL: &str =
-    "Часть данных недоступна без прав - настройте sudo или добавьте пользователя в нужные группы.";
-const ADVICE_SUDO: &str = "Без sudo недоступны проверки sshd -T, файрвола и чужих процессов - задайте sudo в настройках сервера.";
+const ADVICE_MODULES: &str = "Смотрите текст ошибки в таблице модулей в сводке сервера.";
+const ADVICE_PARTIAL: &str = "Настройте sudo или добавьте пользователя в нужные группы.";
+const ADVICE_SUDO: &str = "Задайте sudo в настройках сервера.";
 
 pub static PATTERNS: &[Pattern] = &[
     Pattern {

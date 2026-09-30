@@ -9,7 +9,7 @@ use crate::audit::pattern::{Area, Pattern, Verdict, Weight};
 const SYSCTL_CONF: &str = "/etc/sysctl.conf";
 const ADVICE_SYSCTL: &str =
     "Задайте параметр в /etc/sysctl.d/99-hardening.conf и примените sysctl --system.";
-const ADVICE_FORWARD: &str = "Если сервер не маршрутизатор и не хост контейнеров, выключите net.ipv4.ip_forward=0 в /etc/sysctl.d/.";
+const ADVICE_FORWARD: &str = "Если сервер не маршрутизатор и не хост контейнеров, задайте net.ipv4.ip_forward=0 в /etc/sysctl.d/.";
 
 pub(super) struct SysctlRule {
     pub(super) key: &'static str,
@@ -74,7 +74,7 @@ pub static PATTERNS: &[Pattern] = &[
     sysctl_pattern(
         "kernel.accept_redirects",
         "Приём ICMP-редиректов",
-        "ICMP redirect позволяет соседу по сети подменить маршрут - на сервере их принимать не нужно (IPv4 и IPv6).",
+        "ICMP redirect позволяет узлу той же сети подменить маршрут; серверу такие пакеты не нужны (IPv4 и IPv6).",
         Weight::Low,
         accept_redirects,
     ),
@@ -96,7 +96,7 @@ pub static PATTERNS: &[Pattern] = &[
     sysctl_pattern(
         "kernel.source_route",
         "Source routing",
-        "Пакеты с маршрутом от источника позволяют обойти правила маршрутизации - accept_source_route должен быть 0.",
+        "Пакеты с маршрутом от источника обходят правила маршрутизации; accept_source_route должен быть 0.",
         Weight::Low,
         |ctx| {
             rule(
@@ -111,7 +111,7 @@ pub static PATTERNS: &[Pattern] = &[
     sysctl_pattern(
         "kernel.log_martians",
         "Журнал подозрительных пакетов",
-        "log_martians=1 пишет в журнал пакеты с невозможными адресами - полезно при разборе атак.",
+        "log_martians=1 записывает в журнал пакеты с некорректными адресами источника.",
         Weight::Low,
         |ctx| {
             rule(
@@ -142,7 +142,7 @@ pub static PATTERNS: &[Pattern] = &[
         id: "kernel.ip_forward",
         area: Area::Kernel,
         subject: "Маршрутизация пакетов",
-        description: "net.ipv4.ip_forward=1 превращает сервер в маршрутизатор. Docker включает его сам; без контейнеров и VPN это лишнее.",
+        description: "net.ipv4.ip_forward=1 включает маршрутизацию пакетов. Docker задаёт его сам; без контейнеров и VPN параметр не нужен.",
         weight: Weight::Low,
         advice: ADVICE_FORWARD,
         evidence: EvidenceSource::File(SYSCTL_CONF),
@@ -195,10 +195,8 @@ fn accept_redirects(ctx: &AuditContext<'_>) -> Vec<Verdict> {
 fn ip_forward(ctx: &AuditContext<'_>) -> Vec<Verdict> {
     let has_docker = ctx.data::<DockerSnapshot>(docker::ID).is_some();
     with_security(ctx, |s| match s.hardening.sysctl("net.ipv4.ip_forward") {
-        Some("1") if has_docker => Verdict::pass("включена, нужна Docker"),
-        Some("1") => {
-            Verdict::warn("включена (net.ipv4.ip_forward = 1), а контейнеров и VPN не видно")
-        }
+        Some("1") if has_docker => Verdict::pass("включена, требуется Docker"),
+        Some("1") => Verdict::warn("включена (net.ipv4.ip_forward = 1), Docker не обнаружен"),
         Some(value) => Verdict::pass(format!("net.ipv4.ip_forward = {value}")),
         None => Verdict::skipped("net.ipv4.ip_forward не прочитан"),
     })

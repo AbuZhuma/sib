@@ -7,7 +7,7 @@ pub static PATTERNS: &[Pattern] = &[
     sysctl_pattern(
         "kernel.aslr",
         "ASLR",
-        "kernel.randomize_va_space=2 рандомизирует адреса стека, кучи и библиотек - без этого эксплойты переполнений работают надёжно.",
+        "kernel.randomize_va_space=2 рандомизирует адреса стека, кучи и библиотек; без этого адреса предсказуемы.",
         Weight::Medium,
         |ctx| {
             rule(
@@ -22,7 +22,7 @@ pub static PATTERNS: &[Pattern] = &[
     sysctl_pattern(
         "kernel.kptr_restrict",
         "Скрытие адресов ядра",
-        "kernel.kptr_restrict>=1 прячет адреса ядра из /proc и dmesg - они нужны для обхода KASLR.",
+        "kernel.kptr_restrict>=1 скрывает адреса ядра в /proc и dmesg; по ним обходят KASLR.",
         Weight::Low,
         |ctx| {
             rule(
@@ -37,7 +37,7 @@ pub static PATTERNS: &[Pattern] = &[
     sysctl_pattern(
         "kernel.dmesg_restrict",
         "Доступ к dmesg",
-        "kernel.dmesg_restrict=1 закрывает журнал ядра от обычных пользователей - там адреса, железо и ошибки драйверов.",
+        "kernel.dmesg_restrict=1 закрывает журнал ядра от обычных пользователей.",
         Weight::Low,
         |ctx| {
             rule(
@@ -52,7 +52,7 @@ pub static PATTERNS: &[Pattern] = &[
     sysctl_pattern(
         "kernel.ptrace_scope",
         "Ограничение ptrace",
-        "kernel.yama.ptrace_scope>=1 запрещает процессам подключаться отладчиком к чужим процессам того же пользователя и красть из них секреты.",
+        "kernel.yama.ptrace_scope>=1 запрещает процессу подключаться отладчиком к другому процессу того же пользователя и читать его память.",
         Weight::Low,
         |ctx| {
             rule(
@@ -82,7 +82,7 @@ pub static PATTERNS: &[Pattern] = &[
     sysctl_pattern(
         "kernel.unprivileged_bpf",
         "BPF без привилегий",
-        "kernel.unprivileged_bpf_disabled=1 закрывает обычным пользователям загрузку BPF-программ - частый вектор эскалации.",
+        "kernel.unprivileged_bpf_disabled=1 запрещает обычным пользователям загружать BPF-программы; через них повышают привилегии.",
         Weight::Low,
         |ctx| {
             rule(
@@ -112,7 +112,7 @@ pub static PATTERNS: &[Pattern] = &[
     sysctl_pattern(
         "kernel.protected_links",
         "Защита символических ссылок",
-        "fs.protected_symlinks и fs.protected_hardlinks закрывают классические атаки через ссылки в /tmp.",
+        "fs.protected_symlinks и fs.protected_hardlinks закрывают атаки через символические и жёсткие ссылки в общедоступных каталогах.",
         Weight::Low,
         protected_links,
     ),

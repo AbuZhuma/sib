@@ -13,21 +13,22 @@ const DEFAULT_SSH_PORT: u16 = 22;
 
 const ADVICE_FIREWALL: &str =
     "Включите nftables, ufw или firewalld и разрешите снаружи только нужные порты (SSH, 80/443).";
-const ADVICE_RISKY: &str = "Закройте порт или привяжите сервис к 127.0.0.1 / внутренней сети; наружу такие сервисы выставляют только через VPN или TLS с аутентификацией.";
-const ADVICE_EXPOSED: &str = "Порт слушает на всех адресах, доступен снаружи и не разрешён файрволом явно - закройте его или ограничьте адресами источника.";
-const ADVICE_PUBLIC: &str = "Чем меньше публичных портов, тем меньше поверхность атаки - привяжите служебные порты к 127.0.0.1.";
-const ADVICE_FAIL2BAN: &str = "Поставьте fail2ban с джейлом sshd (apt install fail2ban) - он банит адреса после нескольких неудачных попыток.";
-const ADVICE_BRUTE_FORCE: &str = "Забаньте адреса кнопкой в подразделе «Атаки и баны», отключите вход по паролю и включите fail2ban.";
-const ADVICE_UNBANNED: &str =
-    "Атакующие без бана продолжают перебор - забаньте их вручную или включите fail2ban.";
-const ADVICE_SSH_EXPOSED: &str = "SSH с паролями доступен всему интернету и ничто не ограничивает перебор - отключите пароли или поставьте fail2ban, а лучше и то и другое.";
+const ADVICE_RISKY: &str = "Закройте порт или привяжите сервис к 127.0.0.1 / внутренней сети; наружу такие сервисы публикуют через VPN или TLS с аутентификацией.";
+const ADVICE_EXPOSED: &str = "Порт слушает на всех адресах и доступен снаружи без явного правила файрвола. Закройте его или ограничьте адреса источника.";
+const ADVICE_PUBLIC: &str =
+    "Привяжите служебные порты к 127.0.0.1: каждый публичный порт увеличивает поверхность атаки.";
+const ADVICE_FAIL2BAN: &str = "Установите fail2ban и включите джейл sshd: он блокирует адрес после нескольких неудачных попыток.";
+const ADVICE_BRUTE_FORCE: &str =
+    "Забаньте адреса в подразделе «Атаки и баны», отключите вход по паролю, включите fail2ban.";
+const ADVICE_UNBANNED: &str = "Забаньте адреса вручную или включите fail2ban.";
+const ADVICE_SSH_EXPOSED: &str = "Отключите вход по паролю и установите fail2ban.";
 
 pub static PATTERNS: &[Pattern] = &[
     Pattern {
         id: "firewall.active",
         area: Area::Firewall,
         subject: "Файрвол",
-        description: "Без файрвола наружу торчит всё, что слушает 0.0.0.0, включая служебные порты, о которых легко забыть.",
+        description: "Без файрвола снаружи доступны все сокеты, слушающие 0.0.0.0, включая служебные.",
         weight: Weight::High,
         advice: ADVICE_FIREWALL,
         evidence: EvidenceSource::Tab(TAB_PORTS),
@@ -37,7 +38,7 @@ pub static PATTERNS: &[Pattern] = &[
         id: "firewall.risky_ports",
         area: Area::Firewall,
         subject: "Опасные открытые порты",
-        description: "telnet (23), ftp (21), rsh (512-514), Docker API (2375/2376), Redis (6379), MongoDB (27017), Elasticsearch (9200) - сервисы, которые снаружи должны быть закрыты всегда: они либо без шифрования, либо без аутентификации по умолчанию.",
+        description: "telnet (23), ftp (21), rsh (512-514), Docker API (2375/2376), Redis (6379), MongoDB (27017), Elasticsearch (9200) работают без шифрования или без аутентификации по умолчанию и не должны быть доступны снаружи.",
         weight: Weight::High,
         advice: ADVICE_RISKY,
         evidence: EvidenceSource::Tab(TAB_PORTS),
@@ -47,7 +48,7 @@ pub static PATTERNS: &[Pattern] = &[
         id: "firewall.exposed_ports",
         area: Area::Firewall,
         subject: "Порты снаружи мимо файрвола",
-        description: "Порт отвечает на внешнее подключение, хотя правил файрвола для него нет - сервис открыт случайно.",
+        description: "Порт отвечает на внешнее подключение, правила файрвола для него нет.",
         weight: Weight::Medium,
         advice: ADVICE_EXPOSED,
         evidence: EvidenceSource::Tab(TAB_PORTS),
@@ -57,7 +58,7 @@ pub static PATTERNS: &[Pattern] = &[
         id: "firewall.public_ports",
         area: Area::Firewall,
         subject: "Число публичных портов",
-        description: "Каждый порт, который слушает не на localhost, - отдельная точка входа, которую нужно защищать и обновлять.",
+        description: "Каждый порт, слушающий не на localhost, - отдельная точка входа, которую нужно защищать и обновлять.",
         weight: Weight::Low,
         advice: ADVICE_PUBLIC,
         evidence: EvidenceSource::Tab(TAB_PORTS),
@@ -67,7 +68,7 @@ pub static PATTERNS: &[Pattern] = &[
         id: "firewall.fail2ban",
         area: Area::Firewall,
         subject: "Защита от перебора (fail2ban)",
-        description: "fail2ban читает журнал sshd и банит адреса после нескольких неудачных попыток - это основной rate limit для SSH.",
+        description: "fail2ban читает журнал sshd и блокирует адрес после нескольких неудачных попыток.",
         weight: Weight::Medium,
         advice: ADVICE_FAIL2BAN,
         evidence: EvidenceSource::Tab(SECURITY_ATTACKS),
@@ -77,7 +78,7 @@ pub static PATTERNS: &[Pattern] = &[
         id: "firewall.ssh_exposed",
         area: Area::Firewall,
         subject: "SSH с паролями без защиты",
-        description: "Сочетание трёх условий: порт SSH доступен снаружи, пароли разрешены и нет fail2ban. В таком виде перебор ограничен только скоростью сети атакующего.",
+        description: "Порт SSH доступен снаружи, вход по паролю разрешён, fail2ban отсутствует. Скорость перебора ничем не ограничена.",
         weight: Weight::High,
         advice: ADVICE_SSH_EXPOSED,
         evidence: EvidenceSource::File("/etc/ssh/sshd_config"),
@@ -87,7 +88,7 @@ pub static PATTERNS: &[Pattern] = &[
         id: "firewall.brute_force",
         area: Area::Firewall,
         subject: "Перебор паролей сейчас",
-        description: "Адреса с десятью и более неудачными попытками за последние 10 минут - активный перебор в эту минуту.",
+        description: "Адреса с десятью и более неудачными попытками за последние 10 минут.",
         weight: Weight::Medium,
         advice: ADVICE_BRUTE_FORCE,
         evidence: EvidenceSource::Tab(SECURITY_ATTACKS),
@@ -97,7 +98,7 @@ pub static PATTERNS: &[Pattern] = &[
         id: "firewall.unbanned_attackers",
         area: Area::Firewall,
         subject: "Атакующие без бана",
-        description: "Адреса, которые перебирают пароли и при этом не заблокированы ни fail2ban, ни файрволом.",
+        description: "Адреса, которые перебирают пароли и не заблокированы fail2ban или файрволом.",
         weight: Weight::Medium,
         advice: ADVICE_UNBANNED,
         evidence: EvidenceSource::Tab(SECURITY_ATTACKS),
@@ -113,7 +114,7 @@ fn firewall(ctx: &AuditContext<'_>) -> Vec<Verdict> {
             }
             FirewallState::Inactive => {
                 return Verdict::fail(
-                    "не активен - ни ufw, ни firewalld, ни nftables, ни iptables не запущены",
+                    "не активен: ufw, firewalld, nftables и iptables не запущены",
                 )
                 .single();
             }

@@ -23,7 +23,7 @@ fn drafts(ctx: &DocContext<'_>) -> Vec<IncidentDraft> {
                 asiba_core::IncidentKind::Alert,
                 Severity::Critical,
                 "offline",
-                "server is offline or unreachable",
+                "Сервер недоступен",
             ),
         );
     }

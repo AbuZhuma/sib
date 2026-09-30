@@ -20,7 +20,7 @@ impl Detector for ClockDetector {
             Severity::Warning,
             "offset",
             format!(
-                "server clock differs from local by {} s",
+                "Часы сервера расходятся с локальными на {} с",
                 info.clock_offset_secs
             ),
         )]

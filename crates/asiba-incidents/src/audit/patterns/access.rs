@@ -10,23 +10,25 @@ const SHOWN: usize = 5;
 const SUSPICIOUS_FAILURES: u64 = 5;
 
 const ADVICE_UID0: &str =
-    "Кроме root никто не должен иметь UID 0 - смените UID лишним учёткам или удалите их.";
+    "Смените UID таким учётным записям или удалите их: UID 0 должен быть только у root.";
 const ADVICE_EMPTY: &str =
-    "Задайте пароль (passwd <user>) или заблокируйте учётку (passwd -l <user>).";
+    "Задайте пароль (passwd <user>) или заблокируйте учётную запись (passwd -l <user>).";
 const ADVICE_NOPASSWD: &str = "Уберите NOPASSWD из /etc/sudoers и /etc/sudoers.d/, оставив его только для автоматики с узким набором команд.";
-const ADVICE_KEYS: &str = "chmod 600 ~/.ssh/authorized_keys и chmod 700 ~/.ssh - иначе любой локальный пользователь добавит свой ключ.";
-const ADVICE_WORLD_WRITABLE: &str = "Файлы в /etc с записью для всех позволяют любому пользователю менять конфигурацию - снимите бит o+w.";
-const ADVICE_ROOT_PASSWORD_LOGINS: &str = "Вход root по паролю - худшее сочетание: переведите root на ключи или запретите PermitRootLogin.";
-const ADVICE_ATTACKER_LOGIN: &str = "Адрес перебирал пароли и потом вошёл - считайте учётку скомпрометированной: смените пароль и ключи, проверьте ~/.ssh, crontab и процессы.";
+const ADVICE_KEYS: &str = "Выполните chmod 600 ~/.ssh/authorized_keys и chmod 700 ~/.ssh.";
+const ADVICE_WORLD_WRITABLE: &str =
+    "Снимите бит o+w: конфигурацию в /etc не должен менять обычный пользователь.";
+const ADVICE_ROOT_PASSWORD_LOGINS: &str =
+    "Переведите root на вход по ключу или запретите PermitRootLogin.";
+const ADVICE_ATTACKER_LOGIN: &str = "Считайте учётную запись скомпрометированной: смените пароль и ключи, проверьте ~/.ssh, crontab и запущенные процессы.";
 const ADVICE_SUDO_FAILURES: &str =
-    "Неудачные вызовы sudo - кто-то пробовал получить root; посмотрите, кто и какие команды.";
+    "Посмотрите в подразделе «Входы и sudo», какой пользователь и какие команды вызывал.";
 
 pub static PATTERNS: &[Pattern] = &[
     Pattern {
         id: "access.extra_uid0",
         area: Area::Access,
         subject: "Учётки с UID 0",
-        description: "Любая учётная запись с UID 0 - это второй root. Такие записи оставляют бэкдоры и устаревшие утилиты.",
+        description: "Учётная запись с UID 0 равна root по правам.",
         weight: Weight::High,
         advice: ADVICE_UID0,
         evidence: EvidenceSource::File("/etc/passwd"),
@@ -36,7 +38,7 @@ pub static PATTERNS: &[Pattern] = &[
         id: "access.empty_passwords",
         area: Area::Access,
         subject: "Пустые пароли",
-        description: "Учётка с пустым полем пароля в /etc/shadow позволяет войти без пароля локально и, при разрешённом PermitEmptyPasswords, по SSH.",
+        description: "Учётная запись с пустым полем пароля в /etc/shadow позволяет войти без пароля локально, а при PermitEmptyPasswords yes - и по SSH.",
         weight: Weight::High,
         advice: ADVICE_EMPTY,
         evidence: EvidenceSource::File("/etc/shadow"),
@@ -46,7 +48,7 @@ pub static PATTERNS: &[Pattern] = &[
         id: "access.sudo_nopasswd",
         area: Area::Access,
         subject: "sudo без пароля",
-        description: "NOPASSWD в sudoers превращает компрометацию пользователя в компрометацию root без второго фактора.",
+        description: "С правилом NOPASSWD компрометация учётной записи пользователя даёт права root без ввода пароля.",
         weight: Weight::Low,
         advice: ADVICE_NOPASSWD,
         evidence: EvidenceSource::File("/etc/sudoers"),
@@ -66,7 +68,7 @@ pub static PATTERNS: &[Pattern] = &[
         id: "access.world_writable_etc",
         area: Area::Access,
         subject: "Файлы в /etc с записью для всех",
-        description: "Конфигурация в /etc определяет поведение системы; запись для всех означает, что её может изменить любой пользователь или сервис.",
+        description: "Файл конфигурации с битом o+w может изменить любой пользователь или сервис.",
         weight: Weight::Medium,
         advice: ADVICE_WORLD_WRITABLE,
         evidence: EvidenceSource::None,
@@ -76,7 +78,7 @@ pub static PATTERNS: &[Pattern] = &[
         id: "access.root_password_logins",
         area: Area::Access,
         subject: "Входы root по паролю",
-        description: "Успешные входы root по паролю за сутки - признак, что root доступен для перебора, а пароль циркулирует между людьми.",
+        description: "Успешные входы root по паролю за сутки: учётная запись root доступна для перебора.",
         weight: Weight::Medium,
         advice: ADVICE_ROOT_PASSWORD_LOGINS,
         evidence: EvidenceSource::Tab(SECURITY_ACCESS),
@@ -86,7 +88,7 @@ pub static PATTERNS: &[Pattern] = &[
         id: "access.login_from_attacker",
         area: Area::Access,
         subject: "Вход с атакующего адреса",
-        description: "Адрес, который перебирал пароли, а затем успешно вошёл - самый надёжный признак взлома через слабый пароль.",
+        description: "Адрес перебирал пароли, а затем успешно вошёл.",
         weight: Weight::High,
         advice: ADVICE_ATTACKER_LOGIN,
         evidence: EvidenceSource::Tab(SECURITY_ACCESS),
