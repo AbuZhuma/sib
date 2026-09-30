@@ -1,0 +1,13 @@
+[package]
+name = "sib-incidents"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+sib-core.workspace = true
+sib-modules.workspace = true
+chrono.workspace = true
+
+[lints]
+workspace = true

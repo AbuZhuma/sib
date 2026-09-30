@@ -1,0 +1,45 @@
+pub mod anomalies;
+pub mod checks;
+mod common;
+pub mod cpu;
+pub mod deploy;
+pub mod disk;
+pub mod docker;
+pub mod files;
+pub mod git;
+pub mod gpu;
+pub mod logs;
+pub mod memory;
+pub mod network;
+pub mod ports;
+pub mod processes;
+pub mod security;
+pub mod services;
+pub mod system;
+pub mod updates;
+pub mod users;
+
+use sib_core::ModuleRegistry;
+
+pub fn default_registry() -> ModuleRegistry {
+    ModuleRegistry::new()
+        .register(checks::ChecksModule)
+        .register(system::SystemModule)
+        .register(cpu::CpuModule)
+        .register(memory::MemoryModule)
+        .register(disk::DiskModule)
+        .register(network::NetworkModule)
+        .register(processes::ProcessesModule)
+        .register(services::ServicesModule)
+        .register(docker::DockerModule)
+        .register(files::FilesModule)
+        .register(ports::PortsModule)
+        .register(logs::LogsModule)
+        .register(users::UsersModule)
+        .register(updates::UpdatesModule)
+        .register(security::SecurityModule)
+        .register(anomalies::AnomaliesModule)
+        .register(deploy::DeployModule)
+        .register(git::GitModule)
+        .register(gpu::GpuModule)
+}

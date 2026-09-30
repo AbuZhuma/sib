@@ -1,0 +1,25 @@
+[package]
+name = "sib-ui"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+sib-core.workspace = true
+sib-engine.workspace = true
+sib-incidents.workspace = true
+sib-alerts.workspace = true
+sib-modules.workspace = true
+sib-config.workspace = true
+sib-transport.workspace = true
+chrono.workspace = true
+eframe.workspace = true
+egui.workspace = true
+egui_plot.workspace = true
+walkers.workspace = true
+egui_extras.workspace = true
+image = { version = "0.25", default-features = false, features = ["png"] }
+tracing.workspace = true
+
+[lints]
+workspace = true

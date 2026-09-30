@@ -3,29 +3,29 @@
 ## Крейты и направление зависимостей
 
 ```
-asiba-core ◄── asiba-transport ◄──┐
+sib-core ◄── sib-transport ◄──┐
      ▲                            │
-     ├── asiba-config ◄───────────┼── asiba-engine ◄── asiba-ui ◄── asiba-app
+     ├── sib-config ◄───────────┼── sib-engine ◄── sib-ui ◄── sib-app
      │                            │        ▲
-     └── asiba-modules ◄──────────┘        │
+     └── sib-modules ◄──────────┘        │
               ▲                            │
               └────────────────────────────┘
 ```
 
 | Крейт | Отвечает за | Не знает про |
 |---|---|---|
-| `asiba-core` | доменные типы: `ServerSpec`, `Transport`, `Module`, `Snapshot`, `AppState` | SSH, egui, SQLite, файлы |
-| `asiba-transport` | SSH-сессии (`russh`), локальный транспорт, sudo, known_hosts | модули, UI |
-| `asiba-config` | пути XDG, `config.toml`, `servers/<name>.toml`, keyring, архив инцидентов | сеть, UI |
-| `asiba-modules` | сборщики данных и их парсеры | как и когда их вызывают |
-| `asiba-storage` | SQLite: история метрик, даунсэмплинг, поток записи | модули, UI |
-| `asiba-incidents` | детекторы инцидентов (`Detector`) и сверка с состоянием (`reconcile`) | docgen, движок |
-| `asiba-ai` | бэкенды `Backend` (Gemini, OpenAI/совместимые, Anthropic), сборка контекста с бюджетом токенов, плейбуки (инциденты, разделы, парк, полный аудит), промпт | движок |
-| `asiba-docgen` | секции данных сервера; рендер `servers/<name>.md` (человек) и `servers/<name>.llm.md` (модель) | движок, UI |
-| `asiba-alerts` | встроенные правила, оценка правил и базовой линии над `AppState`, уведомления на рабочий стол | транспорт, UI |
-| `asiba-engine` | воркеры серверов, задачи сбора по модулям, пинг, переподключение, геолокация, алерты, действия, команды от UI | egui |
-| `asiba-ui` | тема, страницы, виджеты модулей | сеть напрямую |
-| `asiba-app` | точка входа, tokio runtime, сборка зависимостей | — |
+| `sib-core` | доменные типы: `ServerSpec`, `Transport`, `Module`, `Snapshot`, `AppState` | SSH, egui, SQLite, файлы |
+| `sib-transport` | SSH-сессии (`russh`), локальный транспорт, sudo, known_hosts | модули, UI |
+| `sib-config` | пути XDG, `config.toml`, `servers/<name>.toml`, keyring, архив инцидентов | сеть, UI |
+| `sib-modules` | сборщики данных и их парсеры | как и когда их вызывают |
+| `sib-storage` | SQLite: история метрик, даунсэмплинг, поток записи | модули, UI |
+| `sib-incidents` | детекторы инцидентов (`Detector`) и сверка с состоянием (`reconcile`) | docgen, движок |
+| `sib-ai` | бэкенды `Backend` (Gemini, OpenAI/совместимые, Anthropic), сборка контекста с бюджетом токенов, плейбуки (инциденты, разделы, парк, полный аудит), промпт | движок |
+| `sib-docgen` | секции данных сервера; рендер `servers/<name>.md` (человек) и `servers/<name>.llm.md` (модель) | движок, UI |
+| `sib-alerts` | встроенные правила, оценка правил и базовой линии над `AppState`, уведомления на рабочий стол | транспорт, UI |
+| `sib-engine` | воркеры серверов, задачи сбора по модулям, пинг, переподключение, геолокация, алерты, действия, команды от UI | egui |
+| `sib-ui` | тема, страницы, виджеты модулей | сеть напрямую |
+| `sib-app` | точка входа, tokio runtime, сборка зависимостей | — |
 
 ## Потоки
 
@@ -66,15 +66,15 @@ UI → `ViewAction::Act { spec, request }` → `Action::AskPerform` → диал
 
 ## Алерты
 
-Задача движка раз в 5 с: `Evaluator::evaluate(&mut AppState)` — правила (встроенные из `asiba-alerts::builtin_rules` + пользовательские из `config.toml`) по последним значениям серий и виртуальной метрике `connection.offline`, плюс базовая линия EWMA по ключевым метрикам. Поднятые алерты — в `AppState.alerts`, warning/critical уходят на рабочий стол. `Command::AcknowledgeAlert` / `MuteAlert` меняют запись; `SetAlertSettings` обновляет правила через `watch`.
+Задача движка раз в 5 с: `Evaluator::evaluate(&mut AppState)` — правила (встроенные из `sib-alerts::builtin_rules` + пользовательские из `config.toml`) по последним значениям серий и виртуальной метрике `connection.offline`, плюс базовая линия EWMA по ключевым метрикам. Поднятые алерты — в `AppState.alerts`, warning/critical уходят на рабочий стол. `Command::AcknowledgeAlert` / `MuteAlert` меняют запись; `SetAlertSettings` обновляет правила через `watch`.
 
 ## Геолокация и карта
 
-При старте воркера `geo::resolve_server`: ручные координаты → кеш `geo.json` → `ip-api.com`. Результат — `ServerState.location`; положение локальной машины — `AppState.self_location`. UI рисует карту компонентом `MapState` (`walkers`, OSM-тайлы с кешем в `~/.cache/asiba/tiles`), маркеры и линии пинга — плагином `Markers`.
+При старте воркера `geo::resolve_server`: ручные координаты → кеш `geo.json` → `ip-api.com`. Результат — `ServerState.location`; положение локальной машины — `AppState.self_location`. UI рисует карту компонентом `MapState` (`walkers`, OSM-тайлы с кешем в `~/.cache/sib/tiles`), маркеры и линии пинга — плагином `Markers`.
 
 ## Файл сервера
 
-`asiba-docgen` описывает данные сервера как набор секций (`Section` с `SectionId`, по одному файлу в `sections/`): каждая секция умеет `human` (русский markdown) и `llm` (английский, `key: value`, ограниченные списки). `render_human` и `render_llm` собирают все доступные секции, `render_llm_sections` — выбранные (для контекста модели). Секция `findings` показывает выводы детекторов `asiba-incidents` и идёт первой. `DocWriter` в воркере после каждого цикла любого модуля, не чаще раза в 10 с и только при изменении тела, пишет `servers/<name>.md` (сохраняя блок `<!-- notes:start -->…<!-- notes:end -->`) и `servers/<name>.llm.md`.
+`sib-docgen` описывает данные сервера как набор секций (`Section` с `SectionId`, по одному файлу в `sections/`): каждая секция умеет `human` (русский markdown) и `llm` (английский, `key: value`, ограниченные списки). `render_human` и `render_llm` собирают все доступные секции, `render_llm_sections` — выбранные (для контекста модели). Секция `findings` показывает выводы детекторов `sib-incidents` и идёт первой. `DocWriter` в воркере после каждого цикла любого модуля, не чаще раза в 10 с и только при изменении тела, пишет `servers/<name>.md` (сохраняя блок `<!-- notes:start -->…<!-- notes:end -->`) и `servers/<name>.llm.md`.
 
 ## Данные для графиков
 
@@ -86,18 +86,18 @@ system, cpu, memory, disk, network, processes, services, docker, ports, logs, us
 
 ## Модуль
 
-Модуль = папка в `asiba-modules/src/<id>/` с `mod.rs` (реализация `Module`), `model.rs` (данные), `parse.rs` (чистые парсеры). Собирает всё одной командой-скриптом через `common::sections::script`, ответ режется по маркерам `###name`. Подробности — `MODULE_GUIDE.md`.
+Модуль = папка в `sib-modules/src/<id>/` с `mod.rs` (реализация `Module`), `model.rs` (данные), `parse.rs` (чистые парсеры). Собирает всё одной командой-скриптом через `common::sections::script`, ответ режется по маркерам `###name`. Подробности — `MODULE_GUIDE.md`.
 
-Представление модуля в UI = `asiba-ui/src/modules/<id>.rs`, реализует `ModuleView`, получает `Snapshot` и делает `downcast::<Model>()`.
+Представление модуля в UI = `sib-ui/src/modules/<id>.rs`, реализует `ModuleView`, получает `Snapshot` и делает `downcast::<Model>()`.
 
 ## Хранение
 
 | Что | Где |
 |---|---|
-| конфигурация | `~/.config/asiba/config.toml` |
-| серверы | `~/.config/asiba/servers/<name>.toml` |
-| секреты | keyring, сервис `asiba`, аккаунт `<name>/password` / `<name>/passphrase` / `<name>/sudo` |
-| история (этап 2) | `~/.local/share/asiba/history.db` |
+| конфигурация | `~/.config/sib/config.toml` |
+| серверы | `~/.config/sib/servers/<name>.toml` |
+| секреты | keyring, сервис `sib`, аккаунт `<name>/password` / `<name>/passphrase` / `<name>/sudo` |
+| история (этап 2) | `~/.local/share/sib/history.db` |
 
 ## Каналы SSH
 
@@ -105,14 +105,14 @@ system, cpu, memory, disk, network, processes, services, docker, ports, logs, us
 
 ## Инциденты
 
-`asiba-incidents` — единый источник «негатива»: каждый детектор (`detectors/<name>.rs`, трейт `Detector`) по состоянию сервера возвращает `IncidentDraft { kind, severity, subject, summary, evidence }`. Детекторы: алерты, признаки DDoS, брутфорс SSH, проверки безопасности, упавшие юниты, контейнеры (остановлен при политике перезапуска, unhealthy, рестарт-петля), упавшие деплои, диски, память (OOM, swap), обновления безопасности, ошибки модулей, расхождение часов. `reconcile(&mut AppState, now)` сравнивает черновики (уровень ≥ warning) с активными `AppState.incidents` по `kind + subject`: новые открывает, исчезнувшие закрывает, совпавшие обновляет. Цикл алертов в движке вызывает `reconcile` каждые 5 с, пишет события, шлёт уведомления на рабочий стол и `EngineEvent::IncidentsOpened`. UI показывает активные инциденты на главной и в сводке сервера. Инциденты - точка запуска ИИ-аудита (см. `docs/AI-PLAN.md`): новый детектор автоматически становится новым триггером.
+`sib-incidents` — единый источник «негатива»: каждый детектор (`detectors/<name>.rs`, трейт `Detector`) по состоянию сервера возвращает `IncidentDraft { kind, severity, subject, summary, evidence }`. Детекторы: алерты, признаки DDoS, брутфорс SSH, проверки безопасности, упавшие юниты, контейнеры (остановлен при политике перезапуска, unhealthy, рестарт-петля), упавшие деплои, диски, память (OOM, swap), обновления безопасности, ошибки модулей, расхождение часов. `reconcile(&mut AppState, now)` сравнивает черновики (уровень ≥ warning) с активными `AppState.incidents` по `kind + subject`: новые открывает, исчезнувшие закрывает, совпавшие обновляет. Цикл алертов в движке вызывает `reconcile` каждые 5 с, пишет события, шлёт уведомления на рабочий стол и `EngineEvent::IncidentsOpened`. UI показывает активные инциденты на главной и в сводке сервера. Инциденты - точка запуска ИИ-аудита (см. `docs/AI-PLAN.md`): новый детектор автоматически становится новым триггером.
 
-Аудит: единый реестр паттернов `asiba_incidents::audit::patterns` - по файлу на область (`ssh`, `access`, `firewall`, `kernel`, `hardening`, `resources`, `reliability`, `network`, `updates`, `logs`, `collection`), каждый файл - `static PATTERNS: &[Pattern]`. `Pattern` - данные, а не код: `id`, `area`, `subject` (нейтральное название: «Файрвол», «Вход root по SSH»), `description` (что и зачем проверяется), `weight`, `advice`, `evidence` (файл, запрос модуля или вкладка, где смотреть подтверждение) и `evaluate: fn(&AuditContext) -> Vec<Verdict>`. `Verdict` описывает состояние словами («не активен - ни ufw, ни firewalld…»), так что строка проблемы читается как «Файрвол - не активен», а не «Файрвол включён - проблема». Проверки безопасности (области `is_security()`) дают оценку `security_score` (буква A-F), они же превращаются в инциденты `SecurityCheck` (`detectors/security_checks.rs`, ключ инцидента = `AuditCheck::key()`). Модуль `security` только собирает и парсит данные - оценок в нём нет. Показывается на вкладке «Безопасность» (подразделы «Аудит», «Входы и sudo», «Атаки и баны»); по умолчанию видны только проблемы; клик по проверке открывает страницу проблемы с состоянием, описанием, советом и уликой (содержимое файла через модуль `files`, запрос модуля в панель просмотра или переход в раздел). Новый паттерн - запись в `PATTERNS` нужного файла.
+Аудит: единый реестр паттернов `sib_incidents::audit::patterns` - по файлу на область (`ssh`, `access`, `firewall`, `kernel`, `hardening`, `resources`, `reliability`, `network`, `updates`, `logs`, `collection`), каждый файл - `static PATTERNS: &[Pattern]`. `Pattern` - данные, а не код: `id`, `area`, `subject` (нейтральное название: «Файрвол», «Вход root по SSH»), `description` (что и зачем проверяется), `weight`, `advice`, `evidence` (файл, запрос модуля или вкладка, где смотреть подтверждение) и `evaluate: fn(&AuditContext) -> Vec<Verdict>`. `Verdict` описывает состояние словами («не активен - ни ufw, ни firewalld…»), так что строка проблемы читается как «Файрвол - не активен», а не «Файрвол включён - проблема». Проверки безопасности (области `is_security()`) дают оценку `security_score` (буква A-F), они же превращаются в инциденты `SecurityCheck` (`detectors/security_checks.rs`, ключ инцидента = `AuditCheck::key()`). Модуль `security` только собирает и парсит данные - оценок в нём нет. Показывается на вкладке «Безопасность» (подразделы «Аудит», «Входы и sudo», «Атаки и баны»); по умолчанию видны только проблемы; клик по проверке открывает страницу проблемы с состоянием, описанием, советом и уликой (содержимое файла через модуль `files`, запрос модуля в панель просмотра или переход в раздел). Новый паттерн - запись в `PATTERNS` нужного файла.
 
-Архив: кнопка «забыть» у инцидента кладёт `IgnoredIncident { server, kind, subject }` в `~/.local/state/asiba/ignored.toml` (`asiba_config::IgnoredStore`) и в `AppState.ignored_incidents` (`Command::SetIgnoredIncidents`). `reconcile` отбрасывает такие черновики (активный инцидент закрывается сразу), а оценщик алертов пропускает правило, если игнорируется инцидент вида `alert` с этим `rule_id` - ни алерта, ни уведомления, ни строки в списках. Список и кнопка «вернуть» - на странице «Алерты».
+Архив: кнопка «забыть» у инцидента кладёт `IgnoredIncident { server, kind, subject }` в `~/.local/state/sib/ignored.toml` (`sib_config::IgnoredStore`) и в `AppState.ignored_incidents` (`Command::SetIgnoredIncidents`). `reconcile` отбрасывает такие черновики (активный инцидент закрывается сразу), а оценщик алертов пропускает правило, если игнорируется инцидент вида `alert` с этим `rule_id` - ни алерта, ни уведомления, ни строки в списках. Список и кнопка «вернуть» - на странице «Алерты».
 
 ## ИИ-анализ
 
-`asiba-ai`: `Backend` (реализации `Gemini`, `OpenAi` — также любой совместимый API через `base_url`, `Anthropic`; выбор — `engine/src/ai/backend.rs` по `AiConfig.provider`), `ContextBuilder` (части с приоритетом, бюджет токенов, обрезание по строкам), `playbook(kind)` / `section_audit(key)` / `fleet_audit()` / `full_audit()` — какие секции, какая задача и какой формат ответа, `queries(incident)` — что дополнительно спросить у сервера (логи контейнера, journal юнита), `SYSTEM_PROMPT` и `build_user` (ответ на русском).
+`sib-ai`: `Backend` (реализации `Gemini`, `OpenAi` — также любой совместимый API через `base_url`, `Anthropic`; выбор — `engine/src/ai/backend.rs` по `AiConfig.provider`), `ContextBuilder` (части с приоритетом, бюджет токенов, обрезание по строкам), `playbook(kind)` / `section_audit(key)` / `fleet_audit()` / `full_audit()` — какие секции, какая задача и какой формат ответа, `queries(incident)` — что дополнительно спросить у сервера (логи контейнера, journal юнита), `SYSTEM_PROMPT` и `build_user` (ответ на русском).
 
 Движок (`engine/src/ai/`): один воркер `AuditWorker` с очередью заданий. `Command::Audit { target, scope, is_auto }` (`target` — сервер или весь парк; `scope` — Full, Incident или Section) приходит от UI (кнопки «Полный аудит», «разобрать», «Проанализировать»/«Обновить» в блоках, автозапрос блока раздела при первом открытии вкладки), из цикла алертов при открытии инцидента (если `AiConfig::is_ready()` и `auto_audit`) и от `ai::startup` — сводка по парку после первого сбора данных со всех серверов (и при включении ИИ в настройках). Воркер проверяет согласие и ключ, для автозаданий — минимальный уровень и кулдаун по `server:kind:subject`, кладёт `AuditReport { status: Running }` в `AppState.audits`, собирает контекст (`context::prepare`: запросы к серверу через `Module::query`, затем секции по плейбуку через `render_llm_section`), выполняет запрос в `spawn_blocking`, пишет отчёт в `audits_dir/<сервер>/<время>_<scope>.md`, шлёт `EngineEvent::AuditFinished`. Настройки — `AppConfig.ai` (`AiConfig`: `consent`, `api_key`, `model`, лимиты), меняются на лету через `Command::SetAiConfig`. Без `consent = true` ни один запрос наружу не выполняется.

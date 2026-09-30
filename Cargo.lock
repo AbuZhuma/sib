@@ -322,174 +322,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "asiba-ai"
-version = "0.1.0"
-dependencies = [
- "asiba-core",
- "asiba-docgen",
- "asiba-modules",
- "chrono",
- "serde",
- "serde_json",
- "thiserror 2.0.20",
- "tracing",
- "ureq",
-]
-
-[[package]]
-name = "asiba-alerts"
-version = "0.1.0"
-dependencies = [
- "asiba-core",
- "asiba-modules",
- "chrono",
- "notify-rust",
- "tracing",
-]
-
-[[package]]
-name = "asiba-app"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "asiba-config",
- "asiba-core",
- "asiba-engine",
- "asiba-modules",
- "asiba-storage",
- "asiba-ui",
- "tokio",
- "tracing",
- "tracing-subscriber",
-]
-
-[[package]]
-name = "asiba-config"
-version = "0.1.0"
-dependencies = [
- "asiba-core",
- "directories",
- "keyring",
- "serde",
- "thiserror 2.0.20",
- "toml",
- "tracing",
-]
-
-[[package]]
-name = "asiba-core"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "chrono",
- "serde",
- "thiserror 2.0.20",
-]
-
-[[package]]
-name = "asiba-docgen"
-version = "0.1.0"
-dependencies = [
- "asiba-core",
- "asiba-incidents",
- "asiba-modules",
- "chrono",
-]
-
-[[package]]
-name = "asiba-engine"
-version = "0.1.0"
-dependencies = [
- "asiba-ai",
- "asiba-alerts",
- "asiba-config",
- "asiba-core",
- "asiba-docgen",
- "asiba-incidents",
- "asiba-modules",
- "asiba-storage",
- "asiba-transport",
- "async-trait",
- "chrono",
- "serde",
- "serde_json",
- "thiserror 2.0.20",
- "tokio",
- "tracing",
- "ureq",
-]
-
-[[package]]
-name = "asiba-incidents"
-version = "0.1.0"
-dependencies = [
- "asiba-core",
- "asiba-modules",
- "chrono",
-]
-
-[[package]]
-name = "asiba-modules"
-version = "0.1.0"
-dependencies = [
- "asiba-core",
- "asiba-transport",
- "async-trait",
- "chrono",
- "regex",
- "serde",
- "serde_json",
- "thiserror 2.0.20",
- "tokio",
-]
-
-[[package]]
-name = "asiba-storage"
-version = "0.1.0"
-dependencies = [
- "asiba-core",
- "chrono",
- "rusqlite",
- "serde",
- "thiserror 2.0.20",
- "tracing",
-]
-
-[[package]]
-name = "asiba-transport"
-version = "0.1.0"
-dependencies = [
- "asiba-core",
- "async-trait",
- "russh",
- "ssh2-config",
- "thiserror 2.0.20",
- "tokio",
- "tracing",
-]
-
-[[package]]
-name = "asiba-ui"
-version = "0.1.0"
-dependencies = [
- "asiba-alerts",
- "asiba-config",
- "asiba-core",
- "asiba-engine",
- "asiba-incidents",
- "asiba-modules",
- "asiba-transport",
- "chrono",
- "eframe",
- "egui",
- "egui_extras",
- "egui_plot",
- "image",
- "tracing",
- "walkers",
-]
-
-[[package]]
 name = "async-broadcast"
 version = "0.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5216,6 +5048,174 @@ name = "shlex"
 version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f8fadd59c855ef2080decdef8ff161eb6661b86933c9d82e5ba29dc602a55aba"
+
+[[package]]
+name = "sib-ai"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "serde",
+ "serde_json",
+ "sib-core",
+ "sib-docgen",
+ "sib-modules",
+ "thiserror 2.0.20",
+ "tracing",
+ "ureq",
+]
+
+[[package]]
+name = "sib-alerts"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "notify-rust",
+ "sib-core",
+ "sib-modules",
+ "tracing",
+]
+
+[[package]]
+name = "sib-app"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "sib-config",
+ "sib-core",
+ "sib-engine",
+ "sib-modules",
+ "sib-storage",
+ "sib-ui",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "sib-config"
+version = "0.1.0"
+dependencies = [
+ "directories",
+ "keyring",
+ "serde",
+ "sib-core",
+ "thiserror 2.0.20",
+ "toml",
+ "tracing",
+]
+
+[[package]]
+name = "sib-core"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "chrono",
+ "serde",
+ "thiserror 2.0.20",
+]
+
+[[package]]
+name = "sib-docgen"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "sib-core",
+ "sib-incidents",
+ "sib-modules",
+]
+
+[[package]]
+name = "sib-engine"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "chrono",
+ "serde",
+ "serde_json",
+ "sib-ai",
+ "sib-alerts",
+ "sib-config",
+ "sib-core",
+ "sib-docgen",
+ "sib-incidents",
+ "sib-modules",
+ "sib-storage",
+ "sib-transport",
+ "thiserror 2.0.20",
+ "tokio",
+ "tracing",
+ "ureq",
+]
+
+[[package]]
+name = "sib-incidents"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "sib-core",
+ "sib-modules",
+]
+
+[[package]]
+name = "sib-modules"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "chrono",
+ "regex",
+ "serde",
+ "serde_json",
+ "sib-core",
+ "sib-transport",
+ "thiserror 2.0.20",
+ "tokio",
+]
+
+[[package]]
+name = "sib-storage"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "rusqlite",
+ "serde",
+ "sib-core",
+ "thiserror 2.0.20",
+ "tracing",
+]
+
+[[package]]
+name = "sib-transport"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "russh",
+ "sib-core",
+ "ssh2-config",
+ "thiserror 2.0.20",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "sib-ui"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "eframe",
+ "egui",
+ "egui_extras",
+ "egui_plot",
+ "image",
+ "sib-alerts",
+ "sib-config",
+ "sib-core",
+ "sib-engine",
+ "sib-incidents",
+ "sib-modules",
+ "sib-transport",
+ "tracing",
+ "walkers",
+]
 
 [[package]]
 name = "signal-hook-registry"

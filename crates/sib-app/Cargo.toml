@@ -1,0 +1,24 @@
+[package]
+name = "sib-app"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "sib"
+path = "src/main.rs"
+
+[dependencies]
+sib-core.workspace = true
+sib-config.workspace = true
+sib-engine.workspace = true
+sib-modules.workspace = true
+sib-storage.workspace = true
+sib-ui.workspace = true
+anyhow.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
+[lints]
+workspace = true

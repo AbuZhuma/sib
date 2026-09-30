@@ -1,0 +1,17 @@
+[package]
+name = "sib-transport"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+sib-core.workspace = true
+async-trait.workspace = true
+russh.workspace = true
+ssh2-config.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+
+[lints]
+workspace = true

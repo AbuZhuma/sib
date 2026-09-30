@@ -1,0 +1,135 @@
+use egui::{RichText, Ui};
+use sib_core::{ModuleId, ServerState};
+use sib_modules::ports::{self, ListeningPort, PortsSnapshot};
+
+use super::{ModuleView, Tab, ViewShared};
+use crate::components::{Sort, SortColumn, SortKey, Table, badge, sort_rows};
+use crate::text;
+use crate::theme::Palette;
+
+const PORT_SORTABLE: [SortColumn; 3] = [
+    SortColumn::text(0),
+    SortColumn::text(3),
+    SortColumn::number(4),
+];
+const PORT_DEFAULT_SORT: Sort = Sort::ascending(0);
+
+pub struct PortsView;
+
+impl ModuleView for PortsView {
+    fn id(&self) -> ModuleId {
+        ports::ID
+    }
+
+    fn title(&self) -> &'static str {
+        text::MODULE_PORTS
+    }
+
+    fn tab(&self) -> Tab {
+        Tab::Ports
+    }
+
+    fn summary(&self, ui: &mut Ui, server: &ServerState, _shared: &ViewShared) {
+        let p = Palette::current(ui.ctx());
+        let Some(snapshot) = server.data::<PortsSnapshot>(ports::ID) else {
+            return;
+        };
+        ui.horizontal_wrapped(|ui| {
+            ui.monospace(format!("{} {}", snapshot.ports.len(), text::PORT_LISTENING));
+            ui.monospace(format!(
+                "{} {}",
+                snapshot.public_ports().count(),
+                text::PORT_PUBLIC
+            ));
+        });
+        let exposed: Vec<&ListeningPort> = snapshot.exposed_without_firewall().collect();
+        if !exposed.is_empty() {
+            let list: Vec<String> = exposed.iter().map(|p| p.port.to_string()).collect();
+            ui.label(
+                RichText::new(format!("{}: {}", text::PORT_EXPOSED, list.join(", ")))
+                    .color(p.warning),
+            );
+        }
+        if snapshot.firewall.is_none() {
+            ui.label(
+                RichText::new(text::PORT_NO_FIREWALL)
+                    .small()
+                    .color(p.text_muted),
+            );
+        }
+    }
+
+    fn page(
+        &self,
+        ui: &mut Ui,
+        server: &ServerState,
+        _shared: &ViewShared,
+    ) -> Option<super::ViewAction> {
+        let p = Palette::current(ui.ctx());
+        let snapshot = server.data::<PortsSnapshot>(ports::ID)?;
+        if let Some(firewall) = &snapshot.firewall {
+            ui.label(
+                RichText::new(format!("{}: {:?}", text::PORT_FIREWALL, firewall.backend))
+                    .color(p.text_secondary),
+            );
+        }
+        ports_table(ui, snapshot, &p);
+        None
+    }
+}
+
+fn ports_table(ui: &mut Ui, snapshot: &PortsSnapshot, p: &Palette) {
+    {
+        let columns = [
+            text::PORT_PORT,
+            text::PORT_PROTO,
+            text::PORT_ADDRESS,
+            text::PORT_PROCESS,
+            text::PORT_CONNECTIONS,
+            text::PORT_FIREWALL,
+            text::PORT_REACHABLE,
+        ];
+        let table = Table::new("ports-table", &columns).sortable(&PORT_SORTABLE, PORT_DEFAULT_SORT);
+        table.show_sorted(ui, |ui, sort| {
+            let mut rows: Vec<&ListeningPort> = snapshot.ports.iter().collect();
+            sort_rows(&mut rows, sort, |port, column| match column {
+                0 => SortKey::number(port.port),
+                3 => SortKey::text(&port.process_label()),
+                _ => SortKey::number(port.connections as f64),
+            });
+            for port in rows {
+                ui.monospace(RichText::new(port.port.to_string()).strong());
+                ui.monospace(port.protocol.label());
+                ui.monospace(&port.address);
+                ui.monospace(port.process_label());
+                ui.monospace(port.connections.to_string());
+                firewall_cell(ui, port, p);
+                reachable_cell(ui, port, p);
+                ui.end_row();
+            }
+        });
+    }
+}
+
+fn firewall_cell(ui: &mut Ui, port: &ListeningPort, p: &Palette) {
+    match port.firewall_allowed {
+        Some(true) => badge(ui, text::PORT_ALLOWED, p.ok),
+        Some(false) => badge(ui, text::PORT_BLOCKED, p.text_muted),
+        None => {
+            ui.label(RichText::new("-").color(p.text_muted));
+        }
+    }
+}
+
+fn reachable_cell(ui: &mut Ui, port: &ListeningPort, p: &Palette) {
+    match port.reachable {
+        Some(true) if port.firewall_allowed != Some(true) && port.is_wildcard() => {
+            badge(ui, text::PORT_OPEN, p.warning)
+        }
+        Some(true) => badge(ui, text::PORT_OPEN, p.ok),
+        Some(false) => badge(ui, text::PORT_CLOSED, p.text_muted),
+        None => {
+            ui.label(RichText::new("-").color(p.text_muted));
+        }
+    }
+}

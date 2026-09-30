@@ -9,17 +9,17 @@ license = "MIT"
 rust-version = "1.88"
 
 [workspace.dependencies]
-asiba-core = { path = "crates/asiba-core" }
-asiba-transport = { path = "crates/asiba-transport" }
-asiba-alerts = { path = "crates/asiba-alerts" }
-asiba-config = { path = "crates/asiba-config" }
-asiba-modules = { path = "crates/asiba-modules" }
-asiba-engine = { path = "crates/asiba-engine" }
-asiba-storage = { path = "crates/asiba-storage" }
-asiba-docgen = { path = "crates/asiba-docgen" }
-asiba-incidents = { path = "crates/asiba-incidents" }
-asiba-ai = { path = "crates/asiba-ai" }
-asiba-ui = { path = "crates/asiba-ui" }
+sib-core = { path = "crates/sib-core" }
+sib-transport = { path = "crates/sib-transport" }
+sib-alerts = { path = "crates/sib-alerts" }
+sib-config = { path = "crates/sib-config" }
+sib-modules = { path = "crates/sib-modules" }
+sib-engine = { path = "crates/sib-engine" }
+sib-storage = { path = "crates/sib-storage" }
+sib-docgen = { path = "crates/sib-docgen" }
+sib-incidents = { path = "crates/sib-incidents" }
+sib-ai = { path = "crates/sib-ai" }
+sib-ui = { path = "crates/sib-ui" }
 
 tokio = { version = "1.53", features = ["rt-multi-thread", "macros", "sync", "time", "process", "fs", "io-util", "net"] }
 async-trait = "0.1"

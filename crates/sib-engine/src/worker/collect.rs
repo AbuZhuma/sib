@@ -1,0 +1,152 @@
+use std::sync::Arc;
+use std::time::Duration;
+
+use chrono::Utc;
+use sib_core::{
+    CollectContext, Module, ModuleError, ModuleId, Snapshot, Transport, TransportError,
+};
+use sib_storage::StoredSample;
+use tokio::sync::{broadcast, watch};
+use tokio::time::{MissedTickBehavior, interval};
+
+use super::WorkerContext;
+
+const FAILURES_BEFORE_GIVING_UP: u32 = 3;
+const STALE_PREVIOUS_INTERVALS: u32 = 3;
+
+pub struct LoopContext {
+    pub worker: Arc<WorkerContext>,
+    pub transport: Arc<dyn Transport>,
+    pub module: Arc<dyn Module>,
+    pub interval: Duration,
+    pub lost: watch::Sender<Option<String>>,
+}
+
+pub async fn run(ctx: LoopContext) {
+    let mut ticker = interval(ctx.interval);
+    ticker.set_missed_tick_behavior(MissedTickBehavior::Delay);
+    let mut requests = ctx.worker.backfill.subscribe();
+    let mut previous = recent_snapshot(&ctx);
+    let mut failures = 0;
+    loop {
+        let is_backfill = tokio::select! {
+            _ = ticker.tick() => false,
+            request = requests.recv() => {
+                if !is_own_request(&ctx, request) {
+                    continue;
+                }
+                true
+            }
+        };
+        match fetch(&ctx, previous.clone(), is_backfill).await {
+            Ok(snapshot) => {
+                failures = 0;
+                record_snapshot(&ctx, &snapshot);
+                previous = Some(snapshot);
+            }
+            Err(ModuleError::Transport(TransportError::Disconnected(reason))) => {
+                let _ = ctx.lost.send(Some(reason));
+                return;
+            }
+            Err(error) if is_backfill => record_error(&ctx, &error),
+            Err(error) => {
+                failures += 1;
+                record_error(&ctx, &error);
+                if failures >= FAILURES_BEFORE_GIVING_UP {
+                    tracing::warn!(server = %ctx.worker.spec.id, module = %ctx.module.id(), %error, "модуль отключён до повторного detect");
+                    return;
+                }
+            }
+        }
+    }
+}
+
+async fn fetch(
+    ctx: &LoopContext,
+    previous: Option<Snapshot>,
+    is_backfill: bool,
+) -> Result<Snapshot, ModuleError> {
+    let context = CollectContext {
+        previous,
+        host: ctx.worker.spec.external_host(),
+        settings: ctx.worker.spec.module_settings(ctx.module.id().0),
+        checks: ctx.worker.spec.checks.clone(),
+    };
+    if is_backfill {
+        return ctx.module.backfill(ctx.transport.as_ref(), &context).await;
+    }
+    ctx.module.collect(ctx.transport.as_ref(), &context).await
+}
+
+fn is_own_request(
+    ctx: &LoopContext,
+    request: Result<ModuleId, broadcast::error::RecvError>,
+) -> bool {
+    matches!(request, Ok(module) if module == ctx.module.id())
+}
+
+fn recent_snapshot(ctx: &LoopContext) -> Option<Snapshot> {
+    let state = ctx.worker.state.read().ok()?;
+    let snapshot = state
+        .servers
+        .get(&ctx.worker.spec.id)?
+        .modules
+        .get(&ctx.module.id())?
+        .last_snapshot
+        .clone()?;
+    let max_age = chrono::Duration::from_std(ctx.interval * STALE_PREVIOUS_INTERVALS).ok()?;
+    (Utc::now() - snapshot.taken_at <= max_age).then_some(snapshot)
+}
+
+fn record_snapshot(ctx: &LoopContext, snapshot: &Snapshot) {
+    let worker = &ctx.worker;
+    if let Ok(mut state) = worker.state.write() {
+        let Some(server) = state.servers.get_mut(&worker.spec.id) else {
+            return;
+        };
+        server.push_samples(snapshot.taken_at, &snapshot.samples);
+        if let Some(module_state) = server.modules.get_mut(&ctx.module.id()) {
+            module_state.record_snapshot(snapshot.clone());
+        }
+        let events: Vec<_> = snapshot
+            .events
+            .iter()
+            .map(|event| event.clone().for_server(worker.spec.id.clone()))
+            .collect();
+        server.push_recent_events(events.iter().cloned());
+        state.push_events(events);
+    }
+    persist_samples(ctx, snapshot);
+    let worker = Arc::clone(worker);
+    tokio::task::spawn_blocking(move || worker.docs.maybe_write(&worker));
+    (ctx.worker.notify)();
+}
+
+fn persist_samples(ctx: &LoopContext, snapshot: &Snapshot) {
+    let Some(storage) = &ctx.worker.storage else {
+        return;
+    };
+    let server = ctx.worker.spec.id.to_string();
+    for sample in &snapshot.samples {
+        let stored = StoredSample {
+            server: server.clone(),
+            key: sample.key.clone(),
+            at: snapshot.taken_at,
+            value: sample.value,
+        };
+        if storage.write(stored).is_err() {
+            return;
+        }
+    }
+}
+
+fn record_error(ctx: &LoopContext, error: &ModuleError) {
+    let worker = &ctx.worker;
+    if let Ok(mut state) = worker.state.write()
+        && let Some(server) = state.servers.get_mut(&worker.spec.id)
+        && let Some(module_state) = server.modules.get_mut(&ctx.module.id())
+    {
+        module_state.record_error(error);
+    }
+    (worker.notify)();
+}
