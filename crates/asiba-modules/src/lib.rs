@@ -1,4 +1,5 @@
 pub mod anomalies;
+pub mod checks;
 mod common;
 pub mod cpu;
 pub mod deploy;
@@ -20,8 +21,9 @@ pub mod users;
 
 use asiba_core::ModuleRegistry;
 
-pub fn default_registry() -> ModuleRegistry {
+pub fn default_registry(checks: checks::Defined) -> ModuleRegistry {
     ModuleRegistry::new()
+        .register(checks::ChecksModule::new(checks))
         .register(system::SystemModule)
         .register(cpu::CpuModule)
         .register(memory::MemoryModule)

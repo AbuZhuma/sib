@@ -74,6 +74,7 @@ fn engine(deps: EngineDeps, notify: RepaintNotifier, senders: Senders) -> Engine
         history_path: deps.history_path,
         geo_cache: deps.geo_cache,
         geolocation: Arc::new(AtomicBool::new(deps.geolocation)),
+        checks: deps.checks,
         intervals: deps.intervals.clamped(),
         notify,
         events: senders.events,

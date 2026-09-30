@@ -3,8 +3,8 @@ use std::time::Duration;
 use asiba_config::AiConfig;
 use asiba_core::{
     ActionRecord, ActionRequest, AuditReport, AuditScope, AuditTarget, Availability, Credentials,
-    IgnoredIncident, Incident, Intervals, ModuleId, QueryRequest, QueryResponse, Retention,
-    ServerId, ServerSpec, Snapshot, TransportError,
+    CustomCheck, IgnoredIncident, Incident, Intervals, ModuleId, QueryRequest, QueryResponse,
+    Retention, ServerId, ServerSpec, Snapshot, TransportError,
 };
 use asiba_transport::HostKeyPolicy;
 use chrono::{DateTime, Utc};
@@ -53,6 +53,7 @@ pub enum Command {
     SetIntervals(Intervals),
     SetRetention(Retention),
     SetGeolocation(bool),
+    SetChecks(Vec<CustomCheck>),
     Audit {
         target: AuditTarget,
         scope: AuditScope,

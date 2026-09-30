@@ -5,7 +5,7 @@ use asiba_transport::LocalTransport;
 #[ignore = "требует локальную машину с /proc; запускать вручную: cargo test -p asiba-modules -- --ignored"]
 async fn all_modules_collect_on_localhost() {
     let transport = LocalTransport::new(SudoMode::None, None);
-    for module in asiba_modules::default_registry().all() {
+    for module in asiba_modules::default_registry(Default::default()).all() {
         let first = module.collect(&transport, &CollectContext::default()).await;
         assert!(first.is_ok(), "{}: {:?}", module.id(), first.err());
         tokio::time::sleep(std::time::Duration::from_millis(300)).await;

@@ -44,14 +44,16 @@ fn engine_deps(
 ) -> EngineDeps {
     let servers = ServerStore::new(config.servers_dir(paths));
     let storage = open_storage(paths, config.retention);
+    let checks = asiba_modules::checks::Defined::new(config.checks.clone());
     EngineDeps {
-        registry: asiba_modules::default_registry(),
+        registry: asiba_modules::default_registry(checks.clone()),
         state,
         persistence: Persistence::new(servers, secrets),
         history_path: storage.is_some().then(|| paths.history_db()),
         storage,
         geo_cache: Some(paths.geo_cache()),
         geolocation: config.geolocation,
+        checks,
         alert_settings: AlertSettings::from_custom(
             &config.alert_rules,
             config.desktop_notifications,

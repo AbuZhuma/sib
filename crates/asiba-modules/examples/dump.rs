@@ -7,7 +7,7 @@ async fn main() {
         .nth(1)
         .unwrap_or_else(|| "system".to_owned());
     let transport = LocalTransport::new(SudoMode::None, None);
-    let registry = asiba_modules::default_registry();
+    let registry = asiba_modules::default_registry(Default::default());
     let leaked: &'static str = Box::leak(id.into_boxed_str());
     let Some(module) = registry.get(ModuleId(leaked)) else {
         eprintln!("нет такого модуля");
