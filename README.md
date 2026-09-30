@@ -1,41 +1,41 @@
 # Sib
 
-Мониторинг Linux-серверов в одном окне. Агент на сервер не ставится: приложение подключается по SSH, читает `/proc`, `/sys` и вывод обычных утилит, пишет историю в SQLite и в markdown-файл рядом с настройками сервера.
+Linux server monitoring in one window. Nothing is installed on the server: the app connects over SSH, reads `/proc`, `/sys` and the output of ordinary tools, and writes the history into SQLite and into a markdown file next to the server settings.
 
-## Что умеет
+## What it does
 
-- **Серверы.** Карточки и таблица, поиск и фильтры по статусу, окружению и тегам. Сервер добавляется по хосту, пользователю и ключу; без ключа берутся ssh-agent и `~/.ssh`. Поддерживаются jump host и sudo.
-- **19 модулей.** Система, CPU, память, диски, сеть, процессы, сервисы systemd, Docker и Podman, порты и файрвол, журнал, пользователи, обновления, безопасность, аномалии и DDoS, деплой, git, GPU, файловый менеджер, свои проверки. Вкладка появляется, только если модуль доступен на сервере и в нём есть данные.
-- **Графики** с историей в SQLite: сырые точки 48 часов, поминутные 30 дней, почасовые год.
-- **Действия** с подтверждением и журналом: бан IP через fail2ban, nftables, iptables или ufw, завершение процесса, рестарт и остановка юнита или контейнера. Опасные требуют ввести имя сервера.
-- **Алерты.** Десять встроенных правил; любое правится, выключается или возвращается к исходному, свои правила добавляются там же. Плюс базовая линия по ключевым метрикам и уведомления на рабочий стол.
-- **Аудит.** 77 проверок безопасности и надёжности, оценка защиты от A до F. Вес и включение каждой проверки настраиваются отдельно для каждого сервера, туда же добавляются свои: команда, скрипт из формы, файл с этой машины или файл на сервере.
-- **Инциденты.** Один список всего, что не в порядке, на главной и в карточке сервера.
-- **Карта.** Серверы по геолокации или ручным координатам, линии от вашей машины с задержкой пинга.
-- **ИИ-анализ.** Выключен по умолчанию, включается тумблером в настройках. Провайдеры: Gemini, OpenAI, Claude и любой OpenAI-совместимый API по URL (Groq, Mistral, DeepSeek, свой сервер). После включения модель разбирает каждый инцидент, анализирует разделы сервера по кнопке или автоматически и делает полный аудит. Отчёты лежат в `~/.local/state/sib/audits/`. Пока тумблер выключен, наружу ничего не уходит.
-- **Терминал.** Кнопка открывает системный эмулятор терминала с запущенным `ssh`, порт и jump host подставляются. Ищутся `$TERMINAL`, `x-terminal-emulator`, ptyxis, gnome-terminal, konsole, tilix, wezterm, xfce4-terminal, alacritty, kitty, foot, xterm.
-- **Файл сервера.** `<имя>.md` повторяет всё, что показывает программа, и обновляется после цикла сбора. Блок между `<!-- notes:start -->` и `<!-- notes:end -->` ваш, программа его не перезаписывает. Рядом `<имя>.llm.md`: те же данные компактно, для языковой модели.
+- **Servers.** Cards and a table, search and filters by status, environment and tags. A server is added by host, user and key. Without a key it uses ssh-agent and `~/.ssh`. Jump hosts and sudo are supported.
+- **19 modules.** System, CPU, memory, disks, network, processes, systemd services, Docker and Podman, ports and firewall, journal, users, updates, security, anomalies and DDoS, deploys, git, GPU, file manager, your own checks. A tab shows up only if the module works on that server and has data.
+- **Charts** with history in SQLite: raw points for 48 hours, per minute for 30 days, per hour for a year.
+- **Actions** with a confirmation dialog and a journal: ban an IP through fail2ban, nftables, iptables or ufw, stop a process, restart or stop a unit or a container. The dangerous ones ask you to type the server name.
+- **Alerts.** Ten built-in rules. Any of them can be edited, turned off or reset, and your own rules are added in the same place. Plus a baseline on the key metrics and desktop notifications.
+- **Audit.** 77 security and reliability checks with a protection score from A to F. The weight and the on/off state of every check are set per server, and your own checks go in the same list: a command, a script from the form, a file from this machine or a file on the server.
+- **Incidents.** One list of everything that is wrong, on the overview page and on the server card.
+- **Map.** Servers by geolocation or by coordinates you set, with lines from your machine showing the ping time.
+- **AI analysis.** Off by default, turned on with a switch in the settings. Providers: Gemini, OpenAI, Claude and any OpenAI-compatible API by URL (Groq, Mistral, DeepSeek, your own server). Once it is on, the model reviews every incident, analyses server sections on a button or automatically, and runs a full audit. Reports are kept in `~/.local/state/sib/audits/`. While the switch is off, nothing leaves your machine.
+- **Terminal.** A button opens the system terminal emulator with `ssh` already running, with the port and the jump host filled in. It looks for `$TERMINAL`, `x-terminal-emulator`, ptyxis, gnome-terminal, konsole, tilix, wezterm, xfce4-terminal, alacritty, kitty, foot, xterm.
+- **Server file.** `<name>.md` repeats everything the program shows and is updated after each collect cycle. The block between `<!-- notes:start -->` and `<!-- notes:end -->` is yours, the program never overwrites it. Next to it is `<name>.llm.md`: the same data in a compact form for a language model.
 
-## Установка
+## Install
 
-Сборка для x86_64 Linux лежит на странице [Releases](https://github.com/AbuZhuma/sib/releases):
+A build for x86_64 Linux is on the [Releases](https://github.com/AbuZhuma/sib/releases) page:
 
 ```
 curl -L https://github.com/AbuZhuma/sib/releases/latest/download/sib-x86_64-linux.tar.gz | tar xz
 ./sib
 ```
 
-Нужен рабочий стол с Secret Service для keyring (GNOME Keyring, KWallet) и обычные библиотеки окна: `libxkbcommon`, `libwayland-client` или `libX11`, `libdbus-1`, драйвер OpenGL. SQLite собран внутрь бинарника.
+You need a desktop with a Secret Service for the keyring (GNOME Keyring, KWallet) and the usual window libraries: `libxkbcommon`, `libwayland-client` or `libX11`, `libdbus-1`, and an OpenGL driver. SQLite is built into the binary.
 
-## Сборка из исходников
+## Build from source
 
-Нужен Rust 1.88 или новее и заголовочные файлы тех же библиотек. Fedora: `libxkbcommon-devel wayland-devel dbus-devel`. Debian и Ubuntu: `libxkbcommon-dev libwayland-dev libdbus-1-dev`.
+You need Rust 1.88 or newer and the headers of the same libraries. Fedora: `libxkbcommon-devel wayland-devel dbus-devel`. Debian and Ubuntu: `libxkbcommon-dev libwayland-dev libdbus-1-dev`.
 
 ```
 cargo run -p sib-app --release
 ```
 
-Проверки перед коммитом; те же шаги гоняет CI в `.github/workflows/ci.yml`, плюс `cargo deny check` по `deny.toml`:
+Checks before a commit. CI runs the same steps in `.github/workflows/ci.yml`, plus `cargo deny check` against `deny.toml`:
 
 ```
 cargo fmt
@@ -43,21 +43,21 @@ cargo clippy --all-targets -- -D warnings
 cargo test --workspace
 ```
 
-## Где что лежит
+## Where things are kept
 
-| Путь | Содержимое |
+| Path | Content |
 |---|---|
-| `~/.config/sib/config.toml` | тема, интервалы, сроки хранения, правила алертов, уведомления, настройки ИИ без ключа |
-| `~/.config/sib/servers/<имя>.toml` | настройки сервера без секретов |
-| `~/.config/sib/servers/<имя>.md` | файл сервера для человека, обновляется автоматически |
-| `~/.config/sib/servers/<имя>.llm.md` | файл сервера для языковой модели |
-| `~/.local/state/sib/audits/<имя>/` | отчёты ИИ |
-| `~/.local/state/sib/ignored.toml` | инциденты, которые вы убрали кнопкой «забыть» |
-| `~/.local/share/sib/history.db` | история метрик и журнал действий |
-| `~/.cache/sib/` | геолокация, страны адресов, тайлы карты |
-| системный keyring | пароли, passphrase, пароль sudo, ключ API провайдера ИИ |
+| `~/.config/sib/config.toml` | theme, intervals, retention, alert rules, notifications, AI settings without the key |
+| `~/.config/sib/servers/<name>.toml` | server settings without secrets |
+| `~/.config/sib/servers/<name>.md` | the server file for people, updated automatically |
+| `~/.config/sib/servers/<name>.llm.md` | the server file for a language model |
+| `~/.local/state/sib/audits/<name>/` | AI reports |
+| `~/.local/state/sib/ignored.toml` | incidents you archived |
+| `~/.local/share/sib/history.db` | metric history and the action journal |
+| `~/.cache/sib/` | geolocation, address countries, map tiles |
+| system keyring | passwords, passphrases, the sudo password, the AI provider API key |
 
-## Файл сервера `servers/<имя>.toml`
+## Server file `servers/<name>.toml`
 
 ```toml
 id = "neo"
@@ -71,7 +71,7 @@ kind = "key_file"              # auto | key_file | password
 path = "/home/me/.ssh/neo"
 has_passphrase = false
 
-[jump]                         # необязательно
+[jump]                         # optional
 host = "bastion.example.org"
 port = 22
 user = "deploy"
@@ -85,112 +85,112 @@ owner = "ops@example.org"
 links = ["https://grafana.example.org"]
 notes = ""
 
-[location]                     # необязательно, иначе определяется по IP
+[location]                     # optional, otherwise looked up by IP
 lat = 52.52
 lon = 13.40
 label = "Berlin, Hetzner"
 
-[modules.deploy]               # настройки модулей
+[modules.deploy]               # module settings
 logs = "/var/log/deploy.log,/srv/shop/deploy.log"
 
 [modules.processes]
-interval = "5"                 # свой интервал сбора в секундах
-enabled = "true"               # "false" выключает модуль на этом сервере
+interval = "5"                 # collect interval in seconds for this module
+enabled = "true"               # "false" turns the module off on this server
 
-[[checks]]                     # своя проверка аудита, правится в UI
+[[checks]]                     # your own audit check, edited in the UI
 id = "custom:1"
-name = "Сертификат не истекает"
+name = "Certificate is not expiring"
 kind = "script"                # script | local_file | remote_file
 source = "openssl x509 -checkend 604800 -noout -in /etc/ssl/site.pem"
 expect = "exit_zero"           # exit_zero | contains | missing
 area = "reliability"
 weight = "high"                # low | medium | high
-advice = "Продлить сертификат"
+advice = "Renew the certificate"
 
-[check_overrides."ssh.port"]   # изменённая встроенная проверка
+[check_overrides."ssh.port"]   # a built-in check you changed
 enabled = false
 ```
 
-Секреты в файл не попадают: пароли вводятся в форме и уходят в keyring.
+Secrets never go into the file: passwords are typed in the form and stored in the keyring.
 
-## Безопасность
+## Security
 
-- Ключ хоста проверяется по `~/.ssh/known_hosts`. Незнакомый или изменившийся показывается с отпечатком и требует подтверждения.
-- Команды модулей только читают, полный список ниже. Записывают лишь действия: бан, kill, restart, stop и правка файлов. Каждое проходит через диалог подтверждения и попадает в журнал.
-- Приложение не логирует команды с секретами.
-- Без включённого ИИ наружу уходят только запросы к `ip-api.com` для карты и стран адресов. Выключаются в Настройки → Общие.
+- The host key is checked against `~/.ssh/known_hosts`. An unknown or changed key is shown with its fingerprint and has to be confirmed.
+- Module commands only read, the full list is below. Only actions write: ban, kill, restart, stop and file editing. Each of them goes through a confirmation dialog and lands in the journal.
+- The app never logs commands that carry secrets.
+- Without AI turned on, the only requests that leave your machine are to `ip-api.com`, for the map and for address countries. They are turned off in Settings > General.
 
-## Какие команды выполняются на сервере
+## What the app runs on your servers
 
-Полный список того, что программа запускает по SSH. Всё остальное она не трогает. Команды, помеченные как **действия**, выполняются только после диалога подтверждения и записываются в журнал; все прочие читают.
+The full list of what the program runs over SSH. It touches nothing else. Commands marked as **actions** run only after a confirmation dialog and are written to the journal; everything else only reads.
 
-Пинг команд на сервере не выполняет: приложение раз в 5 секунд само делает TCP-connect на порт SSH со своей машины.
+Ping runs no command on the server: the app makes a TCP connect to the SSH port from its own machine every 5 seconds.
 
 **system**
 `hostname`, `cat /etc/os-release`, `uname -r`, `uname -m`, `cat /proc/uptime`, `cat /proc/loadavg`, `grep -m1 'model name' /proc/cpuinfo`, `grep -c '^processor' /proc/cpuinfo`, `grep -E '^(MemTotal|SwapTotal):' /proc/meminfo`, `systemd-detect-virt`, `cat /etc/timezone || timedatectl show -p Timezone --value`, `date -u +%s`.
 
 **cpu**
-`cat /proc/stat`, `cat /proc/pressure/cpu`, `grep 'cpu MHz' /proc/cpuinfo`, чтение `/sys/class/thermal/thermal_zone*/{type,temp}` и `/sys/class/hwmon/hwmon*/{name,temp1_input}`.
+`cat /proc/stat`, `cat /proc/pressure/cpu`, `grep 'cpu MHz' /proc/cpuinfo`, reads of `/sys/class/thermal/thermal_zone*/{type,temp}` and `/sys/class/hwmon/hwmon*/{name,temp1_input}`.
 
 **memory**
 `cat /proc/meminfo`, `cat /proc/pressure/memory`, `grep -E '^(oom_kill|pswpin|pswpout) ' /proc/vmstat`.
 
 **disk**
-`df -P -B1 -x tmpfs -x devtmpfs -x squashfs -x overlay -x efivarfs -x fuse.portal`, то же с `-i` для inode, `cat /proc/diskstats`, `cat /proc/pressure/io`. Проверка доступности: `command -v df`.
+`df -P -B1 -x tmpfs -x devtmpfs -x squashfs -x overlay -x efivarfs -x fuse.portal`, the same with `-i` for inodes, `cat /proc/diskstats`, `cat /proc/pressure/io`. Availability check: `command -v df`.
 
 **network**
-`cat /proc/net/dev`, `ip -o addr`, `ip -o link`, чтение `/sys/class/net/*/{operstate,speed}`, `ss -Htan | awk '{print $1}' | sort | uniq -c`, `ip -o -4 route show default`.
+`cat /proc/net/dev`, `ip -o addr`, `ip -o link`, reads of `/sys/class/net/*/{operstate,speed}`, `ss -Htan | awk '{print $1}' | sort | uniq -c`, `ip -o -4 route show default`.
 
 **processes**
-`cat /proc/[0-9]*/stat`, чтение `/proc/<pid>/cmdline` и `/proc/<pid>/io`, `ps -eo pid=,user=`, `getconf CLK_TCK`, `getconf PAGESIZE`, `cat /proc/uptime`, `grep MemTotal /proc/meminfo`.
-**Действия** (через sudo, если настроен): `kill -TERM <pid>`, `kill -KILL <pid>`.
+`cat /proc/[0-9]*/stat`, reads of `/proc/<pid>/cmdline` and `/proc/<pid>/io`, `ps -eo pid=,user=`, `getconf CLK_TCK`, `getconf PAGESIZE`, `cat /proc/uptime`, `grep MemTotal /proc/meminfo`.
+**Actions** (through sudo if it is set up): `kill -TERM <pid>`, `kill -KILL <pid>`.
 
 **services**
-`systemctl list-units --type=service --all --plain --no-legend --no-pager`, `TZ=UTC systemctl show '*.service' -p Id -p NRestarts -p MainPID -p ActiveEnterTimestamp -p FragmentPath -p WorkingDirectory -p Result`, `TZ=UTC systemctl list-timers --all --no-legend -o json`. По запросу: `journalctl -u <unit> -n 200 --no-pager -o short-iso`. Проверка доступности: `command -v systemctl`.
-**Действия** (root): `systemctl restart|start|stop <unit>`.
+`systemctl list-units --type=service --all --plain --no-legend --no-pager`, `TZ=UTC systemctl show '*.service' -p Id -p NRestarts -p MainPID -p ActiveEnterTimestamp -p FragmentPath -p WorkingDirectory -p Result`, `TZ=UTC systemctl list-timers --all --no-legend -o json`. On request: `journalctl -u <unit> -n 200 --no-pager -o short-iso`. Availability check: `command -v systemctl`.
+**Actions** (root): `systemctl restart|start|stop <unit>`.
 
 **docker**
-Бинарник `docker`, иначе `podman`: `version --format`, `ps -a --format`, `stats --no-stream --format`, `images --format`, `inspect --format` по всем контейнерам, `volume ls -q | wc -l`, `network ls --format`. По запросу: `logs --tail 300 -t <container>`. Проверка доступности: `ps -q`.
-**Действия**: `restart|start|stop <container>`.
+The `docker` binary, or `podman`: `version --format`, `ps -a --format`, `stats --no-stream --format`, `images --format`, `inspect --format` over all containers, `volume ls -q | wc -l`, `network ls --format`. On request: `logs --tail 300 -t <container>`. Availability check: `ps -q`.
+**Actions**: `restart|start|stop <container>`.
 
 **ports**
-`ss -tulpnH`, `ss -Htan state established`. Через sudo, если настроен: `ufw status`, `firewall-cmd --list-all`, `nft list ruleset`, `iptables -S INPUT`. Доступность портов снаружи приложение проверяет со своей машины TCP-connect'ом, не более 64 портов, таймаут 1.5 секунды, не чаще раза в 5 минут.
+`ss -tulpnH`, `ss -Htan state established`. Through sudo if it is set up: `ufw status`, `firewall-cmd --list-all`, `nft list ruleset`, `iptables -S INPUT`. Whether a port answers from outside is checked by the app from its own machine with a TCP connect, at most 64 ports, 1.5 second timeout, no more than once every 5 minutes.
 
 **logs**
-`journalctl -p warning -o json --no-pager -q --since -1h -n 300`, дальше то же с `--after-cursor=<курсор последней записи>`. Подгрузка истории при прокрутке: то же с `--until=@<время самой старой записи>`. Проверка доступности: `command -v journalctl` и пробный `journalctl -q -n 1 --system`.
+`journalctl -p warning -o json --no-pager -q --since -1h -n 300`, then the same with `--after-cursor=<cursor of the last entry>`. Loading older entries while scrolling: the same with `--until=@<time of the oldest entry>`. Availability check: `command -v journalctl` and a test `journalctl -q -n 1 --system`.
 
 **users**
-`who`, `last -F -n 30 -w`, `getent passwd`, `getent group sudo wheel admin`, подсчёт строк в `/root/.ssh/authorized_keys` и `/home/*/.ssh/authorized_keys`. По запросу «активность пользователя» (через sudo, если настроен): `getent passwd <user>`, `tail -n 300` его `.bash_history` и `.zsh_history`, `journalctl -t sudo -o short-iso --since -30d`, `journalctl _UID=<uid> -n 200 -o short-iso`. История команд не сохраняется на диск, только показывается.
+`who`, `last -F -n 30 -w`, `getent passwd`, `getent group sudo wheel admin`, a line count of `/root/.ssh/authorized_keys` and `/home/*/.ssh/authorized_keys`. On a user activity request (through sudo if it is set up): `getent passwd <user>`, `tail -n 300` of their `.bash_history` and `.zsh_history`, `journalctl -t sudo -o short-iso --since -30d`, `journalctl _UID=<uid> -n 200 -o short-iso`. The command history is never saved to disk, only shown.
 
 **updates**
-Проверка доступности: `apt-get`, `dnf`, `yum`, `pacman`, `zypper` или `apk`. Сбор: `apt-get -s upgrade | grep ^Inst`, `dnf -q -C check-update` (только по кешу метаданных, полный запрос лишь если кеша нет), `yum -q check-update`, `pacman -Qu`, `zypper -q lu`, `apk version -l '<'`. Перезагрузка: `/var/run/reboot-required`, `needs-restarting -r`.
+Availability check: `apt-get`, `dnf`, `yum`, `pacman`, `zypper` or `apk`. Collect: `apt-get -s upgrade | grep ^Inst`, `dnf -q -C check-update` (metadata cache only, the full query only when there is no cache), `yum -q check-update`, `pacman -Qu`, `zypper -q lu`, `apk version -l '<'`. Reboot: `/var/run/reboot-required`, `needs-restarting -r`.
 
 **security**
-Выполняется через sudo, если он настроен. Каждый цикл: `id -un`, `systemctl is-active` для `firewalld ufw nftables iptables netfilter-persistent fail2ban auditd unattended-upgrades dnf-automatic.timer`, `command -v fail2ban-client nft iptables ufw`, `journalctl -q -o short-iso --since -24h -t sshd -t sshd-session -n 2000` (без journald `grep sshd /var/log/auth.log /var/log/secure`), то же для `-t sudo -n 500`, `fail2ban-client status` и `fail2ban-client status <jail>` по каждому джейлу, `nft list set inet sib bans|bans6`, `iptables -S SIB`, `ip6tables -S SIB`, `ufw status | grep DENY`.
-Раз в 5 минут: `sshd -T` (если недоступен, `grep` по `/etc/ssh/sshd_config` и `sshd_config.d/*.conf`), `sha256sum /etc/passwd /etc/group /etc/sudoers /etc/sudoers.d/*`, `sysctl` по ключам защищённости, `getenforce`, `aa-status --enabled`, `timedatectl show -p NTPSynchronized --value`, `awk` по `/etc/passwd` и `/etc/shadow`, `grep -r NOPASSWD /etc/sudoers /etc/sudoers.d`, `find` по `authorized_keys` с правами `go+w`, `find /etc -maxdepth 2 -type f -perm -o+w`, `ss -tlnH` по типовым портам баз и панелей.
-**Действия** (root): `fail2ban-client set <jail> banip|unbanip <ip>`; для nftables создание таблицы `inet sib` с сетами `bans` и `bans6`, цепочкой `input` и правилом `ip saddr @bans drop`, затем `nft add element` и `nft delete element`; для iptables `-N SIB`, `-I INPUT -j SIB`, `-A|-D SIB -s <ip> -j DROP` (и то же для ip6tables); `ufw insert 1 deny from <ip>` и `ufw delete deny from <ip>`.
+Runs through sudo if it is set up. Every cycle: `id -un`, `systemctl is-active` for `firewalld ufw nftables iptables netfilter-persistent fail2ban auditd unattended-upgrades dnf-automatic.timer`, `command -v fail2ban-client nft iptables ufw`, `journalctl -q -o short-iso --since -24h -t sshd -t sshd-session -n 2000` (without journald, `grep sshd /var/log/auth.log /var/log/secure`), the same for `-t sudo -n 500`, `fail2ban-client status` and `fail2ban-client status <jail>` for each jail, `nft list set inet sib bans|bans6`, `iptables -S SIB`, `ip6tables -S SIB`, `ufw status | grep DENY`.
+Every 5 minutes: `sshd -T` (if it is not available, `grep` over `/etc/ssh/sshd_config` and `sshd_config.d/*.conf`), `sha256sum /etc/passwd /etc/group /etc/sudoers /etc/sudoers.d/*`, `sysctl` for the hardening keys, `getenforce`, `aa-status --enabled`, `timedatectl show -p NTPSynchronized --value`, `awk` over `/etc/passwd` and `/etc/shadow`, `grep -r NOPASSWD /etc/sudoers /etc/sudoers.d`, `find` for `authorized_keys` with `go+w`, `find /etc -maxdepth 2 -type f -perm -o+w`, `ss -tlnH` for the usual database and panel ports.
+**Actions** (root): `fail2ban-client set <jail> banip|unbanip <ip>`; for nftables it creates the table `inet sib` with the sets `bans` and `bans6`, the chain `input` and the rule `ip saddr @bans drop`, then `nft add element` and `nft delete element`; for iptables `-N SIB`, `-I INPUT -j SIB`, `-A|-D SIB -s <ip> -j DROP` (and the same for ip6tables); `ufw insert 1 deny from <ip>` and `ufw delete deny from <ip>`.
 
 **anomalies**
-`ss -Htan`, `cat /proc/net/netstat`, `cat /proc/net/snmp`, `cat /proc/net/dev`, `cat /proc/sys/net/netfilter/nf_conntrack_count` и `nf_conntrack_max`. Проверка доступности: `command -v ss && test -r /proc/net/snmp`.
+`ss -Htan`, `cat /proc/net/netstat`, `cat /proc/net/snmp`, `cat /proc/net/dev`, `cat /proc/sys/net/netfilter/nf_conntrack_count` and `nf_conntrack_max`. Availability check: `command -v ss && test -r /proc/net/snmp`.
 
 **deploy**
-Проверка доступности: `command -v docker || command -v podman`, `systemctl list-units 'deploy*'`, `pgrep -f '[R]unner.Listener|[g]itlab-runner run'`, чтение логов из настройки `[modules.deploy] logs`. Сбор: `docker events --since <unix> --until <unix> --format`, `TZ=UTC systemctl show 'deploy*' -p Id -p ActiveState -p SubState -p Result -p ExecMainStartTimestamp -p ExecMainExitTimestamp -p ExecMainStatus`, `journalctl -u <unit> -n 60 -o short-iso` по каждому юниту `deploy*`, `stat -c %Y` и `tail -n 400` по каждому логу из настройки, `pgrep -f` раннера с `readlink /proc/<pid>/cwd` и `tail -n 40` его последнего лога.
+Availability check: `command -v docker || command -v podman`, `systemctl list-units 'deploy*'`, `pgrep -f '[R]unner.Listener|[g]itlab-runner run'`, and reading the logs from the `[modules.deploy] logs` setting. Collect: `docker events --since <unix> --until <unix> --format`, `TZ=UTC systemctl show 'deploy*' -p Id -p ActiveState -p SubState -p Result -p ExecMainStartTimestamp -p ExecMainExitTimestamp -p ExecMainStatus`, `journalctl -u <unit> -n 60 -o short-iso` for each `deploy*` unit, `stat -c %Y` and `tail -n 400` for each log from the setting, `pgrep -f` for the runner with `readlink /proc/<pid>/cwd` and `tail -n 40` of its latest log.
 
 **git**
-Проверка доступности: `git --version` и поиск первого `.git` в `/opt /srv /var/www /home/* /root /app /docker /data` (`find -maxdepth 3 -name .git -type d`). Сбор по каждому репозиторию с `GIT_OPTIONAL_LOCKS=0`: `rev-parse --abbrev-ref HEAD`, `rev-parse HEAD`, `remote get-url origin`, `rev-list --left-right --count 'HEAD...@{upstream}'`, `status --porcelain | head -200`, `stash list | wc -l`, `branch --format='%(refname:short)' | head -50`, `tag --sort=-creatordate | head -20`, `log -100`. По запросу истории: `log -2000`. В репозиторий ничего не пишется, `status` с `GIT_OPTIONAL_LOCKS=0` не трогает индекс.
+Availability check: `git --version` and a search for the first `.git` in `/opt /srv /var/www /home/* /root /app /docker /data` (`find -maxdepth 3 -name .git -type d`). Collect, for each repository, with `GIT_OPTIONAL_LOCKS=0`: `rev-parse --abbrev-ref HEAD`, `rev-parse HEAD`, `remote get-url origin`, `rev-list --left-right --count 'HEAD...@{upstream}'`, `status --porcelain | head -200`, `stash list | wc -l`, `branch --format='%(refname:short)' | head -50`, `tag --sort=-creatordate | head -20`, `log -100`. On a history request: `log -2000`. Nothing is written to the repository, and `status` with `GIT_OPTIONAL_LOCKS=0` does not touch the index.
 
 **gpu**
-Проверка доступности: `command -v nvidia-smi || ls /sys/class/drm/card*/device/gpu_busy_percent`. Сбор: `nvidia-smi --query-gpu=...` и `nvidia-smi --query-compute-apps=...`; для AMD чтение `/sys/class/drm/card*/device/{gpu_busy_percent,mem_info_vram_used,mem_info_vram_total,product_name}` и `hwmon/hwmon*/{temp1_input,power1_average}`.
+Availability check: `command -v nvidia-smi || ls /sys/class/drm/card*/device/gpu_busy_percent`. Collect: `nvidia-smi --query-gpu=...` and `nvidia-smi --query-compute-apps=...`; for AMD, reads of `/sys/class/drm/card*/device/{gpu_busy_percent,mem_info_vram_used,mem_info_vram_total,product_name}` and `hwmon/hwmon*/{temp1_input,power1_average}`.
 
 **files**
-По расписанию ничего не собирает, только по запросу из файлового менеджера. Проверка доступности: `find / -maxdepth 0 -printf ''` и `command -v stat`. Список папки: `find <dir> -mindepth 1 -maxdepth 1 -printf ... | head -n 1000`. Поиск: `timeout 15 nice -n 19 find / \( -path /proc -o -path /sys -o -path /dev -o -path /run \) -prune -o -iname '*<шаблон>*' | head -n 200`. Чтение файла: `stat -c %s`, проверка прав, лимит 200 000 байт, проба на двоичное содержимое, затем `cat`. Всё через sudo, если он настроен.
-**Действия**: запись через временный файл рядом с сохранением прав и владельца и `mv -f`, `mkdir`, создание пустого файла, `mv`, `cp -a`, `chmod`, `chown`, `rm -rf`. Пути только абсолютные и без `..`, всё экранируется. Запись в `/etc`, `/boot`, `/usr`, `/bin`, `/sbin` и `/lib` требует ввести имя сервера.
+Collects nothing on a schedule, only on request from the file manager. Availability check: `find / -maxdepth 0 -printf ''` and `command -v stat`. Folder listing: `find <dir> -mindepth 1 -maxdepth 1 -printf ... | head -n 1000`. Search: `timeout 15 nice -n 19 find / \( -path /proc -o -path /sys -o -path /dev -o -path /run \) -prune -o -iname '*<pattern>*' | head -n 200`. Reading a file: `stat -c %s`, a permission check, a limit of 200 000 bytes, a test for binary content, then `cat`. All of it through sudo if it is set up.
+**Actions**: writing through a temporary file next to the original, keeping the permissions and the owner, then `mv -f`; `mkdir`; creating an empty file; `mv`; `cp -a`; `chmod`; `chown`; `rm -rf`. Paths must be absolute and without `..`, and everything is quoted. Writing into `/etc`, `/boot`, `/usr`, `/bin`, `/sbin` and `/lib` asks you to type the server name.
 
 **checks**
-Ваши собственные проверки. Проверка доступности: `command -v timeout`. Если проверок нет, модуль не выполняет ни одной команды. Иначе один вызов на все проверки без root и один через sudo, в каждом по фрагменту на проверку: `printf '%s' '<скрипт>' | timeout 20 sh 2>&1`. Скрипт передаётся аргументом `printf` и во временные файлы на сервере не сохраняется.
+Your own checks. Availability check: `command -v timeout`. With no checks the module runs no command at all. Otherwise one call for all the checks without root and one through sudo, each with a fragment per check: `printf '%s' '<script>' | timeout 20 sh 2>&1`. The script is passed as an argument to `printf` and is never saved to a file on the server.
 
-## Для разработки
+## For development
 
-- `cargo run -p sib-modules --example dump <модуль>` снимает данные модуля с локальной машины.
-- `cargo test -p sib-modules --test live_local -- --ignored` прогоняет все модули на localhost.
-- `SIB_SCREENSHOT=/tmp/shot.png SIB_SCREENSHOT_DELAY=10 SIB_OPEN=<сервер>[/<вкладка>]|overview|servers|alerts|map|settings SIB_WINDOW=940x700 cargo run -p sib-app` снимает экран нужной страницы и выходит.
+- `cargo run -p sib-modules --example dump <module>` takes a snapshot of one module from the local machine.
+- `cargo test -p sib-modules --test live_local -- --ignored` runs every module against localhost.
+- `SIB_SCREENSHOT=/tmp/shot.png SIB_SCREENSHOT_DELAY=10 SIB_OPEN=<server>[/<tab>]|overview|servers|alerts|map|settings SIB_WINDOW=940x700 cargo run -p sib-app` takes a screenshot of the given page and exits.
