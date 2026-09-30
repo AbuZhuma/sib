@@ -24,7 +24,7 @@ pub fn show(ui: &mut Ui, server: &ServerState) -> Option<Action> {
         ConnectionStatus::Offline { reason, retry_at } => {
             ui.label(RichText::new(reason).color(p.critical));
             let seconds = format::seconds_until(*retry_at);
-            ui.label(format!("{} {seconds} с", text::DETAIL_RETRY_AT));
+            ui.label(format!("{} {seconds} s", text::DETAIL_RETRY_AT));
             None
         }
         ConnectionStatus::UntrustedHostKey {

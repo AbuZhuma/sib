@@ -192,7 +192,7 @@ mod tests {
 
     #[test]
     fn first_section_returns_text_under_first_heading() {
-        let text = "## Причина\n\nУпала **БД**.\nВторая строка.\n\n## Доказательства\n\n- x";
-        assert_eq!(first_section(text), "Упала БД. Вторая строка.");
+        let text = "## Cause\n\nThe **database** went down.\nSecond line.\n\n## Evidence\n\n- x";
+        assert_eq!(first_section(text), "The database went down. Second line.");
     }
 }

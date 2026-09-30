@@ -91,7 +91,7 @@ fn details(ui: &mut Ui, snapshot: &MemorySnapshot) {
             if let (Some(swap_in), Some(swap_out)) = (snapshot.swap_in_ps, snapshot.swap_out_ps) {
                 row(
                     text::MEM_SWAP_IO,
-                    format!("{swap_in:.0} / {swap_out:.0} стр/с"),
+                    format!("{swap_in:.0} / {swap_out:.0} pages/s"),
                 );
             }
             if let Some(pressure) = snapshot.pressure {

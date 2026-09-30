@@ -41,7 +41,7 @@ mod tests {
 
     #[test]
     fn tooltip_width_grows_with_text_and_stays_within_bounds() {
-        assert_eq!(tooltip_width("коротко"), MIN_WIDTH);
+        assert_eq!(tooltip_width("short"), MIN_WIDTH);
         assert_eq!(tooltip_width(&"a".repeat(40)), 40.0 * CHAR_WIDTH + PADDING);
         assert_eq!(tooltip_width(&"a".repeat(1000)), MAX_WIDTH);
     }

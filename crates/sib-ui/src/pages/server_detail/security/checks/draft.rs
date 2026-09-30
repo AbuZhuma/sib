@@ -145,14 +145,14 @@ mod tests {
         let mut draft = Draft::from_server(&server());
         draft.add();
         let source = CustomCheck {
-            name: "Бэкап".to_owned(),
+            name: "Backup".to_owned(),
             source: "backup --check".to_owned(),
             ..CustomCheck::new("custom:1")
         };
         draft.import(&source);
         let imported = draft.checks.last().expect("imported");
         assert_eq!(imported.id, "custom:2");
-        assert_eq!(imported.name, "Бэкап");
+        assert_eq!(imported.name, "Backup");
         assert!(!draft.is_importing);
     }
 

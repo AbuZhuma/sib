@@ -89,8 +89,8 @@ impl ScreenshotOnStart {
             image::ColorType::Rgba8,
         );
         match result {
-            Ok(()) => tracing::info!(path = %self.target.display(), "снимок экрана сохранён"),
-            Err(error) => tracing::error!(%error, "не удалось сохранить снимок"),
+            Ok(()) => tracing::info!(path = %self.target.display(), "screenshot saved"),
+            Err(error) => tracing::error!(%error, "could not save the screenshot"),
         }
     }
 }

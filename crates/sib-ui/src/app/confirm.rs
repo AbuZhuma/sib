@@ -10,10 +10,10 @@ use crate::theme::Palette;
 
 const DIALOG_WIDTH: f32 = 420.0;
 const BAN_DURATIONS: [(&str, &str); 5] = [
-    ("1h", "1 час"),
-    ("12h", "12 часов"),
-    ("24h", "24 часа"),
-    ("7d", "7 дней"),
+    ("1h", "1 hour"),
+    ("12h", "12 hours"),
+    ("24h", "24 hours"),
+    ("7d", "7 days"),
     (security::PERMANENT, text::CONFIRM_FOREVER),
 ];
 const DEFAULT_BAN_DURATION: &str = "24h";

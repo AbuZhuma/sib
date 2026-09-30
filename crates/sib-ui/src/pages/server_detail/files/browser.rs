@@ -164,10 +164,10 @@ mod tests {
     fn accept_error_records_message_for_path() {
         let mut browser = FileBrowser::default();
         browser.start(2, &QueryRequest::new(files::QUERY_READ, "/etc/shadow"));
-        browser.accept(2, Err("нет доступа".to_owned()));
+        browser.accept(2, Err("no access".to_owned()));
         assert_eq!(
             browser.error("/etc/shadow").map(String::as_str),
-            Some("нет доступа")
+            Some("no access")
         );
     }
 

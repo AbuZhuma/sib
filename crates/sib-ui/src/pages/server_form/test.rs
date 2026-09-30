@@ -71,7 +71,7 @@ pub fn show(ui: &mut Ui, state: &TestState, views: &[Box<dyn ModuleView>]) -> Op
         }
         TestState::Running { started, .. } => {
             ui.label(format!(
-                "{} {:.0} с",
+                "{} {:.0} s",
                 text::TEST_RUNNING,
                 started.elapsed().as_secs_f32()
             ));
@@ -87,7 +87,7 @@ fn report_view(ui: &mut Ui, report: &TestReport, views: &[Box<dyn ModuleView>]) 
         Ok(success) => {
             ui.label(
                 RichText::new(format!(
-                    "{} ({:.1} с)",
+                    "{} ({:.1} s)",
                     text::TEST_OK,
                     report.elapsed.as_secs_f32()
                 ))
