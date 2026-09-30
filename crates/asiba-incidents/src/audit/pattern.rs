@@ -22,10 +22,11 @@ pub enum Area {
     Updates,
     Logs,
     Collection,
+    Custom,
 }
 
 impl Area {
-    pub const ALL: [Area; 11] = [
+    pub const ALL: [Area; 12] = [
         Area::Ssh,
         Area::Access,
         Area::Firewall,
@@ -37,6 +38,7 @@ impl Area {
         Area::Updates,
         Area::Logs,
         Area::Collection,
+        Area::Custom,
     ];
 
     pub fn label(self) -> &'static str {
@@ -52,6 +54,7 @@ impl Area {
             Self::Updates => "Обновления",
             Self::Logs => "Журнал",
             Self::Collection => "Сбор данных",
+            Self::Custom => "Свои проверки",
         }
     }
 

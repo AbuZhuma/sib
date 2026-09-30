@@ -3,30 +3,30 @@ use super::pattern::{Area, Outcome, Pattern, Verdict, Weight};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AuditCheck {
-    pub id: &'static str,
+    pub id: String,
     pub instance: Option<String>,
     pub area: Area,
-    pub subject: &'static str,
-    pub description: &'static str,
+    pub subject: String,
+    pub description: String,
     pub weight: Weight,
     pub outcome: Outcome,
     pub detail: String,
-    pub advice: &'static str,
+    pub advice: String,
     pub evidence: Evidence,
 }
 
 impl AuditCheck {
     pub fn from_verdict(pattern: &Pattern, verdict: Verdict) -> Self {
         Self {
-            id: pattern.id,
+            id: pattern.id.to_owned(),
             instance: verdict.instance,
             area: pattern.area,
-            subject: pattern.subject,
-            description: pattern.description,
+            subject: pattern.subject.to_owned(),
+            description: pattern.description.to_owned(),
             weight: pattern.weight,
             outcome: verdict.outcome,
             detail: verdict.detail,
-            advice: pattern.advice,
+            advice: pattern.advice.to_owned(),
             evidence: verdict
                 .evidence
                 .unwrap_or_else(|| pattern.default_evidence()),
@@ -36,14 +36,14 @@ impl AuditCheck {
     pub fn key(&self) -> String {
         match &self.instance {
             Some(instance) => format!("{}:{instance}", self.id),
-            None => self.id.to_owned(),
+            None => self.id.clone(),
         }
     }
 
     pub fn title(&self) -> String {
         match &self.instance {
             Some(instance) => format!("{} {instance}", self.subject),
-            None => self.subject.to_owned(),
+            None => self.subject.clone(),
         }
     }
 
@@ -85,6 +85,12 @@ impl SystemAudit {
 
     pub fn security(&self) -> impl Iterator<Item = &AuditCheck> {
         self.checks.iter().filter(|c| c.area.is_security())
+    }
+
+    pub fn alerting(&self) -> impl Iterator<Item = &AuditCheck> {
+        self.checks
+            .iter()
+            .filter(|c| c.area.is_security() || c.area == Area::Custom)
     }
 
     pub fn problems(&self) -> impl Iterator<Item = &AuditCheck> {

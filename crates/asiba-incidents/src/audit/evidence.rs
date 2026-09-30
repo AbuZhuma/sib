@@ -52,5 +52,6 @@ pub const TAB_NETWORK: &str = "network";
 pub const TAB_ANOMALIES: &str = "anomalies";
 pub const TAB_GPU: &str = "gpu";
 pub const TAB_SUMMARY: &str = "summary";
+pub const TAB_CHECKS: &str = "checks";
 pub const SECURITY_ATTACKS: &str = "security/attacks";
 pub const SECURITY_ACCESS: &str = "security/access";

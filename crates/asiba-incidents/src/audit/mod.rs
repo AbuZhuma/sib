@@ -1,5 +1,6 @@
 mod check;
 mod context;
+mod custom;
 mod evidence;
 mod pattern;
 mod patterns;
@@ -26,6 +27,7 @@ pub fn system_audit(server: &ServerState, state: &AppState) -> SystemAudit {
                 .map(|verdict| AuditCheck::from_verdict(pattern, verdict))
         })
         .collect();
+    checks.extend(custom::checks(server));
     checks.sort_by_key(|c| (c.area, std::cmp::Reverse(c.outcome)));
     SystemAudit { checks }
 }

@@ -10,8 +10,8 @@ pub struct SecurityChecksDetector;
 impl Detector for SecurityChecksDetector {
     fn detect(&self, server: &ServerState, state: &AppState) -> Vec<IncidentDraft> {
         system_audit(server, state)
-            .security()
-            .filter(|check| !COVERED_BY_OWN_DETECTOR.contains(&check.id))
+            .alerting()
+            .filter(|check| !COVERED_BY_OWN_DETECTOR.contains(&check.id.as_str()))
             .filter_map(|check| {
                 let severity = match (check.outcome, check.weight) {
                     (Outcome::Fail, Weight::High) => Severity::Critical,

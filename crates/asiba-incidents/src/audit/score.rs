@@ -73,15 +73,15 @@ mod tests {
 
     fn check(outcome: Outcome, weight: Weight) -> AuditCheck {
         AuditCheck {
-            id: "t",
+            id: "t".to_owned(),
             instance: None,
             area: Area::Ssh,
-            subject: "x",
-            description: "",
+            subject: "x".to_owned(),
+            description: String::new(),
             weight,
             outcome,
             detail: String::new(),
-            advice: "",
+            advice: String::new(),
             evidence: Evidence::None,
         }
     }

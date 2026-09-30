@@ -36,8 +36,8 @@ pub fn show(
     header(ui, check, &p);
     ui.add_space(GAP);
     section(ui, text::SEC_STATE, &check.detail, &p);
-    section(ui, text::SEC_WHAT_IS_CHECKED, check.description, &p);
-    section(ui, text::SEC_WHAT_TO_DO, check.advice, &p);
+    section(ui, text::SEC_WHAT_IS_CHECKED, &check.description, &p);
+    section(ui, text::SEC_WHAT_TO_DO, &check.advice, &p);
     evidence(ui, ctx, check, subpage)
 }
 
