@@ -17,6 +17,7 @@ mod sparkline;
 pub mod status;
 mod table;
 mod tile;
+mod toggle;
 
 pub use ai_block::{
     AiBlock, ai_block, audit_status_label, cancel_button, first_section, report_body, status_badge,
@@ -40,3 +41,4 @@ pub use sparkline::{sparkline, sparkline_fill};
 pub use status::{status_dot, status_label};
 pub use table::Table;
 pub use tile::{TileSpec, tile_grid};
+pub use toggle::toggle;

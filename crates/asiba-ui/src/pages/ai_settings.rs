@@ -3,7 +3,7 @@ use asiba_core::{AppState, Severity};
 use egui::{ComboBox, Grid, Id, RichText, TextEdit, Ui};
 
 use super::Action;
-use crate::components::{chip_value, help, help_after};
+use crate::components::{chip_value, help, help_after, toggle};
 use crate::modules::Tab;
 use crate::text;
 use crate::theme::{GAP, Palette};
@@ -81,22 +81,14 @@ pub fn show(ui: &mut Ui, config: &AppConfig, state: &AppState) -> Option<Action>
         .ctx()
         .data(|d| d.get_temp(id))
         .unwrap_or_else(|| Draft::from_config(&config.ai));
-    status_line(ui, &config.ai, state);
-    ui.add_space(GAP);
     ui.horizontal(|ui| {
-        ui.checkbox(&mut draft.consent, text::AI_CONSENT);
+        toggle(ui, &mut draft.consent, text::AI_CONSENT);
         help(ui, text::AI_PRIVACY);
+        status_line(ui, &config.ai, state);
     });
     ui.add_space(GAP);
-    provider_picker(ui, &mut draft, &p);
-    Grid::new("ai-grid")
-        .num_columns(2)
-        .spacing([12.0, 4.0])
-        .show(ui, |ui| fields(ui, &mut draft));
-    ui.add_space(GAP);
-    auto_audit_fields(ui, &mut draft, &p);
-    ui.add_space(GAP);
-    section_picker(ui, &mut draft);
+    let is_enabled = draft.consent;
+    ui.add_enabled_ui(is_enabled, |ui| settings_body(ui, &mut draft, &p));
     ui.add_space(GAP);
     let action = apply_button(ui, &draft, config, state);
     ui.ctx().data_mut(|d| d.insert_temp(id, draft));
@@ -104,6 +96,18 @@ pub fn show(ui: &mut Ui, config: &AppConfig, state: &AppState) -> Option<Action>
         ui.ctx().data_mut(|d| d.remove::<Draft>(id));
     }
     action
+}
+
+fn settings_body(ui: &mut Ui, draft: &mut Draft, p: &Palette) {
+    provider_picker(ui, draft, p);
+    Grid::new("ai-grid")
+        .num_columns(2)
+        .spacing([12.0, 4.0])
+        .show(ui, |ui| fields(ui, draft));
+    ui.add_space(GAP);
+    auto_audit_fields(ui, draft, p);
+    ui.add_space(GAP);
+    section_picker(ui, draft);
 }
 
 fn auto_audit_fields(ui: &mut Ui, draft: &mut Draft, p: &Palette) {
