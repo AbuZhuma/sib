@@ -1,2 +1,3 @@
 /target
 *.log
+!crates/sib-modules/fixtures/**/*.log

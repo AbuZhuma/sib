@@ -1,0 +1,18 @@
+@@ /var/log/shop-deploy.log 1757899000
+$ git pull
+Updating 1a2b3c4..5d6e7f8
+Fast-forward
+ app/main.py | 4 ++--
+$ docker compose up -d --build
+ web Pulling
+ web Pulled
+#1 [internal] load build definition
+#5 Building 12.3s
+ Container shop-db-1  Creating
+ Container shop-db-1  Created
+ Container shop-web-1  Recreate
+ Container shop-db-1  Starting
+ Container shop-db-1  Started
+ Container shop-web-1  Starting
+Error response from daemon: driver failed programming external connectivity
+service "web" exited with code 1
