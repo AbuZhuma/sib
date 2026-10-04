@@ -2,7 +2,11 @@
 all-features = true
 
 [advisories]
-ignore = []
+ignore = [
+    { id = "RUSTSEC-2023-0071", reason = "rsa has no fixed release yet. It arrives with russh and is only used when a server key is RSA." },
+    { id = "RUSTSEC-2025-0141", reason = "bincode 1.x is unmaintained, not vulnerable. It arrives with the map tile cache through walkers." },
+    { id = "RUSTSEC-2026-0192", reason = "ttf-parser is unmaintained, not vulnerable. It arrives with eframe through the winit window decorations." },
+]
 
 [licenses]
 allow = [
@@ -16,6 +20,7 @@ allow = [
     "Unicode-3.0",
     "MPL-2.0",
     "CC0-1.0",
+    "CDLA-Permissive-2.0",
     "OFL-1.1",
     "Ubuntu-font-1.0",
     "BSL-1.0",
@@ -24,6 +29,7 @@ allow = [
 [bans]
 multiple-versions = "warn"
 wildcards = "deny"
+allow-wildcard-paths = true
 
 [sources]
 unknown-registry = "deny"

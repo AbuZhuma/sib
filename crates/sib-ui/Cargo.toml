@@ -3,6 +3,7 @@ name = "sib-ui"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+publish = false
 
 [dependencies]
 sib-core.workspace = true
