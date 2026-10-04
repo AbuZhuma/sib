@@ -4,10 +4,11 @@ use chrono::{DateTime, Utc};
 use rusqlite::{Connection, params};
 use sib_core::Point;
 
-use sib_core::ActionRecord;
+use sib_core::{ActionRecord, PipelineRun};
 
 use crate::actions;
 use crate::error::StorageError;
+use crate::pipeline_runs;
 use sib_core::Retention;
 
 use crate::maintenance;
@@ -88,6 +89,14 @@ impl Database {
         actions::list_recent(&self.connection, limit)
     }
 
+    pub fn upsert_pipeline_run(&self, run: &PipelineRun) -> Result<(), StorageError> {
+        pipeline_runs::upsert(&self.connection, run)
+    }
+
+    pub fn recent_pipeline_runs(&self, limit: usize) -> Result<Vec<PipelineRun>, StorageError> {
+        pipeline_runs::list_recent(&self.connection, limit)
+    }
+
     pub fn run_maintenance(
         &mut self,
         now: DateTime<Utc>,
@@ -97,7 +106,13 @@ impl Database {
     }
 
     pub fn delete_server(&self, server: &str) -> Result<(), StorageError> {
-        for table in ["samples", "samples_1m", "samples_1h", "actions"] {
+        for table in [
+            "samples",
+            "samples_1m",
+            "samples_1h",
+            "actions",
+            "pipeline_runs",
+        ] {
             let query = format!("DELETE FROM {table} WHERE server = ?1");
             self.connection.execute(&query, params![server])?;
         }
@@ -123,6 +138,34 @@ mod tests {
             at,
             value,
         }
+    }
+
+    #[test]
+    fn pipeline_run_round_trips() {
+        let db = Database::in_memory().expect("db");
+        let run = PipelineRun {
+            id: 42,
+            server: sib_core::ServerId::parse("neo").expect("id"),
+            pipeline: "deploy".into(),
+            pipeline_name: "Deploy".into(),
+            started_at: DateTime::from_timestamp(1_700_000_000, 0).expect("time"),
+            finished_at: Some(DateTime::from_timestamp(1_700_000_100, 0).expect("time")),
+            status: sib_core::RunStatus::Failed("step build exited with 1".into()),
+            steps: vec![sib_core::StepRun {
+                name: "build".into(),
+                target: sib_core::StepTarget::Server,
+                status: sib_core::StepStatus::Failed,
+                exit_code: Some(1),
+                output: "error\n".into(),
+                started_at: None,
+                finished_at: None,
+            }],
+        };
+        db.upsert_pipeline_run(&run).expect("insert");
+        db.upsert_pipeline_run(&run).expect("replace");
+        assert_eq!(db.recent_pipeline_runs(10).expect("list"), vec![run]);
+        db.delete_server("neo").expect("delete");
+        assert!(db.recent_pipeline_runs(10).expect("list").is_empty());
     }
 
     #[test]

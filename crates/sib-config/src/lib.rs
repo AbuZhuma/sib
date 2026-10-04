@@ -3,6 +3,7 @@ mod app_config;
 mod error;
 mod ignored;
 mod paths;
+mod pipelines;
 mod secrets;
 mod server_store;
 
@@ -11,5 +12,6 @@ pub use app_config::{AppConfig, ThemeChoice};
 pub use error::ConfigError;
 pub use ignored::IgnoredStore;
 pub use paths::Paths;
+pub use pipelines::PipelineStore;
 pub use secrets::{AI_KEY_ACCOUNT, KeyringSecretStore, SecretKind, SecretStore};
 pub use server_store::ServerStore;

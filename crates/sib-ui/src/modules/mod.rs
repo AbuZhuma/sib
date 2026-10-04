@@ -44,10 +44,11 @@ pub enum Tab {
     Gpu,
     Checks,
     Files,
+    Pipelines,
 }
 
 impl Tab {
-    pub const ALL: [Tab; 16] = [
+    pub const ALL: [Tab; 17] = [
         Tab::Summary,
         Tab::Processes,
         Tab::Resources,
@@ -64,6 +65,7 @@ impl Tab {
         Tab::Gpu,
         Tab::Checks,
         Tab::Files,
+        Tab::Pipelines,
     ];
 
     pub fn from_key(key: &str) -> Option<Self> {
@@ -88,6 +90,7 @@ impl Tab {
             Tab::Gpu => "gpu",
             Tab::Checks => "checks",
             Tab::Files => "files",
+            Tab::Pipelines => "pipelines",
         }
     }
 
@@ -109,6 +112,7 @@ impl Tab {
             "gpu" => Tab::Gpu,
             "checks" => Tab::Checks,
             "files" => Tab::Files,
+            "pipelines" | "pipeline" => Tab::Pipelines,
             _ => return None,
         };
         Some(tab)
@@ -127,7 +131,7 @@ impl Tab {
             Tab::Anomalies => Some("anomalies"),
             Tab::Deploy => Some("deploy"),
             Tab::Gpu => Some("gpu"),
-            Tab::Summary | Tab::Git | Tab::Files | Tab::Checks => None,
+            Tab::Summary | Tab::Git | Tab::Files | Tab::Checks | Tab::Pipelines => None,
         }
     }
 
@@ -154,6 +158,7 @@ impl Tab {
             Tab::Gpu => text::TAB_GPU,
             Tab::Checks => text::TAB_CHECKS,
             Tab::Files => text::TAB_FILES,
+            Tab::Pipelines => text::TAB_PIPELINES,
         }
     }
 }

@@ -5,6 +5,7 @@ pub mod check;
 pub mod event;
 pub mod incident;
 pub mod module;
+pub mod pipeline;
 pub mod registry;
 pub mod series;
 pub mod server;
@@ -25,6 +26,10 @@ pub use module::{
     Availability, Intervals, Module, ModuleError, ModuleId, QueryRequest, QueryResponse, Retention,
     SETTING_ENABLED, SETTING_INTERVAL, Schedule,
 };
+pub use pipeline::{
+    DEFAULT_STEP_TIMEOUT_SECS, InvalidPipeline, Pipeline, PipelineBinding, PipelineRun,
+    RenderError, RunStatus, Step, StepRun, StepStatus, StepTarget, Variable,
+};
 pub use registry::ModuleRegistry;
 pub use series::{Point, Series};
 pub use server::{
@@ -34,4 +39,4 @@ pub use server::{
 pub use server_state::{ConnectionStatus, ModuleState, PingStatus, ServerState};
 pub use snapshot::{CollectContext, ModuleData, Sample, Snapshot};
 pub use state::{AppState, SharedState};
-pub use transport::{CommandOutput, Transport, TransportError};
+pub use transport::{CommandOutput, OutputChunk, OutputStream, Transport, TransportError};

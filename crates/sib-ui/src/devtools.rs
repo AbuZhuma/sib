@@ -28,6 +28,7 @@ pub fn start_page() -> Option<(Page, Option<Tab>)> {
         "alerts" => Some(Page::Alerts),
         "map" => Some(Page::Map),
         "settings" => Some(Page::Settings),
+        "pipelines" => Some(Page::Pipelines),
         _ => None,
     };
     if let Some(page) = fixed {

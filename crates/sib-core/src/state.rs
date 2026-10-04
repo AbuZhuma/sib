@@ -6,6 +6,7 @@ use crate::alert::Alert;
 use crate::audit::{AuditReport, AuditScope, AuditTarget};
 use crate::event::Event;
 use crate::incident::{IgnoredIncident, Incident, IncidentKind};
+use crate::pipeline::PipelineRun;
 use crate::server::{Location, ServerId};
 use crate::server_state::ServerState;
 
@@ -14,6 +15,7 @@ const MAX_ACTIONS: usize = 200;
 const MAX_RESOLVED_ALERTS: usize = 300;
 const MAX_RESOLVED_INCIDENTS: usize = 300;
 const MAX_AUDITS: usize = 200;
+const MAX_PIPELINE_RUNS: usize = 100;
 
 pub type SharedState = Arc<RwLock<AppState>>;
 
@@ -26,6 +28,7 @@ pub struct AppState {
     pub incidents: Vec<Incident>,
     pub ignored_incidents: Vec<IgnoredIncident>,
     pub audits: Vec<AuditReport>,
+    pub pipeline_runs: Vec<PipelineRun>,
     pub self_location: Option<Location>,
     pub ip_countries: BTreeMap<String, String>,
 }
@@ -93,6 +96,40 @@ impl AppState {
             overflow -= 1;
             false
         });
+    }
+
+    pub fn pipeline_run_mut(&mut self, id: u64) -> Option<&mut PipelineRun> {
+        self.pipeline_runs.iter_mut().find(|r| r.id == id)
+    }
+
+    pub fn push_pipeline_run(&mut self, run: PipelineRun) {
+        self.pipeline_runs.push(run);
+        let finished = self
+            .pipeline_runs
+            .iter()
+            .filter(|r| !r.is_running())
+            .count();
+        if finished <= MAX_PIPELINE_RUNS {
+            return;
+        }
+        let mut overflow = finished - MAX_PIPELINE_RUNS;
+        self.pipeline_runs.retain(|r| {
+            if r.is_running() || overflow == 0 {
+                return true;
+            }
+            overflow -= 1;
+            false
+        });
+    }
+
+    pub fn pipeline_runs_for<'a>(
+        &'a self,
+        server: &'a ServerId,
+    ) -> impl Iterator<Item = &'a PipelineRun> + 'a {
+        self.pipeline_runs
+            .iter()
+            .rev()
+            .filter(move |r| &r.server == server)
     }
 
     pub fn latest_audit(&self, target: &AuditTarget, scope: &AuditScope) -> Option<&AuditReport> {

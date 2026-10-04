@@ -2,10 +2,13 @@ use std::time::Duration;
 
 use chrono::{DateTime, Utc};
 use sib_config::AiConfig;
+use std::collections::BTreeMap;
+
 use sib_core::{
     ActionRecord, ActionRequest, AuditReport, AuditScope, AuditTarget, Availability,
     CheckOverrides, Credentials, CustomCheck, IgnoredIncident, Incident, Intervals, ModuleId,
-    QueryRequest, QueryResponse, Retention, ServerId, ServerSpec, Snapshot, TransportError,
+    Pipeline, PipelineBinding, QueryRequest, QueryResponse, Retention, ServerId, ServerSpec,
+    Snapshot, TransportError,
 };
 use sib_transport::HostKeyPolicy;
 
@@ -66,6 +69,16 @@ pub enum Command {
     SetAiConfig(AiConfig),
     CancelAudit(u64),
     SetIgnoredIncidents(Vec<IgnoredIncident>),
+    RunPipeline {
+        server: ServerId,
+        pipeline: Pipeline,
+        values: BTreeMap<String, String>,
+    },
+    CancelPipeline(u64),
+    SetServerPipelines {
+        server: ServerId,
+        bindings: Vec<PipelineBinding>,
+    },
 }
 
 #[derive(Debug, Clone)]
@@ -109,5 +122,11 @@ pub enum EngineEvent {
     AuditFinished(AuditReport),
     ServerSaved(ServerId),
     ServerRemoved(ServerId),
+    PipelineFinished {
+        run_id: u64,
+        server: ServerId,
+        name: String,
+        is_success: bool,
+    },
     Warning(String),
 }

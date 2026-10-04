@@ -1,6 +1,22 @@
+use std::time::Duration;
+
 use async_trait::async_trait;
 
 use crate::server::SudoMode;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum OutputStream {
+    Stdout,
+    Stderr,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct OutputChunk {
+    pub stream: OutputStream,
+    pub text: String,
+}
+
+pub type OutputSink<'a> = &'a (dyn Fn(OutputChunk) + Send + Sync);
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CommandOutput {
@@ -42,6 +58,34 @@ pub trait Transport: Send + Sync {
     async fn exec_root(&self, command: &str) -> Result<CommandOutput, TransportError>;
 
     fn sudo_mode(&self) -> SudoMode;
+
+    async fn exec_streaming(
+        &self,
+        command: &str,
+        as_root: bool,
+        timeout: Option<Duration>,
+        sink: OutputSink<'_>,
+    ) -> Result<i32, TransportError> {
+        let _ = timeout;
+        let output = if as_root {
+            self.exec_root(command).await?
+        } else {
+            self.exec(command).await?
+        };
+        if !output.stdout.is_empty() {
+            sink(OutputChunk {
+                stream: OutputStream::Stdout,
+                text: output.stdout,
+            });
+        }
+        if !output.stderr.is_empty() {
+            sink(OutputChunk {
+                stream: OutputStream::Stderr,
+                text: output.stderr,
+            });
+        }
+        Ok(output.exit_code)
+    }
 
     async fn read_file(&self, path: &str) -> Result<String, TransportError> {
         let output = self.exec(&format!("cat {}", shell_quote(path))).await?;

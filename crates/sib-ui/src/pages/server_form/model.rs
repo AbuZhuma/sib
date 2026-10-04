@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use sib_core::{
     AuthMethod, CheckOverrides, Credentials, CustomCheck, Environment, JumpHost, ManualLocation,
-    ModuleSettings, ServerDescription, ServerId, ServerSpec, SudoMode,
+    ModuleSettings, PipelineBinding, ServerDescription, ServerId, ServerSpec, SudoMode,
 };
 
 use crate::text;
@@ -43,6 +43,7 @@ pub struct FormFields {
     pub modules: BTreeMap<String, ModuleSettings>,
     pub checks: Vec<CustomCheck>,
     pub check_overrides: CheckOverrides,
+    pub pipelines: Vec<PipelineBinding>,
 }
 
 impl FormFields {
@@ -90,6 +91,7 @@ impl FormFields {
             modules: spec.modules.clone(),
             checks: spec.checks.clone(),
             check_overrides: spec.check_overrides.clone(),
+            pipelines: spec.pipelines.clone(),
             ..Self::from_description(&spec.description)
         }
     }
@@ -129,6 +131,7 @@ impl FormFields {
             modules: self.modules.clone(),
             checks: self.checks.clone(),
             check_overrides: self.check_overrides.clone(),
+            pipelines: self.pipelines.clone(),
         };
         Ok((spec, self.credentials()))
     }

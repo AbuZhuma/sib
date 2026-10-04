@@ -18,6 +18,7 @@ pub fn sidebar(ui: &mut Ui, page: &Page, state: &AppState) -> Option<Action> {
         (text::NAV_SERVERS, Page::Servers),
         (text::NAV_ALERTS, Page::Alerts),
         (text::NAV_MAP, Page::Map),
+        (text::NAV_PIPELINES, Page::Pipelines),
         (text::NAV_SETTINGS, Page::Settings),
     ];
     let active_alerts = state.active_alerts().count();

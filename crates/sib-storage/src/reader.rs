@@ -3,10 +3,11 @@ use std::path::Path;
 
 use chrono::{DateTime, Utc};
 use rusqlite::{Connection, OpenFlags, params};
-use sib_core::{ActionRecord, Point};
+use sib_core::{ActionRecord, PipelineRun, Point};
 
 use crate::actions;
 use crate::error::StorageError;
+use crate::pipeline_runs;
 
 pub struct HistoryReader {
     connection: Connection,
@@ -22,6 +23,10 @@ impl HistoryReader {
 
     pub fn recent_actions(&self, limit: usize) -> Result<Vec<ActionRecord>, StorageError> {
         actions::list_recent(&self.connection, limit)
+    }
+
+    pub fn recent_pipeline_runs(&self, limit: usize) -> Result<Vec<PipelineRun>, StorageError> {
+        pipeline_runs::list_recent(&self.connection, limit)
     }
 
     pub fn load_series(

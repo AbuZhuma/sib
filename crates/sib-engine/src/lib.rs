@@ -10,6 +10,7 @@ mod history;
 mod incidents;
 mod peers;
 mod persistence;
+mod pipelines;
 mod test_connection;
 mod worker;
 

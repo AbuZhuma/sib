@@ -3,12 +3,15 @@ mod connection;
 pub mod files;
 mod header;
 mod modules_table;
+mod pipelines;
 pub mod security;
 mod summary;
 
 use egui::{Id, RichText, Ui};
 use sib_config::AiConfig;
-use sib_core::{AppState, AuditScope, AuditTarget, Incident, IncidentKind, ModuleId, ServerState};
+use sib_core::{
+    AppState, AuditScope, AuditTarget, Incident, IncidentKind, ModuleId, Pipeline, ServerState,
+};
 use sib_modules::files as files_module;
 
 use super::Action;
@@ -27,6 +30,7 @@ pub struct DetailContext<'a> {
     pub views: &'a [Box<dyn ModuleView>],
     pub inspector: Option<&'a Inspector>,
     pub files: Option<&'a files::FileBrowser>,
+    pub prototypes: &'a [Pipeline],
     pub shared: ViewShared<'a>,
 }
 
@@ -86,6 +90,7 @@ fn tab_content(ui: &mut Ui, ctx: &DetailContext<'_>, tab: Tab) -> Option<Action>
         ),
         Tab::Files => files::show(ui, ctx),
         Tab::Security => security::show(ui, ctx),
+        Tab::Pipelines => pipelines::show(ui, ctx),
         other => {
             let analysis_action = section_analysis(ui, ctx, other);
             pages_for(ui, ctx, other).or(analysis_action)
@@ -97,7 +102,7 @@ fn visible_tabs(server: &ServerState, views: &[Box<dyn ModuleView>]) -> Vec<Tab>
     Tab::ALL
         .into_iter()
         .filter(|tab| {
-            matches!(tab, Tab::Summary | Tab::Security)
+            matches!(tab, Tab::Summary | Tab::Security | Tab::Pipelines)
                 || (*tab == Tab::Files && has_files_module(server))
                 || views
                     .iter()

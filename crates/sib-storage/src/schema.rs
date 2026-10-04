@@ -30,6 +30,17 @@ CREATE TABLE IF NOT EXISTS actions (
     ok INTEGER NOT NULL,
     message TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS pipeline_runs (
+    run_id INTEGER PRIMARY KEY,
+    server TEXT NOT NULL,
+    pipeline TEXT NOT NULL,
+    name TEXT NOT NULL,
+    started INTEGER NOT NULL,
+    finished INTEGER,
+    status TEXT NOT NULL,
+    steps TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS pipeline_runs_server ON pipeline_runs(server, started);
 CREATE TABLE IF NOT EXISTS samples_1h (
     server TEXT NOT NULL,
     key TEXT NOT NULL,

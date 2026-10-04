@@ -129,6 +129,7 @@ mod tests {
             modules: Default::default(),
             checks: Vec::new(),
             check_overrides: Default::default(),
+            pipelines: Vec::new(),
         }
     }
 

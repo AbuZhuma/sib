@@ -164,6 +164,7 @@ mod tests {
             modules: Default::default(),
             checks: Vec::new(),
             check_overrides: Default::default(),
+            pipelines: Vec::new(),
         };
         let result = detect_all(&transport, &registry, &spec).await;
         assert!(matches!(result, Err(TransportError::Disconnected(_))));

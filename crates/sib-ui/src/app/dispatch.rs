@@ -35,6 +35,13 @@ impl SibApp {
             | Action::CancelAudit(_)
             | Action::IgnoreIncident(_)
             | Action::RestoreIncident(_) => self.apply_incidents(action),
+            Action::SavePipeline(_)
+            | Action::DeletePipeline(_)
+            | Action::ImportPipeline(_)
+            | Action::ExportPipeline { .. }
+            | Action::SaveServerPipelines { .. }
+            | Action::AskRunPipeline { .. }
+            | Action::CancelPipeline(_) => self.apply_pipelines(action),
         }
     }
 

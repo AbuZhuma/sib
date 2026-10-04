@@ -5,6 +5,7 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 
 use crate::check::{CheckOverrides, CustomCheck};
+use crate::pipeline::PipelineBinding;
 
 const MAX_NAME_LEN: usize = 32;
 
@@ -72,6 +73,8 @@ pub struct ServerSpec {
     pub checks: Vec<CustomCheck>,
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub check_overrides: CheckOverrides,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub pipelines: Vec<PipelineBinding>,
 }
 
 pub type ModuleSettings = BTreeMap<String, String>;
@@ -241,6 +244,7 @@ mod tests {
             modules: Default::default(),
             checks: Vec::new(),
             check_overrides: Default::default(),
+            pipelines: Vec::new(),
         };
         assert_eq!(spec.external_host(), "");
         spec.host = "neo.example".into();

@@ -3,11 +3,15 @@ mod command;
 mod handler;
 mod session;
 mod ssh_config;
+mod stream;
 
 pub use ssh_config::effective_address;
 
+use std::time::Duration;
+
 use async_trait::async_trait;
 use russh::client::Handle;
+use sib_core::transport::OutputSink;
 use sib_core::{CommandOutput, Credentials, ServerSpec, SudoMode, Transport, TransportError};
 use tokio::sync::Semaphore;
 
@@ -57,6 +61,20 @@ impl SshTransport {
     pub fn is_alive(&self) -> bool {
         !self.handle.is_closed()
     }
+
+    fn root_command(&self, command: &str) -> Result<(String, Option<String>), TransportError> {
+        match self.sudo_mode {
+            SudoMode::None => Err(TransportError::SudoUnavailable),
+            SudoMode::Passwordless => Ok((sudo::wrap_passwordless(command), None)),
+            SudoMode::WithPassword => {
+                let password = self.sudo_password.as_deref().unwrap_or_default();
+                Ok((
+                    sudo::wrap_with_password(command),
+                    Some(format!("{password}\n")),
+                ))
+            }
+        }
+    }
 }
 
 #[async_trait]
@@ -76,6 +94,26 @@ impl Transport for SshTransport {
                     .await
             }
         }
+    }
+
+    async fn exec_streaming(
+        &self,
+        command: &str,
+        as_root: bool,
+        timeout: Option<Duration>,
+        sink: OutputSink<'_>,
+    ) -> Result<i32, TransportError> {
+        let (command, stdin) = if as_root {
+            self.root_command(command)?
+        } else {
+            (command.to_owned(), None)
+        };
+        let _slot = self
+            .channels
+            .acquire()
+            .await
+            .map_err(|_| TransportError::Disconnected("transport closed".to_owned()))?;
+        stream::run(&self.handle, &command, stdin.as_deref(), timeout, sink).await
     }
 
     fn sudo_mode(&self) -> SudoMode {

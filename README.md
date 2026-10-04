@@ -13,6 +13,7 @@ Linux server monitoring in one window. Nothing is installed on the server: the a
 - **Incidents.** One list of everything that is wrong, on the overview page and on the server card.
 - **Map.** Servers by geolocation or by coordinates you set, with lines from your machine showing the ping time.
 - **AI analysis.** Off by default, turned on with a switch in the settings. Providers: Gemini, OpenAI, Claude and any OpenAI-compatible API by URL (Groq, Mistral, DeepSeek, your own server). Once it is on, the model reviews every incident, analyses server sections on a button or automatically, and runs a full audit. Reports are kept in `~/.local/state/sib/audits/`. While the switch is off, nothing leaves your machine.
+- **Pipelines.** A pipeline is a list of shell commands saved once and run on any server with one click: install tools, clone a repository, build, start a long job with `nohup`, bring the results back with `rsync`. Steps run on the server or on this computer, as a user or as root, with a timeout each, stopping at the first failure unless told to continue. Variables are written as `{{name}}` and filled per server; secret ones are asked at run time and never written to disk. Built-in values `{{host}}`, `{{user}}`, `{{port}}`, `{{ssh_target}}` and `{{ssh_args}}` make local `rsync`/`scp` steps work with jump hosts and keys. Output streams live into the server card, every run is kept in the history with per-step exit codes, and a run can be cancelled or repeated. Pipelines are stored as `.toml` files that can be exported and imported.
 - **Terminal.** A button opens the system terminal emulator with `ssh` already running, with the port and the jump host filled in. It looks for `$TERMINAL`, `x-terminal-emulator`, ptyxis, gnome-terminal, konsole, tilix, wezterm, xfce4-terminal, alacritty, kitty, foot, xterm.
 - **Server file.** `<name>.md` repeats everything the program shows and is updated after each collect cycle. The block between `<!-- notes:start -->` and `<!-- notes:end -->` is yours, the program never overwrites it. Next to it is `<name>.llm.md`: the same data in a compact form for a language model.
 
@@ -51,9 +52,10 @@ cargo test --workspace
 | `~/.config/sib/servers/<name>.toml` | server settings without secrets |
 | `~/.config/sib/servers/<name>.md` | the server file for people, updated automatically |
 | `~/.config/sib/servers/<name>.llm.md` | the server file for a language model |
+| `~/.config/sib/pipelines/<id>.toml` | saved pipelines: steps and variables, shared by all servers |
 | `~/.local/state/sib/audits/<name>/` | AI reports |
 | `~/.local/state/sib/ignored.toml` | incidents you archived |
-| `~/.local/share/sib/history.db` | metric history and the action journal |
+| `~/.local/share/sib/history.db` | metric history, the action journal and pipeline runs |
 | `~/.cache/sib/` | geolocation, address countries, map tiles |
 | system keyring | passwords, passphrases, the sudo password, the AI provider API key |
 

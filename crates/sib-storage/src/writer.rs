@@ -2,7 +2,7 @@ use std::sync::mpsc::{self, RecvTimeoutError, Sender};
 use std::time::{Duration, Instant};
 
 use chrono::Utc;
-use sib_core::{ActionRecord, Retention};
+use sib_core::{ActionRecord, PipelineRun, Retention};
 
 use crate::database::Database;
 use crate::error::StorageError;
@@ -15,6 +15,7 @@ const MAX_BATCH: usize = 5000;
 enum WriteRequest {
     Sample(StoredSample),
     Action(ActionRecord),
+    PipelineRun(PipelineRun),
     DeleteServer(String),
     Retention(Retention),
 }
@@ -33,6 +34,10 @@ impl StorageWriter {
 
     pub fn write_action(&self, record: ActionRecord) -> Result<(), StorageError> {
         self.send(WriteRequest::Action(record))
+    }
+
+    pub fn write_pipeline_run(&self, run: PipelineRun) -> Result<(), StorageError> {
+        self.send(WriteRequest::PipelineRun(run))
     }
 
     pub fn delete_server(&self, server: &str) -> Result<(), StorageError> {
@@ -74,6 +79,11 @@ impl Writer {
         match request {
             WriteRequest::Sample(sample) => self.batch.push(sample),
             WriteRequest::Action(record) => record_action(&self.database, &record),
+            WriteRequest::PipelineRun(run) => {
+                if let Err(error) = self.database.upsert_pipeline_run(&run) {
+                    tracing::error!(%error, "could not write the pipeline run");
+                }
+            }
             WriteRequest::DeleteServer(server) => {
                 flush(&mut self.database, &mut self.batch);
                 delete_server(&self.database, &server);

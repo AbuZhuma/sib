@@ -1,9 +1,11 @@
 mod files;
 mod modules;
+mod pipelines;
 mod settings;
 
 pub use files::*;
 pub use modules::*;
+pub use pipelines::*;
 pub use settings::*;
 
 pub const APP_NAME: &str = "SIB";

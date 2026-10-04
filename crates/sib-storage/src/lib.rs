@@ -2,6 +2,7 @@ mod actions;
 mod database;
 mod error;
 mod maintenance;
+mod pipeline_runs;
 mod reader;
 mod sample;
 mod schema;

@@ -6,17 +6,20 @@ pub mod inspector;
 pub mod journal;
 pub mod map;
 pub mod overview;
+pub mod pipelines;
 pub mod server_detail;
 pub mod server_form;
 pub mod servers;
 pub mod settings;
 
+use std::path::PathBuf;
+
 use chrono::{DateTime, Utc};
 use sib_config::{AiConfig, ThemeChoice};
 use sib_core::{
     ActionRequest, ActionSpec, AlertRule, AuditScope, AuditTarget, CheckOverrides, Credentials,
-    CustomCheck, IgnoredIncident, Intervals, ModuleId, QueryRequest, Retention, ServerId,
-    ServerSpec,
+    CustomCheck, IgnoredIncident, Intervals, ModuleId, Pipeline, PipelineBinding, QueryRequest,
+    Retention, ServerId, ServerSpec,
 };
 use sib_engine::TestRequest;
 
@@ -28,6 +31,7 @@ pub enum Page {
     ServerForm,
     Alerts,
     Map,
+    Pipelines,
     Settings,
 }
 
@@ -102,4 +106,20 @@ pub enum Action {
     CancelAudit(u64),
     IgnoreIncident(IgnoredIncident),
     RestoreIncident(IgnoredIncident),
+    SavePipeline(Pipeline),
+    DeletePipeline(String),
+    ImportPipeline(PathBuf),
+    ExportPipeline {
+        id: String,
+        path: PathBuf,
+    },
+    SaveServerPipelines {
+        server: ServerId,
+        bindings: Vec<PipelineBinding>,
+    },
+    AskRunPipeline {
+        server: ServerId,
+        pipeline_id: String,
+    },
+    CancelPipeline(u64),
 }

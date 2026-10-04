@@ -116,6 +116,19 @@ fn notice_message(event: EngineEvent) -> Option<String> {
                 report.scope.key()
             ),
         }),
+        EngineEvent::PipelineFinished {
+            server,
+            name,
+            is_success,
+            ..
+        } => Some(format!(
+            "{}: {name} @ {server}",
+            if is_success {
+                text::RUN_NOTICE_DONE
+            } else {
+                text::RUN_NOTICE_FAILED
+            }
+        )),
         EngineEvent::Warning(message) => Some(message),
         EngineEvent::TestFinished(_)
         | EngineEvent::QueryFinished { .. }

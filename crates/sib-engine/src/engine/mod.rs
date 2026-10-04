@@ -1,5 +1,6 @@
 mod audits;
 mod on_demand;
+mod pipelines;
 mod spawn;
 mod workers;
 
@@ -132,6 +133,11 @@ impl Engine {
             Arc::clone(&self.state),
             Arc::clone(&self.notify),
         );
+        crate::pipelines::prefill_runs(
+            self.history_path.clone(),
+            Arc::clone(&self.state),
+            Arc::clone(&self.notify),
+        );
     }
 
     async fn load_saved(&mut self) {
@@ -186,6 +192,15 @@ impl Engine {
                 module,
                 request,
             } => self.perform(&server, module, request),
+            Command::RunPipeline {
+                server,
+                pipeline,
+                values,
+            } => self.run_pipeline(&server, pipeline, values),
+            Command::CancelPipeline(run_id) => self.cancellations.cancel(run_id),
+            Command::SetServerPipelines { server, bindings } => {
+                self.set_server_pipelines(server, bindings).await;
+            }
             other => self.handle_settings(other),
         }
     }

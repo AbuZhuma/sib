@@ -4,14 +4,16 @@ mod dialogs;
 mod dispatch;
 mod events;
 mod external;
+mod pipelines;
+mod run_dialog;
 
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
 
 use egui::{CentralPanel, Frame, Margin, Panel};
-use sib_config::{AppConfig, IgnoredStore, Paths, SecretStore};
-use sib_core::{AppState, ServerId, SharedState};
+use sib_config::{AppConfig, IgnoredStore, Paths, PipelineStore, SecretStore};
+use sib_core::{AppState, Pipeline, ServerId, SharedState};
 use sib_engine::{EngineHandle, RepaintNotifier};
 
 use crate::components::MapState;
@@ -82,13 +84,21 @@ pub struct SibApp {
     inspector: Option<Inspector>,
     files: HashMap<ServerId, FileBrowser>,
     next_query_token: u64,
+    pipelines: PipelineStore,
+    prototypes: Vec<Pipeline>,
+    run_dialog: Option<run_dialog::RunDialog>,
 }
 
 impl SibApp {
     fn new(deps: AppDeps, engine: EngineHandle, ctx: &egui::Context) -> Self {
         let map = MapState::new(ctx, deps.paths.tiles_cache());
         let ignored = IgnoredStore::load(&deps.paths);
+        let pipelines = PipelineStore::new(&deps.paths);
+        let prototypes = pipelines.load_all();
         Self {
+            pipelines,
+            prototypes,
+            run_dialog: None,
             map,
             ignored,
             engine,
@@ -168,6 +178,7 @@ impl SibApp {
             views: &self.views,
             inspector: self.inspector.as_ref(),
             files: self.files.get(id),
+            prototypes: &self.prototypes,
             shared: ViewShared {
                 state,
                 countries: &state.ip_countries,
@@ -203,6 +214,13 @@ impl SibApp {
             }
             Page::Alerts => pages::alerts::show(ui, state),
             Page::Map => pages::map::show(ui, state, &mut self.map),
+            Page::Pipelines => pages::pipelines::show(
+                ui,
+                &pages::pipelines::PipelinesContext {
+                    prototypes: &self.prototypes,
+                    export_dir: self.pipelines.dir(),
+                },
+            ),
             Page::Settings => pages::settings::show(
                 ui,
                 &SettingsContext {
@@ -256,6 +274,7 @@ impl eframe::App for SibApp {
             });
         self.delete_modal(&ctx);
         self.confirm_modal(&ctx);
+        self.run_modal(&ctx);
         if let Some(action) = action {
             self.apply(action, &ctx);
         }
