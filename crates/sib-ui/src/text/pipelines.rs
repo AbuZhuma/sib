@@ -31,6 +31,9 @@ pub const STEP_AS_ROOT: &str = "as root";
 pub const STEP_TIMEOUT: &str = "timeout, s";
 pub const STEP_TIMEOUT_HINT: &str = "0 = no limit";
 pub const STEP_CONTINUE: &str = "continue on error";
+pub const STEP_ROLLBACK: &str = "rollback";
+pub const STEP_ROLLBACK_HINT: &str =
+    "runs if a later step fails; completed steps are rolled back in reverse order";
 pub const BTN_NEW_PIPELINE: &str = "+ New pipeline";
 pub const BTN_ADD_VARIABLE: &str = "+ variable";
 pub const BTN_ADD_STEP: &str = "+ step";
@@ -69,6 +72,7 @@ pub const STEP_STATUS_PENDING: &str = "pending";
 pub const STEP_STATUS_RUNNING: &str = "running";
 pub const STEP_STATUS_DONE: &str = "done";
 pub const STEP_STATUS_FAILED: &str = "failed";
+pub const STEP_STATUS_ROLLED_BACK: &str = "rolled back";
 pub const STEP_STATUS_SKIPPED: &str = "skipped";
 pub const RUN_LOG_EMPTY: &str = "no output yet";
 pub const RUN_DIALOG_TITLE: &str = "Run the pipeline";

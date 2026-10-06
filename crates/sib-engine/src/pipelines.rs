@@ -44,7 +44,9 @@ pub fn effective_values(
         values.insert(variable.name.clone(), variable.default.clone());
     }
     for (name, value) in provided {
-        values.insert(name.clone(), value.clone());
+        if !value.trim().is_empty() {
+            values.insert(name.clone(), value.clone());
+        }
     }
     values
 }
@@ -76,6 +78,7 @@ async fn execute(job: &RunJob) -> RunStatus {
     for (index, step) in job.pipeline.steps.iter().enumerate() {
         if job.cancellations.is_cancelled(job.run_id) {
             skip_rest(job, index);
+            roll_back(job, &values, &local, index).await;
             return RunStatus::Cancelled;
         }
         let command = match render(&step.command, &values) {
@@ -84,19 +87,18 @@ async fn execute(job: &RunJob) -> RunStatus {
                 mark(job, index, StepStatus::Failed, None);
                 append(job, index, &format!("{error}\n"));
                 skip_rest(job, index + 1);
+                roll_back(job, &values, &local, index).await;
                 return RunStatus::Failed(format!("step '{}': {error}", step.name));
             }
         };
-        let transport = match step.target {
-            StepTarget::Local => Arc::clone(&local),
-            StepTarget::Server => match &job.transport {
-                Some(transport) => Arc::clone(transport),
-                None => {
-                    mark(job, index, StepStatus::Failed, None);
-                    skip_rest(job, index + 1);
-                    return RunStatus::Failed("server is not connected".to_owned());
-                }
-            },
+        let transport = match transport_for(job, &local, step.target) {
+            Some(transport) => transport,
+            None => {
+                mark(job, index, StepStatus::Failed, None);
+                skip_rest(job, index + 1);
+                roll_back(job, &values, &local, index).await;
+                return RunStatus::Failed("server is not connected".to_owned());
+            }
         };
         mark(job, index, StepStatus::Running, None);
         let timeout = (step.timeout_secs > 0).then(|| Duration::from_secs(step.timeout_secs));
@@ -110,6 +112,7 @@ async fn execute(job: &RunJob) -> RunStatus {
                 mark(job, index, StepStatus::Failed, None);
                 append(job, index, "\ncancelled\n");
                 skip_rest(job, index + 1);
+                roll_back(job, &values, &local, index).await;
                 return RunStatus::Cancelled;
             }
             Some(Ok(0)) => mark(job, index, StepStatus::Done, Some(0)),
@@ -117,6 +120,7 @@ async fn execute(job: &RunJob) -> RunStatus {
                 mark(job, index, StepStatus::Failed, Some(code));
                 if !step.continue_on_error {
                     skip_rest(job, index + 1);
+                    roll_back(job, &values, &local, index).await;
                     return RunStatus::Failed(format!("step '{}' exited with {code}", step.name));
                 }
             }
@@ -125,12 +129,72 @@ async fn execute(job: &RunJob) -> RunStatus {
                 append(job, index, &format!("\n{error}\n"));
                 if !step.continue_on_error {
                     skip_rest(job, index + 1);
+                    roll_back(job, &values, &local, index).await;
                     return RunStatus::Failed(format!("step '{}': {error}", step.name));
                 }
             }
         }
     }
     RunStatus::Done
+}
+
+fn transport_for(
+    job: &RunJob,
+    local: &Arc<dyn Transport>,
+    target: StepTarget,
+) -> Option<Arc<dyn Transport>> {
+    match target {
+        StepTarget::Local => Some(Arc::clone(local)),
+        StepTarget::Server => job.transport.as_ref().map(Arc::clone),
+    }
+}
+
+fn status_of(job: &RunJob, index: usize) -> Option<StepStatus> {
+    job.state.read().ok().and_then(|s| {
+        s.pipeline_runs
+            .iter()
+            .find(|r| r.id == job.run_id)
+            .map(|r| r.steps[index].status)
+    })
+}
+
+async fn roll_back(
+    job: &RunJob,
+    values: &BTreeMap<String, String>,
+    local: &Arc<dyn Transport>,
+    failed_index: usize,
+) {
+    for index in (0..failed_index).rev() {
+        let step = &job.pipeline.steps[index];
+        let Some(rollback) = step.rollback_command() else {
+            continue;
+        };
+        if status_of(job, index) != Some(StepStatus::Done) {
+            continue;
+        }
+        append(job, index, "\n--- rollback\n");
+        let command = match render(rollback, values) {
+            Ok(command) => command,
+            Err(error) => {
+                append(job, index, &format!("rollback not rendered: {error}\n"));
+                continue;
+            }
+        };
+        let Some(transport) = transport_for(job, local, step.target) else {
+            append(job, index, "rollback skipped: server is not connected\n");
+            continue;
+        };
+        let timeout = (step.timeout_secs > 0).then(|| Duration::from_secs(step.timeout_secs));
+        let sink = |chunk: OutputChunk| append(job, index, &chunk.text);
+        match transport
+            .exec_streaming(&command, step.as_root, timeout, &sink)
+            .await
+        {
+            Ok(0) => mark(job, index, StepStatus::RolledBack, Some(0)),
+            Ok(code) => append(job, index, &format!("rollback exited with {code}\n")),
+            Err(error) => append(job, index, &format!("rollback failed: {error}\n")),
+        }
+    }
 }
 
 fn mark(job: &RunJob, index: usize, status: StepStatus, exit_code: Option<i32>) {
@@ -316,6 +380,25 @@ mod tests {
         assert_eq!(values.get("ssh_args").map(String::as_str), Some("-p 22"));
     }
 
+    #[test]
+    fn empty_provided_value_keeps_the_default() {
+        let mut provided = BTreeMap::new();
+        provided.insert("greeting".to_owned(), String::new());
+        provided.insert("other".to_owned(), "  ".to_owned());
+        let pipeline = Pipeline {
+            variables: vec![Variable {
+                name: "greeting".to_owned(),
+                default: "hi".to_owned(),
+                secret: false,
+                description: String::new(),
+            }],
+            ..pipeline(Vec::new())
+        };
+        let values = effective_values(&spec(), &pipeline, &provided);
+        assert_eq!(values.get("greeting").map(String::as_str), Some("hi"));
+        assert_eq!(values.get("other"), None);
+    }
+
     #[tokio::test]
     async fn run_executes_steps_in_order_and_stops_on_failure() {
         let steps = vec![
@@ -341,6 +424,58 @@ mod tests {
         assert_eq!(run.steps[2].status, StepStatus::Skipped);
         let journal = state.read().ok().map(|s| s.actions.len());
         assert_eq!(journal, Some(1));
+    }
+
+    #[tokio::test]
+    async fn failure_rolls_back_completed_steps_in_reverse_order() {
+        let dir = std::env::temp_dir().join(format!("sib-rollback-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let log = dir.join("log");
+        let mut one = local("one", &format!("echo one >> {}", log.display()));
+        one.rollback = Some(format!("echo undo-one >> {}", log.display()));
+        let mut two = local("two", &format!("echo two >> {}", log.display()));
+        two.rollback = Some(format!("echo undo-two >> {}", log.display()));
+        let three = local("three", "exit 7");
+        let mut four = local("four", "echo never");
+        four.rollback = Some("echo never-undone".into());
+        let (job, state) = job(pipeline(vec![one, two, three, four]), BTreeMap::new());
+        start(job);
+        wait_finished(&state, 1).await;
+        let run = state
+            .read()
+            .ok()
+            .and_then(|s| s.pipeline_runs.first().cloned())
+            .expect("run");
+        assert_eq!(
+            run.status,
+            RunStatus::Failed("step 'three' exited with 7".into())
+        );
+        assert_eq!(run.steps[0].status, StepStatus::RolledBack);
+        assert_eq!(run.steps[1].status, StepStatus::RolledBack);
+        assert_eq!(run.steps[2].status, StepStatus::Failed);
+        assert_eq!(run.steps[3].status, StepStatus::Skipped);
+        assert!(run.steps[0].output.contains("--- rollback"));
+        let logged = std::fs::read_to_string(&log).unwrap();
+        assert_eq!(logged, "one\ntwo\nundo-two\nundo-one\n");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[tokio::test]
+    async fn steps_without_rollback_keep_their_status_on_failure() {
+        let (job, state) = job(
+            pipeline(vec![local("one", "true"), local("two", "exit 1")]),
+            BTreeMap::new(),
+        );
+        start(job);
+        wait_finished(&state, 1).await;
+        let run = state
+            .read()
+            .ok()
+            .and_then(|s| s.pipeline_runs.first().cloned())
+            .expect("run");
+        assert_eq!(run.steps[0].status, StepStatus::Done);
+        assert!(!run.steps[0].output.contains("rollback"));
     }
 
     #[tokio::test]

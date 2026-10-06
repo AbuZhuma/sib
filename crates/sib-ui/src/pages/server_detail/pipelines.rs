@@ -96,9 +96,22 @@ fn bindings_panel(
         },
     );
     if apply_clicked {
+        let bindings = draft
+            .bindings
+            .iter()
+            .map(|b| PipelineBinding {
+                pipeline: b.pipeline.clone(),
+                values: b
+                    .values
+                    .iter()
+                    .filter(|(_, v)| !v.trim().is_empty())
+                    .map(|(k, v)| (k.clone(), v.clone()))
+                    .collect(),
+            })
+            .collect();
         action = Some(Action::SaveServerPipelines {
             server: server.spec.id.clone(),
-            bindings: draft.bindings.clone(),
+            bindings,
         });
     }
     action
@@ -354,6 +367,7 @@ fn step_badge(ui: &mut Ui, step: &StepRun, p: &Palette) {
             badge(ui, &label, p.critical)
         }
         StepStatus::Skipped => badge(ui, text::STEP_STATUS_SKIPPED, p.text_muted),
+        StepStatus::RolledBack => badge(ui, text::STEP_STATUS_ROLLED_BACK, p.warning),
     }
 }
 

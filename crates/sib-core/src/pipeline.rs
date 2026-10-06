@@ -30,6 +30,17 @@ pub struct Step {
     pub timeout_secs: u64,
     #[serde(default)]
     pub continue_on_error: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub rollback: Option<String>,
+}
+
+impl Step {
+    pub fn rollback_command(&self) -> Option<&str> {
+        self.rollback
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+    }
 }
 
 fn default_timeout() -> u64 {
@@ -45,6 +56,7 @@ impl Default for Step {
             as_root: false,
             timeout_secs: DEFAULT_STEP_TIMEOUT_SECS,
             continue_on_error: false,
+            rollback: None,
         }
     }
 }
@@ -269,6 +281,7 @@ pub enum StepStatus {
     Done,
     Failed,
     Skipped,
+    RolledBack,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

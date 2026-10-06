@@ -33,6 +33,7 @@ impl RunDialog {
             .map(|v| {
                 let value = bound
                     .get(&v.name)
+                    .filter(|b| !b.trim().is_empty())
                     .cloned()
                     .unwrap_or_else(|| v.default.clone());
                 (v.name.clone(), value)

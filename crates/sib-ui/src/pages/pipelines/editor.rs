@@ -183,6 +183,19 @@ fn step(ui: &mut Ui, index: usize, count: usize, step: &mut Step) -> Option<Step
                 .desired_rows(COMMAND_ROWS)
                 .hint_text(text::STEP_COMMAND_HINT),
         );
+        ui.add_space(GAP_SMALL);
+        label(ui, text::STEP_ROLLBACK);
+        let rollback = step.rollback.get_or_insert_with(String::new);
+        ui.add(
+            TextEdit::multiline(rollback)
+                .code_editor()
+                .desired_width(f32::INFINITY)
+                .desired_rows(2)
+                .hint_text(text::STEP_ROLLBACK_HINT),
+        );
+        if rollback.trim().is_empty() {
+            step.rollback = None;
+        }
     });
     command
 }
